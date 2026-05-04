@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -16,6 +16,7 @@ const nav = [
   { to: "/agency/clients", icon: Users, label: "Clients" },
   { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
   { to: "/agency/content", icon: FileVideo, label: "Content" },
+  { to: "/agency/performance", icon: BarChart3, label: "Performance" },
 ];
 
 export default function AgencyLayout() {

@@ -15,6 +15,10 @@ import { ArrowLeft, Loader2, UserPlus, Trash2, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { InviteClientDialog } from "./InviteClientDialog";
 import { NICHES, STATUSES, PLATFORMS, GOAL_STATUSES, nicheLabel } from "@/lib/niches";
+import { PerformanceStats } from "@/components/performance/PerformanceStats";
+import { VideosTable } from "@/components/performance/VideosTable";
+import { VideoEditor } from "@/components/performance/VideoEditor";
+import { NichePanel } from "@/components/performance/NichePanel";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +83,7 @@ export default function ClientProfile() {
       <Tabs defaultValue="overview">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
@@ -89,6 +94,7 @@ export default function ClientProfile() {
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
+        <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
         <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
         <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
@@ -450,7 +456,58 @@ function SettingsTab({ client, reload }: any) {
   );
 }
 
-/* --------- helpers --------- */
+/* --------- Performance (niche-aware) --------- */
+function PerformanceTab({ client }: any) {
+  const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("videos")
+      .select("id,client_id,platform,format,publish_date,video_url,hook,views,reach,likes,comments,shares,saves,calls,dms,completion_rate,recommendation,estimated_sales_impact")
+      .eq("client_id", client.id)
+      .order("publish_date", { ascending: false });
+    setVideos(data || []); setLoading(false);
+  };
+  useEffect(() => { load(); }, [client.id]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Video performance</h3>
+        <Button size="sm" onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Plus className="h-4 w-4 mr-1.5" /> Add video
+        </Button>
+      </div>
+      {loading ? (
+        <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : (
+        <>
+          <PerformanceStats videos={videos} />
+          <VideosTable videos={videos} onEdit={(id) => { setEditId(id); setEditorOpen(true); }} />
+        </>
+      )}
+
+      <div className="pt-4 border-t border-border">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">{nicheLabel(client.niche)} KPIs</h3>
+        <NichePanel niche={client.niche} agencyId={client.agency_id} clientId={client.id} />
+      </div>
+
+      <VideoEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        agencyId={client.agency_id}
+        clientId={client.id}
+        videoId={editId}
+        onSaved={load}
+      />
+    </div>
+  );
+}
+
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label>{label}</Label>{children}</div>;
 }
