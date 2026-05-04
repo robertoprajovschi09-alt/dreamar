@@ -18,6 +18,9 @@ import ClientProfile from "./pages/agency/ClientProfile";
 import Calendar from "./pages/agency/Calendar";
 import Content from "./pages/agency/Content";
 import Performance from "./pages/agency/Performance";
+import Tasks from "./pages/agency/Tasks";
+import Campaigns from "./pages/agency/Campaigns";
+import Documents from "./pages/agency/Documents";
 import ClientPortal from "./pages/client/ClientPortal";
 import NotFound from "./pages/NotFound";
 
