@@ -21,6 +21,8 @@ import Performance from "./pages/agency/Performance";
 import Tasks from "./pages/agency/Tasks";
 import Campaigns from "./pages/agency/Campaigns";
 import Documents from "./pages/agency/Documents";
+import Reports from "./pages/agency/Reports";
+import Assistant from "./pages/agency/Assistant";
 import ClientPortal from "./pages/client/ClientPortal";
 import NotFound from "./pages/NotFound";
 
@@ -57,6 +59,8 @@ const App = () => (
                   <Route path="tasks" element={<Tasks />} />
                   <Route path="campaigns" element={<Campaigns />} />
                   <Route path="documents" element={<Documents />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="assistant" element={<Assistant />} />
                 </Route>
 
                 <Route

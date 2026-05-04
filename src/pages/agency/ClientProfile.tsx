@@ -19,6 +19,7 @@ import { PerformanceStats } from "@/components/performance/PerformanceStats";
 import { VideosTable } from "@/components/performance/VideosTable";
 import { VideoEditor } from "@/components/performance/VideoEditor";
 import { NichePanel } from "@/components/performance/NichePanel";
+import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -87,6 +88,7 @@ export default function ClientProfile() {
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
@@ -101,6 +103,7 @@ export default function ClientProfile() {
         <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
         <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
         <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
+        <TabsContent value="reports"><ClientReportsTab client={client} /></TabsContent>
         <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
         <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
