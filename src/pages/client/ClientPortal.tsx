@@ -23,6 +23,7 @@ import { nicheLabel } from "@/lib/niches";
 import { ClientReportsView } from "@/components/reports/ClientReportsView";
 import { BriefWizard } from "@/components/client/BriefWizard";
 import { getClientBrief } from "@/lib/brief";
+import { NicheSummaryCard } from "@/components/client/NicheSummaryCard";
 
 const monthInputDefault = () => {
   const d = new Date();
