@@ -1,75 +1,57 @@
-## De ce nu merge AI Assistant
+## Problema
 
-Edge function-ul `supabase/functions/ai-assistant/index.ts` interoghează **coloane care nu există** în baza de date:
+La acceptarea unei invitații cu cont nou:
+- `handle_new_user` setează `role='agency_owner'` și creează o agenție goală.
+- `accept_client_invite` încearcă să schimbe rolul în `client_viewer`, dar trigger-ul `lock_profile_role_columns` resetează coloanele înapoi (auth.uid() nu e admin).
+- Userul rămâne `agency_owner` → `RoleRoute` îl duce pe `/agency`.
 
-- `clients.goals` → coloana se numește `objectives`
-- `videos.title` → nu există (folosim `hook`)
-- `videos.published_at` → coloana se numește `publish_date`
-- `videos.sales_value` → coloana se numește `estimated_sales_impact`
+## Fix (1 migration + 2 file edits)
 
-PostgREST returnează o eroare gen `column videos.title does not exist`, function-ul returnează 500, iar UI afișează acel mesaj ciudat ("ai brief case" = fragment din "could not find … in the schema cache" tradus prin browser sau mesaj de eroare brut).
+### 1. Migration nouă
 
-**Aceeași problemă există în `ai-report`** (folosește `videos.title`, `videos.published_at`, `videos.sales_value`, `videos.sales_count`, `videos.calls_booked`, `videos.dms_received`, `content_posts.published_at`). Deci raportul AI ESTE deja stricat, dar nu l-ai testat încă.
+**a) `lock_profile_role_columns`** — permite bypass când o funcție trusted setează un flag de sesiune:
+```sql
+IF current_setting('app.bypass_profile_lock', true) = 'on' THEN
+  RETURN NEW;
+END IF;
+IF NOT public.is_saas_admin(auth.uid()) THEN
+  NEW.role := OLD.role; ...
+END IF;
+```
 
----
+**b) `accept_client_invite`** — setează flag-ul înainte de UPDATE și curăță agenția auto-creată pentru invitați (dacă nu are alți membri / clienți):
+```sql
+PERFORM set_config('app.bypass_profile_lock','on', true);
+-- existing INSERT/UPDATE on profiles ...
+-- după update: dacă profile vechi avea agency_id ≠ _inv.agency_id și
+-- agenția aia n-are alți membri / clienți → DELETE agencies, agency_members, subscriptions.
+```
 
-## Faza 6 — Fix complet "make it usable"
+**c) `handle_new_user`** — dacă `raw_user_meta_data->>'invite_token'` e prezent, **nu** creează agenție și setează `role = NULL` (urmează să fie setat de `accept_client_invite`):
+```sql
+IF NEW.raw_user_meta_data ? 'invite_token' THEN
+  INSERT INTO profiles (id,email,full_name,role) VALUES (..., NULL) ...;
+  RETURN NEW;
+END IF;
+-- altfel: comportamentul existent (agency_owner + agency)
+```
 
-### 1. Reparare AI Assistant + AI Report (blocker)
-- Rescriu `ai-assistant/index.ts`: folosesc coloane reale (`hook`, `publish_date`, `estimated_sales_impact`), adaug context din `client_briefs`, `monthly_goals`, `client_feedback` (deja confirmate că există în schemă).
-- Rescriu `ai-report/index.ts`: folosesc `views/reach/likes/comments/shares/saves/calls/dms/estimated_sales_impact/publish_date` din `videos` și `scheduled_for` din `content_posts`. Adaug context: brief, goals, niche-specific tables (real estate / restaurant / dental / fitness / custom) — astfel raportul devine specific pe nișă.
-- Redeploy ambele edge functions.
+### 2. `src/pages/AcceptInvite.tsx`
 
-### 2. Niche-specific AI (acum doar metrici generice)
-Edge function-urile primesc `client.niche` și încarcă tabela respectivă (`niche_real_estate_properties`, `niche_restaurant_items`, `niche_dental_treatments`, `niche_fitness_offerings`, `niche_custom_metrics`). System prompt-ul devine "Ești expert în [niche] marketing" și recomandările devin pe nișă.
+În `handleSignUp`, transmite token-ul în metadata ca `handle_new_user` să-l detecteze:
+```ts
+options: {
+  emailRedirectTo: `${window.location.origin}/accept-invite?token=${token}`,
+  data: { full_name: fullName, invite_token: token },
+}
+```
 
-### 3. Client dashboard pe nișă
-Acum `ClientPortal /overview` arată doar 3 KPI-uri generale. Adaug:
-- **NicheSummaryCard**: pentru fiecare nișă, citește tabela respectivă (read-only pentru client_viewer prin policy nouă) și afișează 3-4 KPI specifici ("Apartamente listate / Vizionări / Oferte" pentru real estate etc.).
-- Card "Last AI report" (dacă există unul `client_visible`).
-- Card "This month's business impact" (sumar `business_impact_entries` pentru luna curentă).
+### 3. `src/contexts/UserContext.tsx` (defensive self-heal)
 
-Migrare nouă: extind RLS pe `niche_*` și `business_impact_entries` să permită `is_client_viewer_of(auth.uid(), client_id)` la SELECT (acum doar agency members văd).
+Extinde self-heal-ul: dacă `profile.role === 'agency_owner'` **dar** există rând activ în `client_users` pentru user, preferă `client_viewer` + ruleaza `accept_client_invite` n-a apucat / nu rerulăm — doar redirecționăm prin a returna profilul cu `role='client_viewer'` din `client_users`. Asta acoperă userii deja stricați din testele anterioare.
 
-### 4. SaaS Admin dashboard (acum lipsește complet)
-Există coloana `profiles.is_saas_admin` și funcția `is_saas_admin()`, dar nu există nicio pagină.
-- Rută nouă `/admin` cu `<RoleRoute allow={["saas_admin"]}>`.
-- Pagină `AdminDashboard.tsx`:
-  - KPI: total agencies, total clients, total users, MRR estimat (din `subscriptions.plan` × `plans.price_eur`).
-  - Tabel agencies cu nume, plan, status (suspended), număr clienți, număr team members, data creării.
-  - Buton "Suspend / Reactivate" (update `agencies.suspended`).
-  - Tabel clients cross-agency.
-- Adaug link în `AgencyLayout` care apare doar dacă `profile.is_saas_admin = true`.
+## Rezultat
 
-### 5. Mic polish necesar pentru a fi utilizabil
-- `AgencyLayout` nu are meniu mobile → adaug `Sheet` cu sidebar pentru < lg.
-- `Content.tsx` nu marchează vizual posturile cu `approval_status='changes_requested'` → adaug badge roșu + comentariu client.
-- Pe `ClientProfile`, în tabul Performance, dacă nu sunt video-uri, butonul "Add video" trebuie mai vizibil.
-- Empty states peste tot să aibă CTA către acțiunea principală.
-
----
-
-## Cum testezi după (checklist concret)
-
-1. **AI Assistant** funcționează cu scope "Whole agency" și "Specific client" — răspunde streaming, fără 500.
-2. **AI Report** se generează din `/agency/reports`, salvat în DB, marcabil `client_visible` → apare în portalul clientului.
-3. **Brief** obligatoriu apare la prima logare client; după submit, dispare.
-4. **Approve / Request changes** din portal client → status post se schimbă în `Content.tsx`.
-5. **Niche dashboards**: deschizi un client de tip "real_estate", vezi tabel proprietăți; "restaurant" vezi item-uri; "dental" tratamente; "fitness" oferte; "custom" KPI custom.
-6. **Client portal Overview** arată acum și sumar pe nișă + ultimul raport + impact lună.
-7. **/admin** accesibil doar dacă `profiles.is_saas_admin = true` → vezi listă agenții + suspend.
-8. **Mobile**: sidebar agenție se deschide cu burger, totul navigabil.
-
----
-
-## Ordine de execuție
-
-**Pas 1 (blocker)**: fix `ai-assistant` + `ai-report` + redeploy. Fără asta nimic AI nu merge.
-**Pas 2**: Migration RLS pentru tabelele `niche_*` și `business_impact_entries` (read pentru client viewer).
-**Pas 3**: NicheSummaryCard în ClientPortal + card "ultimul raport" + impact lună.
-**Pas 4**: Pagina `/admin` cu suspend pe agenții.
-**Pas 5**: Polish (mobile sidebar, badge changes_requested, empty states).
-
-După Pas 1 deja poți folosi AI Assistant și genera rapoarte. Restul aduce SaaS-ul la stare 100% utilizabilă.
-
-Stripe rămâne în continuare afară. Confirmă "go faza 6" și execut în ordine.
+- Invitat nou → cont creat fără agenție parazită → `accept_client_invite` setează `client_viewer` + `client_id` → redirect la `/client`.
+- Userii deja afectați din testele anterioare: self-heal-ul UserContext îi forțează pe `/client`.
+- Owner-ii reali nu sunt afectați (flag-ul de bypass e setat doar din `accept_client_invite`).
