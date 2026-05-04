@@ -10,14 +10,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Card } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { NICHES, STATUSES, nicheLabel } from "@/lib/niches";
 
 type Client = {
   id: string; name: string; niche: string; city: string | null;
   website: string | null; status: string; created_at: string;
 };
 
-const NICHES = ["real_estate", "restaurant", "dental", "fitness", "custom"] as const;
-const STATUSES = ["active", "paused", "churned", "prospect"] as const;
 const emptyForm = { name: "", niche: "custom", city: "", website: "", status: "active" };
 
 export default function Clients() {
@@ -106,7 +105,7 @@ export default function Clients() {
                   <Select value={form.niche} onValueChange={(v) => setForm({ ...form, niche: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {NICHES.map((n) => <SelectItem key={n} value={n}>{n.replace("_", " ")}</SelectItem>)}
+                      {NICHES.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -169,7 +168,7 @@ export default function Clients() {
                     <td className="px-4 py-3 font-medium">
                       <Link to={`/agency/clients/${c.id}`} className="hover:underline">{c.name}</Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.niche.replace("_", " ")}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{nicheLabel(c.niche)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
                     <td className="px-4 py-3"><span className="text-xs uppercase tracking-wide">{c.status}</span></td>
                     <td className="px-4 py-3 text-right">
