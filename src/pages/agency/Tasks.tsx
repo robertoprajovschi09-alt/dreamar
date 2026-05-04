@@ -43,7 +43,7 @@ export default function Tasks() {
 
   const moveTask = async (id: string, status: string) => {
     setTasks(tasks.map((t) => (t.id === id ? { ...t, status } : t)));
-    const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
+    const { error } = await supabase.from("tasks").update({ status: status as any }).eq("id", id);
     if (error) { toast.error(error.message); load(); }
   };
 
