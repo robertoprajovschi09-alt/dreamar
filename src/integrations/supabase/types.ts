@@ -1065,6 +1065,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_agency_for_current_user: {
+        Args: { _name: string }
+        Returns: string
+      }
       has_agency_role: {
         Args: {
           _agency_id: string
