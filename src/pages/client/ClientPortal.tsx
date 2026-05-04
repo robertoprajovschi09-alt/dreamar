@@ -40,6 +40,16 @@ export default function ClientPortal() {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 
+  const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
+
+  useEffect(() => {
+    if (!client) return;
+    setBriefStatus("loading");
+    getClientBrief(client.id)
+      .then((b) => setBriefStatus(b?.completed ? "done" : "missing"))
+      .catch(() => setBriefStatus("missing"));
+  }, [client?.id]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!client || !agency) {
     return (
@@ -49,6 +59,20 @@ export default function ClientPortal() {
           <Button onClick={async () => { await signOut(); navigate("/auth"); }} variant="outline" className="mt-4">Sign out</Button>
         </div>
       </div>
+    );
+  }
+
+  if (briefStatus === "loading") {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
+  }
+  if (briefStatus === "missing") {
+    return (
+      <BriefWizard
+        agencyId={agency.id} agencyName={agency.name}
+        clientId={client.id} clientName={client.name}
+        userId={user!.id}
+        onCompleted={() => setBriefStatus("done")}
+      />
     );
   }
 
