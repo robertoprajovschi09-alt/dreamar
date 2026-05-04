@@ -93,6 +93,7 @@ export default function ClientProfile() {
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
           <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
+          <TabsTrigger value="brief">Brief</TabsTrigger>
           <TabsTrigger value="invites">Invites ({invites.length})</TabsTrigger>
           <TabsTrigger value="feedback">Feedback ({feedback.length})</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -108,6 +109,7 @@ export default function ClientProfile() {
         <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
         <TabsContent value="users"><UsersTab users={users} reload={loadAll} /></TabsContent>
+        <TabsContent value="brief"><BriefViewTab clientId={client.id} /></TabsContent>
         <TabsContent value="invites"><InvitesTab invites={invites} reload={loadAll} /></TabsContent>
         <TabsContent value="feedback"><FeedbackTab feedback={feedback} /></TabsContent>
         <TabsContent value="settings"><SettingsTab client={client} reload={loadAll} /></TabsContent>
