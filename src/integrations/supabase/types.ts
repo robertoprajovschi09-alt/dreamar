@@ -417,52 +417,123 @@ export type Database = {
           },
         ]
       }
+      content_approvals: {
+        Row: {
+          agency_id: string
+          client_id: string
+          comment: string | null
+          content_post_id: string
+          created_at: string
+          decided_by: string | null
+          decision: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          client_id: string
+          comment?: string | null
+          content_post_id: string
+          created_at?: string
+          decided_by?: string | null
+          decision?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string
+          comment?: string | null
+          content_post_id?: string
+          created_at?: string
+          decided_by?: string | null
+          decision?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_approvals_content_post_id_fkey"
+            columns: ["content_post_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_posts: {
         Row: {
           agency_id: string
+          agency_notes: string | null
           approval_status: string | null
+          assets: Json
           assigned_to: string | null
           caption: string | null
           client_id: string
+          content_type: string | null
           created_at: string
+          created_by: string | null
+          cta: string | null
           deadline: string | null
+          format: string | null
+          hook: string | null
           id: string
           platform: string | null
+          post_url: string | null
           scheduled_for: string | null
           script: string | null
           status: Database["public"]["Enums"]["post_status"]
+          thumbnail_url: string | null
           title: string
           updated_at: string
         }
         Insert: {
           agency_id: string
+          agency_notes?: string | null
           approval_status?: string | null
+          assets?: Json
           assigned_to?: string | null
           caption?: string | null
           client_id: string
+          content_type?: string | null
           created_at?: string
+          created_by?: string | null
+          cta?: string | null
           deadline?: string | null
+          format?: string | null
+          hook?: string | null
           id?: string
           platform?: string | null
+          post_url?: string | null
           scheduled_for?: string | null
           script?: string | null
           status?: Database["public"]["Enums"]["post_status"]
+          thumbnail_url?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           agency_id?: string
+          agency_notes?: string | null
           approval_status?: string | null
+          assets?: Json
           assigned_to?: string | null
           caption?: string | null
           client_id?: string
+          content_type?: string | null
           created_at?: string
+          created_by?: string | null
+          cta?: string | null
           deadline?: string | null
+          format?: string | null
+          hook?: string | null
           id?: string
           platform?: string | null
+          post_url?: string | null
           scheduled_for?: string | null
           script?: string | null
           status?: Database["public"]["Enums"]["post_status"]
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string
         }
