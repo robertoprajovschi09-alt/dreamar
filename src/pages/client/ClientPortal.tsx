@@ -21,6 +21,8 @@ import { MonthCalendar, type CalendarItem } from "@/components/content/MonthCale
 import { statusMeta } from "@/lib/content";
 import { nicheLabel } from "@/lib/niches";
 import { ClientReportsView } from "@/components/reports/ClientReportsView";
+import { BriefWizard } from "@/components/client/BriefWizard";
+import { getClientBrief } from "@/lib/brief";
 
 const monthInputDefault = () => {
   const d = new Date();
