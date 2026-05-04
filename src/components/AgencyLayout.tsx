@@ -20,6 +20,8 @@ const nav = [
   { to: "/agency/tasks", icon: ListTodo, label: "Tasks" },
   { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
   { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
+  { to: "/agency/reports", icon: FileText, label: "Reports" },
+  { to: "/agency/assistant", icon: Sparkles, label: "Assistant" },
 ];
 
 export default function AgencyLayout() {
