@@ -291,6 +291,75 @@ export type Database = {
         }
         Relationships: []
       }
+      client_briefs: {
+        Row: {
+          agency_id: string
+          brand_tone: string | null
+          budget_range: string | null
+          business_description: string | null
+          client_id: string
+          completed: boolean
+          content_donts: string | null
+          content_dos: string | null
+          created_at: string
+          extra_notes: string | null
+          id: string
+          main_competitors: string | null
+          main_objective: string | null
+          posting_frequency: string | null
+          preferred_platforms: string[] | null
+          reviewed_at: string | null
+          submitted_by: string | null
+          target_audience: string | null
+          unique_selling_points: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          brand_tone?: string | null
+          budget_range?: string | null
+          business_description?: string | null
+          client_id: string
+          completed?: boolean
+          content_donts?: string | null
+          content_dos?: string | null
+          created_at?: string
+          extra_notes?: string | null
+          id?: string
+          main_competitors?: string | null
+          main_objective?: string | null
+          posting_frequency?: string | null
+          preferred_platforms?: string[] | null
+          reviewed_at?: string | null
+          submitted_by?: string | null
+          target_audience?: string | null
+          unique_selling_points?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          brand_tone?: string | null
+          budget_range?: string | null
+          business_description?: string | null
+          client_id?: string
+          completed?: boolean
+          content_donts?: string | null
+          content_dos?: string | null
+          created_at?: string
+          extra_notes?: string | null
+          id?: string
+          main_competitors?: string | null
+          main_objective?: string | null
+          posting_frequency?: string | null
+          preferred_platforms?: string[] | null
+          reviewed_at?: string | null
+          submitted_by?: string | null
+          target_audience?: string | null
+          unique_selling_points?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_feedback: {
         Row: {
           agency_id: string
