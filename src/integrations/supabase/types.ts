@@ -1403,6 +1403,7 @@ export type Database = {
         | "auto"
         | "hotel"
         | "custom"
+        | "ecommerce"
       plan_tier: "starter" | "growth" | "unlimited" | "white_label"
       post_status:
         | "idea"
@@ -1570,6 +1571,7 @@ export const Constants = {
         "auto",
         "hotel",
         "custom",
+        "ecommerce",
       ],
       plan_tier: ["starter", "growth", "unlimited", "white_label"],
       post_status: [
