@@ -163,6 +163,57 @@ export type Database = {
           },
         ]
       }
+      campaigns: {
+        Row: {
+          agency_id: string
+          budget: number | null
+          channels: string[] | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          objective: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          budget?: number | null
+          channels?: string[] | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          objective?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          budget?: number | null
+          channels?: string[] | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          objective?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_feedback: {
         Row: {
           agency_id: string
@@ -599,6 +650,7 @@ export type Database = {
           ai_summary: string | null
           client_id: string | null
           created_at: string
+          description: string | null
           folder: string | null
           id: string
           mime_type: string | null
@@ -607,12 +659,14 @@ export type Database = {
           storage_path: string
           tags: string[] | null
           uploaded_by: string | null
+          visibility: string
         }
         Insert: {
           agency_id: string
           ai_summary?: string | null
           client_id?: string | null
           created_at?: string
+          description?: string | null
           folder?: string | null
           id?: string
           mime_type?: string | null
@@ -621,12 +675,14 @@ export type Database = {
           storage_path: string
           tags?: string[] | null
           uploaded_by?: string | null
+          visibility?: string
         }
         Update: {
           agency_id?: string
           ai_summary?: string | null
           client_id?: string | null
           created_at?: string
+          description?: string | null
           folder?: string | null
           id?: string
           mime_type?: string | null
@@ -635,6 +691,7 @@ export type Database = {
           storage_path?: string
           tags?: string[] | null
           uploaded_by?: string | null
+          visibility?: string
         }
         Relationships: [
           {

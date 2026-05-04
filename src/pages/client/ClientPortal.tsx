@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, LogOut, Moon, Sun, Send, MessageSquare, ChevronLeft, ChevronRight, Check, X } from "lucide-react";
+import { Loader2, LogOut, Moon, Sun, Send, MessageSquare, ChevronLeft, ChevronRight, Check, X, Download, FileIcon } from "lucide-react";
 import { toast } from "sonner";
 import { initials } from "@/lib/format";
 import { MonthCalendar, type CalendarItem } from "@/components/content/MonthCalendar";
@@ -90,11 +90,13 @@ export default function ClientPortal() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab clientId={client.id} /></TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
           <TabsContent value="approvals"><ApprovalsTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
+          <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
         </Tabs>
       </main>
@@ -282,7 +284,44 @@ function Block({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="text-sm whitespace-pre-wrap">{value}</div></div>;
 }
 
-/* ---------------- Feedback (kept) ---------------- */
+/* ---------------- Documents (visible to client) ---------------- */
+function ClientDocumentsTab({ clientId }: { clientId: string }) {
+  const [docs, setDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("documents").select("*").eq("client_id", clientId).eq("visibility", "client_visible").order("created_at", { ascending: false });
+      setDocs(data || []); setLoading(false);
+    })();
+  }, [clientId]);
+  const download = async (d: any) => {
+    const { data, error } = await supabase.storage.from("agency-files").createSignedUrl(d.storage_path, 60);
+    if (error) return toast.error(error.message);
+    window.open(data.signedUrl, "_blank");
+  };
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (docs.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No documents shared with you yet.</CardContent></Card>;
+  return (
+    <Card><CardContent className="pt-4">
+      <ul className="divide-y divide-border">
+        {docs.map((d) => (
+          <li key={d.id} className="py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
+                <div className="font-medium text-sm truncate">{d.name}</div>
+                <div className="text-[11px] text-muted-foreground">{d.folder} · {new Date(d.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => download(d)}><Download className="h-3.5 w-3.5 mr-1.5" /> Download</Button>
+          </li>
+        ))}
+      </ul>
+    </CardContent></Card>
+  );
+}
+
 function FeedbackTab({ clientId, agencyId, userId }: { clientId: string; agencyId: string; userId: string }) {
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
