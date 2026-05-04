@@ -15,6 +15,10 @@ import { ArrowLeft, Loader2, UserPlus, Trash2, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { InviteClientDialog } from "./InviteClientDialog";
 import { NICHES, STATUSES, PLATFORMS, GOAL_STATUSES, nicheLabel } from "@/lib/niches";
+import { PerformanceStats } from "@/components/performance/PerformanceStats";
+import { VideosTable } from "@/components/performance/VideosTable";
+import { VideoEditor } from "@/components/performance/VideoEditor";
+import { NichePanel } from "@/components/performance/NichePanel";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -79,6 +83,7 @@ export default function ClientProfile() {
       <Tabs defaultValue="overview">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
@@ -89,6 +94,7 @@ export default function ClientProfile() {
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
+        <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
         <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
         <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
