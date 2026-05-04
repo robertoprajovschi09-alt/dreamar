@@ -84,6 +84,9 @@ export default function ClientProfile() {
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
@@ -95,6 +98,9 @@ export default function ClientProfile() {
 
         <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
         <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
+        <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
+        <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
+        <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
         <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
         <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
