@@ -60,28 +60,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Self-heal: if profile exists but role/agency missing (legacy user), populate from agency_members.
-    if (p && (!p.role || !p.agency_id)) {
-      const { data: m } = await supabase
-        .from("agency_members")
-        .select("agency_id,role")
+    // Self-heal: an active client_users link always wins over a stale agency_owner profile
+    // (handles users created before the invite-flow fix).
+    if (p) {
+      const { data: cu } = await supabase
+        .from("client_users")
+        .select("agency_id,client_id,role")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (m) {
-        p = { ...p, role: (p.role || (m.role as Role)), agency_id: p.agency_id || m.agency_id };
-      } else {
-        // check client_users
-        const { data: cu } = await supabase
-          .from("client_users")
-          .select("agency_id,client_id,role")
+      if (cu) {
+        p = { ...p, role: "client_viewer", agency_id: cu.agency_id, client_id: cu.client_id };
+      } else if (!p.role || !p.agency_id) {
+        const { data: m } = await supabase
+          .from("agency_members")
+          .select("agency_id,role")
           .eq("user_id", user.id)
-          .eq("status", "active")
+          .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();
-        if (cu) {
-          p = { ...p, role: "client_viewer", agency_id: cu.agency_id, client_id: cu.client_id };
+        if (m) {
+          p = { ...p, role: (p.role || (m.role as Role)), agency_id: p.agency_id || m.agency_id };
         }
       }
     }
