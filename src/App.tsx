@@ -1,26 +1,59 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/hooks/use-theme";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AgencyProvider } from "@/contexts/AgencyContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import AppLayout from "@/components/AppLayout";
+
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
+import Dashboard from "./pages/Dashboard";
+import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
+import AgencyListPage from "./pages/AgencyListPage";
+import Billing from "./pages/Billing";
+import Admin from "./pages/Admin";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AgencyProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="clients" element={<Clients />} />
+                  <Route path="clients/:id" element={<ClientDetail />} />
+                  <Route path="calendar" element={<AgencyListPage kind="calendar" />} />
+                  <Route path="videos" element={<AgencyListPage kind="videos" />} />
+                  <Route path="impact" element={<AgencyListPage kind="impact" />} />
+                  <Route path="documents" element={<AgencyListPage kind="documents" />} />
+                  <Route path="tasks" element={<AgencyListPage kind="tasks" />} />
+                  <Route path="billing" element={<Billing />} />
+                  <Route path="admin" element={<Admin />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AgencyProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
