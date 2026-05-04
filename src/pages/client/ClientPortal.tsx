@@ -134,22 +134,36 @@ export default function ClientPortal() {
 }
 
 /* ---------------- Overview ---------------- */
-function OverviewTab({ clientId }: { clientId: string }) {
+function OverviewTab({ clientId, niche }: { clientId: string; niche: string }) {
   const [counts, setCounts] = useState<{ scheduled: number; awaiting: number; published: number }>({ scheduled: 0, awaiting: 0, published: 0 });
   const [goals, setGoals] = useState<any[]>([]);
+  const [impact, setImpact] = useState<{ calls: number; dms: number; bookings: number; sales: number }>({ calls: 0, dms: 0, bookings: 0, sales: 0 });
+  const [latestReport, setLatestReport] = useState<any>(null);
+
   useEffect(() => {
     (async () => {
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-      const [a, b, c, g] = await Promise.all([
+      const [a, b, c, g, imp, rep] = await Promise.all([
         supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "scheduled"),
         supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "sent_for_approval"),
         supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "published").gte("scheduled_for", monthStart.toISOString()),
         supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false }).limit(5),
+        supabase.from("business_impact_entries").select("calls,dms,bookings,sales,revenue_estimate").eq("client_id", clientId).gte("entry_date", monthStart.toISOString().slice(0,10)),
+        supabase.from("reports").select("id,title,summary,period_start,period_end,created_at").eq("client_id", clientId).eq("client_visible", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       setCounts({ scheduled: a.count || 0, awaiting: b.count || 0, published: c.count || 0 });
       setGoals(g.data || []);
+      const totals = (imp.data || []).reduce((acc: any, r: any) => ({
+        calls: acc.calls + (r.calls || 0),
+        dms: acc.dms + (r.dms || 0),
+        bookings: acc.bookings + (r.bookings || 0),
+        sales: acc.sales + (r.sales || 0),
+      }), { calls: 0, dms: 0, bookings: 0, sales: 0 });
+      setImpact(totals);
+      setLatestReport(rep.data);
     })();
   }, [clientId]);
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
@@ -157,6 +171,32 @@ function OverviewTab({ clientId }: { clientId: string }) {
         <StatCard label="Awaiting your approval" value={counts.awaiting} accent />
         <StatCard label="Published this month" value={counts.published} />
       </div>
+
+      <NicheSummaryCard clientId={clientId} niche={niche} />
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">This month's business impact</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Mini label="Calls" value={impact.calls} />
+            <Mini label="DMs" value={impact.dms} />
+            <Mini label="Bookings" value={impact.bookings} />
+            <Mini label="Sales" value={impact.sales} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {latestReport && (
+        <Card>
+          <CardHeader><CardTitle className="text-base">Latest report from your agency</CardTitle></CardHeader>
+          <CardContent>
+            <div className="font-medium">{latestReport.title}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{latestReport.period_start} → {latestReport.period_end}</div>
+            {latestReport.summary && <p className="text-sm mt-2 whitespace-pre-wrap">{latestReport.summary}</p>}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader><CardTitle className="text-base">Monthly objectives</CardTitle></CardHeader>
         <CardContent>
@@ -179,6 +219,9 @@ function OverviewTab({ clientId }: { clientId: string }) {
       </Card>
     </div>
   );
+}
+function Mini({ label, value }: { label: string; value: number | string }) {
+  return <div><div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="text-xl font-semibold font-mono mt-0.5">{value}</div></div>;
 }
 function StatCard({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
   return <Card><CardContent className="pt-5"><div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div><div className={`text-3xl font-bold font-mono mt-1 ${accent ? "text-accent" : ""}`}>{value}</div></CardContent></Card>;
