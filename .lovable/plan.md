@@ -1,128 +1,75 @@
-## Obiectiv
+## De ce nu merge AI Assistant
 
-Toate modulele construite în Faze 1-5 să fie complet funcționale end-to-end (fără Stripe), plus un **brief obligatoriu** pe care clientul îl completează la prima logare după ce acceptă invitația.
+Edge function-ul `supabase/functions/ai-assistant/index.ts` interoghează **coloane care nu există** în baza de date:
 
----
+- `clients.goals` → coloana se numește `objectives`
+- `videos.title` → nu există (folosim `hook`)
+- `videos.published_at` → coloana se numește `publish_date`
+- `videos.sales_value` → coloana se numește `estimated_sales_impact`
 
-## 1. Audit rapid al stării actuale
+PostgREST returnează o eroare gen `column videos.title does not exist`, function-ul returnează 500, iar UI afișează acel mesaj ciudat ("ai brief case" = fragment din "could not find … in the schema cache" tradus prin browser sau mesaj de eroare brut).
 
-Ce există deja și funcționează:
-- Auth + roluri (agency_owner, agency_team, client_viewer, saas_admin)
-- Multi-tenant cu RLS pe toate tabelele
-- Clients CRUD + invitații client + portal client
-- Content calendar + editor + aprobare
-- Performance (videos + niche dashboards)
-- Tasks (Kanban), Campaigns, Documents
-- Reports AI + Assistant AI (edge functions deployed)
-
-Ce **lipsește pentru a fi 100% funcțional** (fără Stripe):
-1. **Client brief** la prima intrare în portal (cerut acum)
-2. **Monthly goals** — tabela există dar nu e folosită nicăieri în UI
-3. **Business impact** — tabela `business_impact_entries` există dar nu e completată din portal
-4. **Content approval** din portal client (tabela există, dar portalul doar listează — fără butoane Approve/Request changes/Reject + comment)
-5. **Notifications/dashboard live** — agency dashboard arată doar count clienți; lipsesc: top performers, scădere performanță, task-uri urgente, conținut în așteptare aprobare, postări luna asta
-6. **Polish**: toast-uri, empty states consistente, loaders, mobile menu pe AgencyLayout
+**Aceeași problemă există în `ai-report`** (folosește `videos.title`, `videos.published_at`, `videos.sales_value`, `videos.sales_count`, `videos.calls_booked`, `videos.dms_received`, `content_posts.published_at`). Deci raportul AI ESTE deja stricat, dar nu l-ai testat încă.
 
 ---
 
-## 2. Client brief la prima intrare (feature nou principal)
+## Faza 6 — Fix complet "make it usable"
 
-### Schema
-Migration nouă: tabela `client_briefs`
-```
-id, agency_id, client_id, submitted_by,
-business_description text,
-main_objective text,            -- "Ce vrei să obții în următoarele 3 luni?"
-target_audience text,            -- "Cine este clientul tău ideal?"
-unique_selling_points text,      -- "De ce te-ar alege cineva pe tine?"
-main_competitors text,
-brand_tone text,                 -- prietenos / profesional / luxos / energic
-content_dos text,                -- "Ce VREI să comunicăm"
-content_donts text,              -- "Ce NU vrei să apară niciodată"
-preferred_platforms text[],
-posting_frequency text,
-budget_range text,
-extra_notes text,
-completed boolean default false,
-created_at, updated_at
-unique(client_id)
-```
-RLS: agency members read/write pentru agency_id; client_viewer al acelui client read/write doar rândul propriu.
+### 1. Reparare AI Assistant + AI Report (blocker)
+- Rescriu `ai-assistant/index.ts`: folosesc coloane reale (`hook`, `publish_date`, `estimated_sales_impact`), adaug context din `client_briefs`, `monthly_goals`, `client_feedback` (deja confirmate că există în schemă).
+- Rescriu `ai-report/index.ts`: folosesc `views/reach/likes/comments/shares/saves/calls/dms/estimated_sales_impact/publish_date` din `videos` și `scheduled_for` din `content_posts`. Adaug context: brief, goals, niche-specific tables (real estate / restaurant / dental / fitness / custom) — astfel raportul devine specific pe nișă.
+- Redeploy ambele edge functions.
 
-### UX
-- După `accept_client_invite`, redirect rămâne pe `/client`.
-- `ClientPortal` verifică dacă există `client_briefs` cu `completed=true` pentru clientul curent. Dacă nu → afișează **`BriefWizard`** full-screen (nu poate fi închis). 4 pași simpli (~10 câmpuri total), progress bar, "Salvează și continuă mai târziu" salvează ciorna (`completed=false`).
-- La submit final: `completed=true` → portal normal apare.
-- În agency: tab nou **"Brief"** pe `ClientProfile.tsx` care arată conținutul + buton "Mark as reviewed".
+### 2. Niche-specific AI (acum doar metrici generice)
+Edge function-urile primesc `client.niche` și încarcă tabela respectivă (`niche_real_estate_properties`, `niche_restaurant_items`, `niche_dental_treatments`, `niche_fitness_offerings`, `niche_custom_metrics`). System prompt-ul devine "Ești expert în [niche] marketing" și recomandările devin pe nișă.
 
-### Files
-- `supabase/migrations/<ts>_client_brief.sql`
-- `src/components/client/BriefWizard.tsx` (4 pași, shadcn)
-- `src/lib/brief.ts` (fetch/save helpers + zod schema)
-- edit `src/pages/client/ClientPortal.tsx` (gating logic)
-- edit `src/pages/agency/ClientProfile.tsx` (tab Brief)
+### 3. Client dashboard pe nișă
+Acum `ClientPortal /overview` arată doar 3 KPI-uri generale. Adaug:
+- **NicheSummaryCard**: pentru fiecare nișă, citește tabela respectivă (read-only pentru client_viewer prin policy nouă) și afișează 3-4 KPI specifici ("Apartamente listate / Vizionări / Oferte" pentru real estate etc.).
+- Card "Last AI report" (dacă există unul `client_visible`).
+- Card "This month's business impact" (sumar `business_impact_entries` pentru luna curentă).
+
+Migrare nouă: extind RLS pe `niche_*` și `business_impact_entries` să permită `is_client_viewer_of(auth.uid(), client_id)` la SELECT (acum doar agency members văd).
+
+### 4. SaaS Admin dashboard (acum lipsește complet)
+Există coloana `profiles.is_saas_admin` și funcția `is_saas_admin()`, dar nu există nicio pagină.
+- Rută nouă `/admin` cu `<RoleRoute allow={["saas_admin"]}>`.
+- Pagină `AdminDashboard.tsx`:
+  - KPI: total agencies, total clients, total users, MRR estimat (din `subscriptions.plan` × `plans.price_eur`).
+  - Tabel agencies cu nume, plan, status (suspended), număr clienți, număr team members, data creării.
+  - Buton "Suspend / Reactivate" (update `agencies.suspended`).
+  - Tabel clients cross-agency.
+- Adaug link în `AgencyLayout` care apare doar dacă `profile.is_saas_admin = true`.
+
+### 5. Mic polish necesar pentru a fi utilizabil
+- `AgencyLayout` nu are meniu mobile → adaug `Sheet` cu sidebar pentru < lg.
+- `Content.tsx` nu marchează vizual posturile cu `approval_status='changes_requested'` → adaug badge roșu + comentariu client.
+- Pe `ClientProfile`, în tabul Performance, dacă nu sunt video-uri, butonul "Add video" trebuie mai vizibil.
+- Empty states peste tot să aibă CTA către acțiunea principală.
 
 ---
 
-## 3. Restul de "make it functional"
+## Cum testezi după (checklist concret)
 
-### A. Monthly goals (folosește tabela existentă)
-- Tab **"Goals"** pe `ClientProfile.tsx`: listă obiective lunare + form (objective, metric, target, deadline, owner).
-- Card pe `ClientPortal` "Obiectivele lunii" (read-only pentru client).
-- Apare automat în Reports AI (edge function deja citește acolo).
-
-### B. Business impact din portal client
-- În `ClientPortal`, secțiune **"Impact luna aceasta"** cu form lunar: calls, dms, bookings, sales €, feedback liber.
-- Insert în `business_impact_entries` cu `created_by = auth.uid()`. Update RLS să permită client_viewer să insereze pentru clientul lui (acum doar agency members pot).
-
-### C. Content approval din portal client
-- În tab Content al portalului, fiecare post cu `approval_status='pending'` primește 3 butoane: Approve / Request changes / Reject + textarea comment.
-- Insert în `content_approvals` (RLS deja permite) + update `content_posts.approval_status`.
-- Notificare vizuală în agency `Content.tsx` (badge "X pending").
-
-### D. Agency Dashboard real
-Înlocuiește `AgencyDashboard.tsx` cu:
-- KPI cards: total clients, posts published this month, pending approvals, urgent tasks (deadline <7 zile)
-- Lista **Top performers** (top 3 clienți după views ultima lună din `videos`)
-- Lista **Scădere performanță** (clienți cu engagement_rate luna asta < 80% din luna trecută)
-- Lista **Aprobări așteptate** + **Task-uri urgente** + **Brief-uri necompletate**
-- Buton "Generează raport lunar" (link către Reports)
-
-### E. Polish
-- Mobile sidebar (Sheet) pe `AgencyLayout`
-- Empty states consistente cu CTA
-- Toast pe toate mutațiile
-- Loading skeletons pe liste lungi
+1. **AI Assistant** funcționează cu scope "Whole agency" și "Specific client" — răspunde streaming, fără 500.
+2. **AI Report** se generează din `/agency/reports`, salvat în DB, marcabil `client_visible` → apare în portalul clientului.
+3. **Brief** obligatoriu apare la prima logare client; după submit, dispare.
+4. **Approve / Request changes** din portal client → status post se schimbă în `Content.tsx`.
+5. **Niche dashboards**: deschizi un client de tip "real_estate", vezi tabel proprietăți; "restaurant" vezi item-uri; "dental" tratamente; "fitness" oferte; "custom" KPI custom.
+6. **Client portal Overview** arată acum și sumar pe nișă + ultimul raport + impact lună.
+7. **/admin** accesibil doar dacă `profiles.is_saas_admin = true` → vezi listă agenții + suspend.
+8. **Mobile**: sidebar agenție se deschide cu burger, totul navigabil.
 
 ---
 
-## 4. Plan de testare manual
+## Ordine de execuție
 
-1. Owner nou se înregistrează → ajunge pe `/agency`, vede dashboard cu empty states.
-2. Adaugă client → invită viewer → copiază link.
-3. În incognito, viewer acceptă invitația → vede **BriefWizard** obligatoriu.
-4. Completează brief → ajunge în portal → vede goals + impact form + content (gol).
-5. Owner adaugă goals + content post → viewer vede în portal, dă Approve cu comment.
-6. Owner vede badge "1 approved" + comment în `Content.tsx`.
-7. Viewer completează business impact → owner vede în tab Performance.
-8. Owner generează AI report → marchează client_visible → viewer vede raportul.
-9. Refresh pe fiecare pagină — tot persistă, nimic nu pică.
+**Pas 1 (blocker)**: fix `ai-assistant` + `ai-report` + redeploy. Fără asta nimic AI nu merge.
+**Pas 2**: Migration RLS pentru tabelele `niche_*` și `business_impact_entries` (read pentru client viewer).
+**Pas 3**: NicheSummaryCard în ClientPortal + card "ultimul raport" + impact lună.
+**Pas 4**: Pagina `/admin` cu suspend pe agenții.
+**Pas 5**: Polish (mobile sidebar, badge changes_requested, empty states).
 
----
+După Pas 1 deja poți folosi AI Assistant și genera rapoarte. Restul aduce SaaS-ul la stare 100% utilizabilă.
 
-## 5. Ordine de execuție propusă
-
-**Faza A (acum)** — Client brief end-to-end (migration + wizard + gating + tab agency)
-**Faza B** — Approval în portal + business impact din portal + RLS update
-**Faza C** — Monthly goals UI (agency + client read)
-**Faza D** — Agency Dashboard real cu widget-uri
-**Faza E** — Polish (mobile, empty states, toasts, skeletons)
-
-Stripe / billing / SaaS admin rămân explicit afară până ceri tu.
-
----
-
-## Out of scope acum
-Stripe, plan limits enforcement vizibil în UI, email-uri reale (link copiat rămâne), white-label branding, AI auto-summary pe documente.
-
-Confirmă "go faza A" și încep cu briefingul + restul în ordine.
+Stripe rămâne în continuare afară. Confirmă "go faza 6" și execut în ordine.
