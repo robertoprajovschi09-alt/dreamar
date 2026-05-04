@@ -1,118 +1,181 @@
-# AgencyOS AI — Phase 1 Plan
+## Goal
 
-A premium, multi-tenant SaaS foundation for marketing agencies. This phase delivers a fully usable product: agencies can sign up, subscribe, invite their team, manage clients with niche-specific dashboards, plan content, track video performance, log business impact, store documents, and manage tasks. AI features, Client Portal, AI Reports, Approval Workflow, Hook Library, and Strategy Room ship in Phase 2.
+Replace the current single-area `/app` shell with a fully working multi-role access system:
+- **Agency area** at `/agency` (owners + team members)
+- **Client portal** at `/client` (client viewers, scoped to one client)
+- Token-based **client invitation** flow at `/accept-invite`
+- Strict **RLS** so a client viewer can never see another client, and a second agency can never see the first agency's data
 
-## Visual direction
-
-Premium, scannable, agency-grade UI built around your three brand colors:
-
-- **Background:** near-black `#0A0A0A` (dark mode default) and pure white `#FFFFFF` (light mode)
-- **Accent:** signal red `#E11D2E` — used sparingly for primary CTAs, active states, alerts, and key metrics
-- **Surfaces:** layered grays for cards, subtle red glow on hover for primary actions
-- **Type:** Inter (UI) + JetBrains Mono (numbers/metrics) for that "ops dashboard" feel
-- **Layout:** persistent left sidebar, top bar with workspace switcher + global search, content area with large headings, generous spacing, clean cards, dense tables when needed
-- Dark mode by default, full light mode parity, theme toggle in top bar
-- Fully responsive down to mobile (collapsible sidebar, stacked cards)
-
-## What ships in Phase 1
-
-### 1. Multi-tenant foundation
-- Email/password + Google sign-in
-- Agency workspaces (each user belongs to one or more agencies)
-- Roles: **SaaS Admin**, **Agency Owner**, **Agency Team Member**, **Content Creator** (Client Viewer + Client Portal ship in Phase 2)
-- Workspace switcher in top bar
-- Strict data isolation: every query scoped to the active agency
-- Invite team members by email (respects plan seat limits)
-
-### 2. Billing (Stripe BYOK, 4 plans)
-- Starter 99 / Growth 150 / Unlimited 249 / White Label Pro 399 (EUR/month)
-- Stripe Checkout for new subscriptions, Customer Portal for plan changes/cancellation
-- Webhook handler keeps subscription status + plan in sync
-- **Plan-limit enforcement** in the DB and UI: client cap, seat cap, feature flags (AI reports, niche dashboards, white-label, custom branding)
-- Friendly upgrade prompts when a limit is hit
-- 14-day trial on signup
-
-### 3. Agency Dashboard (home)
-Cards: active clients, scheduled posts this week, pending approvals, monthly reports due, top-performing videos, underperforming clients, overdue tasks, AI alerts placeholder, client health score (basic rule-based for Phase 1, AI-powered in Phase 2). All cards click through to filtered views.
-
-### 4. Client Management
-Full CRUD for clients with all fields you specified: name, niche, city, website, contact person, start date, monthly retainer, status, objectives, platforms, brand voice, notes. Each client has tabs: Overview, Niche Dashboard, Calendar, Videos, Business Impact, Documents, Tasks, Settings.
-
-### 5. Niche-based dashboards (4 niches in Phase 1)
-- **Real Estate** — properties, views, messages, viewings, offers, sold, cost per lead
-- **Restaurant** — products, reservations, orders, foot traffic, events, best dishes
-- **Dental Clinic** — treatments, qualified leads, appointments, patients arrived, conversions
-- **Fitness Gym** — memberships sold, trials, classes, transformations, new members
-- Plus a **Custom** niche with a generic editable metric grid
-- Each niche has its own form, metric cards, and table layout
-- (Lounge, beauty, auto, hotel, local store ship in Phase 2 — same pattern, easy to add)
-
-### 6. Content Calendar
-- Monthly grid view, drag-and-drop posts between days
-- Filter by client, platform, status (idea → script → filming → editing → sent for approval → approved → scheduled → published → analyzed)
-- Post detail drawer: script, attached files, assigned member, deadline, client approval status placeholder
-- List view alternative
-
-### 7. Video Performance Tracker
-- Per-video record with all 25+ fields you listed (client, platform, hook, body angle, CTA, format, duration, objective, views, reach, watch time, retention metrics, engagement, DMs, calls, sales impact, feedback, AI score placeholder, recommendation)
-- Sortable/filterable table per client and across the agency
-- Manual entry (no platform integrations in Phase 1)
-
-### 8. Business Impact Tracker
-- Manual entry form: calls, DMs, bookings, appointments, orders, sales, viewings, contracts, revenue estimate, qualitative feedback, objections
-- Time-series chart per client
-- Roll-up on Agency Dashboard
-
-### 9. Document Library
-- Per-client folders, upload PDFs/images/videos/brand files
-- Tags, search, preview
-- AI summarization stub (button visible, wired to Lovable AI in Phase 2)
-
-### 10. Task Management
-- Tasks with title, client, assignee, deadline, priority, status, type, comments, attachments
-- Kanban + list views
-- Overdue surfacing on Agency Dashboard
-
-### 11. Admin Panel (SaaS Admin only)
-- List all agencies, their plan, MRR, seat usage, client count
-- Suspend/reactivate workspaces
-- View global usage metrics
-
-## Phase 2 (next iteration, not in this plan)
-AI Monthly Report Generator (PDF), AI Strategy Room, Hook Library, Client Portal, Approval Workflow, AI document summarization, AI client health score, remaining 5 niche dashboards, white-label theming, custom domain structure, competitor watch.
+No new "feature" modules (no AI, no Stripe, no calendar, no documents, no analytics). Just access + invites + feedback.
 
 ---
 
-## Technical notes
+## 1. Database changes (one migration)
 
-- **Stack:** React 18 + Vite + TypeScript + Tailwind + shadcn, Lovable Cloud (Supabase) for DB/auth/storage/edge functions
-- **Multi-tenancy:** every domain table has `agency_id`; RLS policies enforce isolation via `SECURITY DEFINER` functions (`current_user_agencies()`, `has_role_in_agency(agency_id, role)`) to avoid recursion
-- **Roles table:** separate `agency_members(agency_id, user_id, role)` table — never on profiles
-- **Plan limits:** enforced both in DB triggers (hard cap) and UI (graceful upsell)
-- **Stripe BYOK:** you'll add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as secrets after the plan is approved. I'll create a small script/edge function to provision the 4 products + prices in your Stripe account on first run, and store the resulting price IDs in a `plans` table
-- **Storage:** one private bucket `agency-files` with path-based RLS (`{agency_id}/{client_id}/...`)
-- **Edge functions:** `stripe-checkout`, `stripe-portal`, `stripe-webhook`, `invite-member`
-- **Theme tokens:** all colors in `index.css` as HSL semantic tokens (`--accent`, `--accent-glow`, `--surface-1/2/3`, etc.) — never hardcoded — so reskinning for white-label in Phase 2 is trivial
-- **No demo data seeded.** Empty states with clear CTAs everywhere.
+Reuse what already exists where it matches the contract; add only what's missing. Existing `agency_members` already covers the user's requested `agency_users` table (same columns: `agency_id`, `user_id`, `role`, `created_at`) — we keep it and treat `agency_members` as the canonical name in code, no rename needed.
+
+**New tables**
+
+- `client_users` — links an auth user to a single client as a viewer  
+  `id, agency_id, client_id, user_id, email, role (default 'client_viewer'), status ('invited'|'active'|'disabled'), created_at`
+- `client_invites` — token-based invite for the client portal  
+  `id, agency_id, client_id, email, token (unique, default random hex), status ('pending'|'accepted'|'expired'), invited_by, created_at, expires_at (default now()+7d)`
+- `client_feedback` — monthly client feedback + business impact  
+  `id, agency_id, client_id, submitted_by, month (date, first day of month), feedback_text, calls_received int, messages_received int, bookings int, sales_estimate numeric, real_life_impact text, objections text, promote_next_month text, created_at`
+
+**Profile additions**
+
+Add `client_id uuid` (nullable) and `agency_id uuid` (nullable) to `profiles`. The existing `app_role` enum already contains `agency_owner`, `agency_team`, `client_viewer`, `saas_admin` — we keep using it and treat `agency_team` as `agency_team_member`.
+
+**Helper functions (SECURITY DEFINER, search_path=public)**
+
+- `accept_client_invite(_token text)` — validates token, marks invite accepted, inserts/updates `client_users` (status='active'), updates the caller's `profiles.client_id` + `profiles.agency_id`, returns the `client_id`. Runs as definer to bypass RLS during the linking step.
+- `is_client_viewer_of(_user uuid, _client uuid)` — boolean used in client RLS.
+- Keep existing `is_member_of`, `is_owner_of`, `is_saas_admin`.
+
+**RLS rewrites (drop existing relevant policies, recreate)**
+
+- `clients` SELECT: `is_member_of(auth.uid(), agency_id) OR is_client_viewer_of(auth.uid(), id) OR is_saas_admin(auth.uid())`. INSERT/UPDATE/DELETE: agency owner of that agency only (UPDATE allowed for any agency member, DELETE owner-only).
+- `client_users`: agency members of the row's agency can read/insert/update/delete; the linked user can read their own row.
+- `client_invites`: agency members can read/insert/delete for their agency. No public SELECT — invite acceptance goes through the SECURITY DEFINER function so the token never needs anonymous read.
+- `client_feedback`:  
+  SELECT — agency members of the agency, OR the client_viewer for that client.  
+  INSERT — `is_client_viewer_of(auth.uid(), client_id) AND submitted_by = auth.uid()`.  
+  No UPDATE/DELETE from client side.
+- `profiles`: keep self-read/update; ensure no client can elevate `role`, `agency_id`, or `client_id` via update — use a `BEFORE UPDATE` trigger that resets these columns to OLD values when the caller is not a SaaS admin.
+
+**Cleanup**
+
+- Drop the old `invites` table (replaced by `client_invites`) — only if it's empty; otherwise leave it untouched and just stop using it in code.
+
+---
+
+## 2. Routing & guards (`src/App.tsx`)
+
+Replace the `/app` route subtree with three areas:
 
 ```text
-agencies ── agency_members ── auth.users
-   │              │
-   │              └── role (owner | team | creator | admin)
-   │
-   ├── subscriptions (stripe_customer_id, stripe_sub_id, plan, status, seats, client_cap)
-   ├── clients ── niche, retainer, objectives, ...
-   │      ├── niche_real_estate / niche_restaurant / niche_dental / niche_fitness / niche_custom
-   │      ├── content_posts (calendar)
-   │      ├── videos (performance tracker)
-   │      ├── business_impact_entries
-   │      ├── documents (storage refs)
-   │      └── tasks
-   └── (audit_log, invites)
+/                  → public landing (Index)
+/auth              → Auth (signup/login). If logged in, redirect by role.
+/accept-invite     → token handler (public; prompts auth if needed)
+/agency            → AgencyLayout (sidebar + outlet)
+  /agency             → Dashboard (client list summary)
+  /agency/clients     → Clients list (CRUD + invite)
+  /agency/clients/:id → Client profile (details, client users, invites, feedback)
+/client            → ClientPortal (single page, no sidebar)
+*                  → NotFound
 ```
 
-## What I need from you after approval
-1. Your **Stripe secret key** (test key is fine to start) — I'll prompt for it via the secrets tool
-2. Optional: a logo file to drop in (otherwise I'll ship a clean wordmark "AgencyOS" with the red accent)
+**`<RoleRoute allow={['agency_owner','agency_team']}>`** wrapper:
+- Wait for `AuthContext` + a new `useUserRole()` hook to resolve.
+- If not logged in → `/auth`.
+- If role not in `allow`:
+  - `client_viewer` → `/client`
+  - `agency_owner|agency_team` → `/agency`
+- Otherwise render children.
 
-Once approved, I'll switch to build mode and start with the foundation (auth, agencies, roles, RLS, theming) before layering the modules.
+`/auth` → if already authed, redirect by role.
+
+`Index.tsx` "Sign in" buttons keep going to `/auth`. Remove the now-broken `/app` link from `Dashboard.tsx`.
+
+---
+
+## 3. Auth + role context
+
+Replace `AgencyContext` with a simpler `UserContext` that exposes:
+- `user`, `session`, `loading` (from existing `AuthContext`)
+- `profile` (with `role`, `agency_id`, `client_id`)
+- `agency` (single row joined via `profile.agency_id` for agency users)
+- `client` (single row for client viewers)
+- `refresh()`
+
+Loading rule: render nothing protected until `loading === false`. This is the single source of truth for guards and prevents the race that's currently breaking redirects.
+
+The existing `handle_new_user` trigger already auto-creates an agency + `agency_members` row + `profiles` row on signup, so `agency_owner` signup flow needs no extra code. We will update that trigger to also set `profiles.agency_id` and `profiles.role = 'agency_owner'`.
+
+---
+
+## 4. Pages to build
+
+**`/auth`** — keep current Auth.tsx, but redirect by role on success (`agency_*` → `/agency`, `client_viewer` → `/client`). The signup form stays as-is (becomes an agency owner). Client viewers only enter the system through `/accept-invite`.
+
+**`/agency` (AgencyLayout + Dashboard)** — sidebar with: Dashboard, Clients. Header with agency name + sign out. Dashboard shows client count + recent clients (kept from current `Dashboard.tsx`, paths updated).
+
+**`/agency/clients`** — kept from current `Clients.tsx`, paths updated, "Open" button added that navigates to `/agency/clients/:id`.
+
+**`/agency/clients/:id` (new `ClientProfile.tsx`)** — tabs:
+1. *Details* — editable client fields.
+2. *Client users* — list `client_users` for this client + "Invite client" button. Modal asks for email; calls a `create_client_invite` insert and shows the resulting `/accept-invite?token=…` link in a copyable input + a toast. (Email sending is out of scope; we explicitly show the copyable link as the spec allows.)
+3. *Invites* — pending/accepted/expired list with revoke (delete row).
+4. *Feedback* — list of `client_feedback` rows for this client, newest first, read-only display.
+
+**`/client` (new `ClientPortal.tsx`)** — single page for the assigned client:
+- Header: client name, niche, city, agency name.
+- Section: monthly objectives placeholder (static "Coming soon" card).
+- Section: content awaiting approval placeholder (static empty state).
+- Section: latest reports placeholder (static empty state).
+- Section: **Feedback + Business Impact form** (single combined form, exactly the fields listed in the spec). On submit → insert into `client_feedback` with `agency_id`, `client_id`, `submitted_by = auth.uid()`. Toast success, reset form. Below the form: "Your previous submissions" list of the user's own past entries.
+
+**`/accept-invite`** — reads `?token=` from the URL.
+- If not logged in: show "Create account or sign in to accept this invite from <agency>" with email pre-filled (read non-sensitive invite info via the SECURITY DEFINER `get_invite_preview(token)` function, which returns just agency name + client name + email if pending).
+- After auth: call `accept_client_invite(token)` RPC. On success → refresh profile → `navigate('/client')`. On failure (expired/invalid) → error message + link back to `/auth`.
+
+---
+
+## 5. Files
+
+**Create**
+- `supabase/migrations/<ts>_multirole_access.sql`
+- `src/contexts/UserContext.tsx`
+- `src/components/RoleRoute.tsx`
+- `src/components/AgencyLayout.tsx`
+- `src/pages/agency/AgencyDashboard.tsx` (moved from current Dashboard)
+- `src/pages/agency/Clients.tsx` (moved + updated paths)
+- `src/pages/agency/ClientProfile.tsx`
+- `src/pages/agency/InviteClientDialog.tsx`
+- `src/pages/client/ClientPortal.tsx`
+- `src/pages/AcceptInvite.tsx`
+
+**Edit**
+- `src/App.tsx` — new route tree, drop AgencyProvider, add UserProvider.
+- `src/pages/Auth.tsx` — role-based post-login redirect.
+- `src/pages/Onboarding.tsx` — delete (auto-agency on signup makes it dead).
+- `src/components/ProtectedRoute.tsx` — replaced by `RoleRoute`.
+- `src/pages/Index.tsx` — leave landing intact; just ensure CTAs go to `/auth`.
+
+**Delete**
+- `src/contexts/AgencyContext.tsx`
+- `src/components/AppLayout.tsx` (replaced by `AgencyLayout`)
+- `src/pages/Onboarding.tsx`
+- `src/pages/Dashboard.tsx` (logic moved)
+- `src/pages/Clients.tsx` (logic moved)
+
+---
+
+## 6. Test plan (run after build)
+
+I'll walk through these manually in the preview before declaring done:
+
+**Agency flow**
+1. Sign up `owner1@test.com` → lands on `/agency` with auto-created agency.
+2. Add client "Bistro X" → appears, persists across refresh.
+3. Open client → Invite client `viewer1@test.com` → invite row created, token link shown.
+
+**Client flow**
+4. Open invite link in incognito → prompted to sign up.
+5. Sign up `viewer1@test.com` → invite auto-accepted → redirected to `/client` showing only Bistro X.
+6. Submit feedback form → success → row visible to `owner1` in client profile → Feedback tab.
+
+**Security**
+7. As `viewer1`, manually navigate to `/agency` → redirected to `/client`.
+8. As `viewer1`, attempt `supabase.from('clients').select('*')` in console → returns only Bistro X.
+9. Sign up `owner2@test.com` (separate agency) → cannot see Bistro X or `viewer1`'s feedback.
+10. Refresh on every page after each action — session and data persist.
+
+If any of those fail, I fix and re-test before stopping.
+
+---
+
+## Out of scope (explicitly not built)
+
+AI reports, Stripe/billing, content calendar, documents library, advanced analytics, niche dashboards, SaaS admin panel, email sending for invites (copyable link only).

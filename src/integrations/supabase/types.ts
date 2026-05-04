@@ -163,6 +163,126 @@ export type Database = {
           },
         ]
       }
+      client_feedback: {
+        Row: {
+          agency_id: string
+          bookings: number | null
+          calls_received: number | null
+          client_id: string
+          created_at: string
+          feedback_text: string | null
+          id: string
+          messages_received: number | null
+          month: string
+          objections: string | null
+          promote_next_month: string | null
+          real_life_impact: string | null
+          sales_estimate: number | null
+          submitted_by: string
+        }
+        Insert: {
+          agency_id: string
+          bookings?: number | null
+          calls_received?: number | null
+          client_id: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          messages_received?: number | null
+          month?: string
+          objections?: string | null
+          promote_next_month?: string | null
+          real_life_impact?: string | null
+          sales_estimate?: number | null
+          submitted_by: string
+        }
+        Update: {
+          agency_id?: string
+          bookings?: number | null
+          calls_received?: number | null
+          client_id?: string
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          messages_received?: number | null
+          month?: string
+          objections?: string | null
+          promote_next_month?: string | null
+          real_life_impact?: string | null
+          sales_estimate?: number | null
+          submitted_by?: string
+        }
+        Relationships: []
+      }
+      client_invites: {
+        Row: {
+          agency_id: string
+          client_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          agency_id: string
+          client_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      client_users: {
+        Row: {
+          agency_id: string
+          client_id: string
+          created_at: string
+          email: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          client_id: string
+          created_at?: string
+          email: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           agency_id: string
@@ -799,30 +919,39 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_id: string | null
           avatar_url: string | null
+          client_id: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
           is_saas_admin: boolean
+          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
         }
         Insert: {
+          agency_id?: string | null
           avatar_url?: string | null
+          client_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
           is_saas_admin?: boolean
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
         Update: {
+          agency_id?: string | null
           avatar_url?: string | null
+          client_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           is_saas_admin?: boolean
+          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
         }
         Relationships: []
@@ -1065,9 +1194,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_client_invite: { Args: { _token: string }; Returns: string }
       create_agency_for_current_user: {
         Args: { _name: string }
         Returns: string
+      }
+      get_invite_preview: {
+        Args: { _token: string }
+        Returns: {
+          agency_name: string
+          client_name: string
+          email: string
+          expires_at: string
+          status: string
+        }[]
       }
       has_agency_role: {
         Args: {
@@ -1075,6 +1215,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_client_viewer_of: {
+        Args: { _client: string; _user: string }
         Returns: boolean
       }
       is_member_of: {
