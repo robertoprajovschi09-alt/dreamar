@@ -513,8 +513,120 @@ function PerformanceTab({ client }: any) {
   );
 }
 
+/* --------- Client-scoped Tasks / Campaigns / Documents --------- */
+import { TaskEditor } from "@/components/operations/TaskEditor";
+import { DocumentsList } from "@/components/operations/DocumentsList";
+import { TASK_STATUSES, TASK_PRIORITIES, CAMPAIGN_STATUSES, statusFor } from "@/lib/operations";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function ClientTasksTab({ client }: any) {
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const [{ data: t }, { data: m }] = await Promise.all([
+      supabase.from("tasks").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
+      supabase.from("agency_members").select("user_id, profiles:user_id(full_name,email)").eq("agency_id", client.agency_id),
+    ]);
+    setTasks(t || []);
+    setMembers((m || []).map((x: any) => ({ user_id: x.user_id, full_name: x.profiles?.full_name, email: x.profiles?.email })));
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [client.id]);
+
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> New task</Button>
+      </div>
+      {tasks.length === 0 ? (
+        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No tasks yet.</CardContent></Card>
+      ) : (
+        <ul className="space-y-2">
+          {tasks.map((t) => {
+            const s = statusFor(TASK_STATUSES as any, t.status);
+            const p = statusFor(TASK_PRIORITIES as any, t.priority);
+            return (
+              <li key={t.id}>
+                <Card className="cursor-pointer hover:border-accent" onClick={() => { setEditId(t.id); setEditorOpen(true); }}>
+                  <CardContent className="p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{t.title}</div>
+                      <div className="text-[11px] text-muted-foreground">{t.deadline ? new Date(t.deadline).toLocaleDateString() : "No deadline"}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${p.color}`}>{p.label}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${s.color}`}>{s.label}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <TaskEditor
+        open={editorOpen} onOpenChange={setEditorOpen}
+        agencyId={client.agency_id} taskId={editId}
+        defaultClientId={client.id}
+        clients={[{ id: client.id, name: client.name }]}
+        members={members}
+        onSaved={load}
+      />
+    </div>
+  );
+}
+
+function ClientCampaignsTab({ client }: any) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("campaigns").select("*").eq("client_id", client.id).order("start_date", { ascending: false, nullsFirst: false });
+    setItems(data || []); setLoading(false);
+  };
+  useEffect(() => { load(); }, [client.id]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (items.length === 0) return (
+    <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
+      No campaigns yet. <Link to="/agency/campaigns" className="text-accent underline">Create one</Link>
+    </CardContent></Card>
+  );
+  return (
+    <ul className="space-y-2">
+      {items.map((c) => {
+        const s = statusFor(CAMPAIGN_STATUSES as any, c.status);
+        return (
+          <li key={c.id}>
+            <Card>
+              <CardContent className="p-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold">{c.name}</div>
+                  {c.objective && <div className="text-xs text-muted-foreground">{c.objective}</div>}
+                  <div className="text-[11px] text-muted-foreground mt-1">
+                    {c.start_date ? new Date(c.start_date).toLocaleDateString() : "—"} → {c.end_date ? new Date(c.end_date).toLocaleDateString() : "—"}
+                    {c.budget != null ? ` · €${Number(c.budget).toLocaleString()}` : ""}
+                  </div>
+                </div>
+                <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${s.color}`}>{s.label}</span>
+              </CardContent>
+            </Card>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ClientDocumentsTab({ client }: any) {
+  return <DocumentsList agencyId={client.agency_id} clientId={client.id} />;
+}
+
+
   return <div className="space-y-1.5"><Label>{label}</Label>{children}</div>;
 }
 function Row({ k, v }: { k: string; v: any }) {
