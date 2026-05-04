@@ -456,7 +456,58 @@ function SettingsTab({ client, reload }: any) {
   );
 }
 
-/* --------- helpers --------- */
+/* --------- Performance (niche-aware) --------- */
+function PerformanceTab({ client }: any) {
+  const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("videos")
+      .select("id,client_id,platform,format,publish_date,video_url,hook,views,reach,likes,comments,shares,saves,calls,dms,completion_rate,recommendation,estimated_sales_impact")
+      .eq("client_id", client.id)
+      .order("publish_date", { ascending: false });
+    setVideos(data || []); setLoading(false);
+  };
+  useEffect(() => { load(); }, [client.id]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Video performance</h3>
+        <Button size="sm" onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Plus className="h-4 w-4 mr-1.5" /> Add video
+        </Button>
+      </div>
+      {loading ? (
+        <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : (
+        <>
+          <PerformanceStats videos={videos} />
+          <VideosTable videos={videos} onEdit={(id) => { setEditId(id); setEditorOpen(true); }} />
+        </>
+      )}
+
+      <div className="pt-4 border-t border-border">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">{nicheLabel(client.niche)} KPIs</h3>
+        <NichePanel niche={client.niche} agencyId={client.agency_id} clientId={client.id} />
+      </div>
+
+      <VideoEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        agencyId={client.agency_id}
+        clientId={client.id}
+        videoId={editId}
+        onSaved={load}
+      />
+    </div>
+  );
+}
+
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label>{label}</Label>{children}</div>;
 }
