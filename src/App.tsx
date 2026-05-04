@@ -5,15 +5,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AgencyProvider } from "@/contexts/AgencyContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import AppLayout from "@/components/AppLayout";
+import { UserProvider } from "@/contexts/UserContext";
+import { RoleRoute } from "@/components/RoleRoute";
+import AgencyLayout from "@/components/AgencyLayout";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import Dashboard from "./pages/Dashboard";
-import Clients from "./pages/Clients";
+import AcceptInvite from "./pages/AcceptInvite";
+import AgencyDashboard from "./pages/agency/AgencyDashboard";
+import Clients from "./pages/agency/Clients";
+import ClientProfile from "./pages/agency/ClientProfile";
+import ClientPortal from "./pages/client/ClientPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,18 +28,37 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AgencyProvider>
+            <UserProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                  <Route index element={<Dashboard />} />
+                <Route path="/accept-invite" element={<AcceptInvite />} />
+
+                <Route
+                  path="/agency"
+                  element={
+                    <RoleRoute allow={["agency_owner", "agency_team", "saas_admin"]}>
+                      <AgencyLayout />
+                    </RoleRoute>
+                  }
+                >
+                  <Route index element={<AgencyDashboard />} />
                   <Route path="clients" element={<Clients />} />
+                  <Route path="clients/:id" element={<ClientProfile />} />
                 </Route>
+
+                <Route
+                  path="/client"
+                  element={
+                    <RoleRoute allow={["client_viewer"]}>
+                      <ClientPortal />
+                    </RoleRoute>
+                  }
+                />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </AgencyProvider>
+            </UserProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

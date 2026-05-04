@@ -3,6 +3,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/contexts/UserContext";
+import { roleHome } from "@/components/RoleRoute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,14 +15,17 @@ import { Loader2 } from "lucide-react";
 
 export default function Auth() {
   const { user, loading } = useAuth();
+  const { profile, loading: userLoading } = useUser();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
-  if (user) return <Navigate to="/app" replace />;
+  if (loading || (user && userLoading)) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
+  }
+  if (user && profile?.role) return <Navigate to={roleHome(profile.role)} replace />;
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +33,7 @@ export default function Auth() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) toast.error(error.message);
-    else navigate("/app");
+    // role redirect handled by Navigate above on next render
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -36,29 +41,26 @@ export default function Auth() {
     setBusy(true);
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { emailRedirectTo: window.location.origin + "/app", data: { full_name: fullName } },
+      options: { emailRedirectTo: window.location.origin + "/agency", data: { full_name: fullName } },
     });
     setBusy(false);
     if (error) toast.error(error.message);
-    else { toast.success("Account created. Welcome!"); navigate("/onboarding"); }
+    else toast.success("Account created. Welcome!");
   };
 
   const handleGoogle = async () => {
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/app" });
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/agency" });
       if (result.error) { toast.error("Google sign-in failed"); setBusy(false); return; }
       if (result.redirected) return;
-      navigate("/app");
     } catch (e: any) { toast.error(e.message); setBusy(false); }
   };
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      {/* Left brand panel */}
       <div className="hidden lg:flex flex-col justify-between p-10 bg-gradient-surface relative overflow-hidden border-r border-border">
         <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
-        <div className="absolute bottom-10 -left-10 h-60 w-60 rounded-full bg-accent/5 blur-3xl" />
         <Logo size="lg" />
         <div className="relative z-10 max-w-md space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/30 bg-accent/5 text-xs font-semibold uppercase tracking-wider">
@@ -68,29 +70,14 @@ export default function Auth() {
             Run your entire agency from <span className="text-gradient-accent">one premium workspace</span>.
           </h2>
           <p className="text-muted-foreground">
-            Manage clients, plan content, track every video's real impact, generate AI-powered monthly reports — all in your private, branded workspace.
+            Sign up to create your agency. Clients you invite will get their own private portal — they only see their own data.
           </p>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            {[
-              "Multi-client workspaces",
-              "Niche-specific dashboards",
-              "Video performance tracker",
-              "Real business impact",
-              "AI monthly reports",
-              "Client portal & approvals",
-            ].map((f) => (
-              <div key={f} className="flex items-center gap-2 text-muted-foreground">
-                <span className="h-1 w-1 rounded-full bg-accent" /> {f}
-              </div>
-            ))}
-          </div>
         </div>
         <div className="text-xs text-muted-foreground relative z-10">
-          Trusted by performance-driven agencies. 14-day free trial. Cancel anytime.
+          Are you a client of an agency? Use the invite link they sent you.
         </div>
       </div>
 
-      {/* Right form */}
       <div className="flex items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8"><Logo size="lg" /></div>
@@ -98,12 +85,12 @@ export default function Auth() {
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Create account</TabsTrigger>
+              <TabsTrigger value="signup">Create agency</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
               <h1 className="text-2xl font-bold">Welcome back</h1>
-              <p className="text-sm text-muted-foreground mt-1 mb-6">Sign in to your agency workspace.</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">Sign in to your workspace.</p>
 
               <Button variant="outline" className="w-full mb-4" onClick={handleGoogle} disabled={busy}>
                 <GoogleIcon /> Continue with Google
@@ -126,8 +113,8 @@ export default function Auth() {
             </TabsContent>
 
             <TabsContent value="signup">
-              <h1 className="text-2xl font-bold">Start your trial</h1>
-              <p className="text-sm text-muted-foreground mt-1 mb-6">14 days free. No credit card required.</p>
+              <h1 className="text-2xl font-bold">Create your agency</h1>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">Your workspace is created automatically.</p>
 
               <Button variant="outline" className="w-full mb-4" onClick={handleGoogle} disabled={busy}>
                 <GoogleIcon /> Continue with Google
@@ -148,7 +135,7 @@ export default function Auth() {
                   <Input id="password2" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
                 </div>
                 <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={busy}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create agency"}
                 </Button>
               </form>
             </TabsContent>

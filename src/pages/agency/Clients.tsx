@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useAgency } from "@/contexts/AgencyContext";
+import { Link } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,26 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Loader2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 type Client = {
-  id: string;
-  name: string;
-  niche: string;
-  city: string | null;
-  website: string | null;
-  status: string;
-  created_at: string;
+  id: string; name: string; niche: string; city: string | null;
+  website: string | null; status: string; created_at: string;
 };
 
 const NICHES = ["real_estate", "restaurant", "dental", "fitness", "custom"] as const;
 const STATUSES = ["active", "paused", "churned", "prospect"] as const;
-
 const emptyForm = { name: "", niche: "custom", city: "", website: "", status: "active" };
 
 export default function Clients() {
-  const { currentAgency } = useAgency();
+  const { agency } = useUser();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -35,19 +30,19 @@ export default function Clients() {
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
 
   const load = async () => {
-    if (!currentAgency) return;
+    if (!agency) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("clients")
       .select("id,name,niche,city,website,status,created_at")
-      .eq("agency_id", currentAgency.id)
+      .eq("agency_id", agency.id)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setClients((data || []) as Client[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [currentAgency]);
+  useEffect(() => { load(); }, [agency]);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (c: Client) => {
@@ -58,7 +53,7 @@ export default function Clients() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentAgency || !form.name.trim()) return;
+    if (!agency || !form.name.trim()) return;
     setBusy(true);
     const payload = {
       name: form.name.trim(),
@@ -69,7 +64,7 @@ export default function Clients() {
     };
     const { error } = editing
       ? await supabase.from("clients").update(payload).eq("id", editing.id)
-      : await supabase.from("clients").insert({ ...payload, agency_id: currentAgency.id });
+      : await supabase.from("clients").insert({ ...payload, agency_id: agency.id });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success(editing ? "Client updated" : "Client created");
@@ -90,7 +85,7 @@ export default function Clients() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage every client in {currentAgency?.name}.</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage every client in {agency?.name}.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -164,7 +159,6 @@ export default function Clients() {
                   <th className="text-left px-4 py-3 font-medium">Name</th>
                   <th className="text-left px-4 py-3 font-medium">Niche</th>
                   <th className="text-left px-4 py-3 font-medium">City</th>
-                  <th className="text-left px-4 py-3 font-medium">Website</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-right px-4 py-3 font-medium">Actions</th>
                 </tr>
@@ -172,14 +166,16 @@ export default function Clients() {
               <tbody className="divide-y divide-border">
                 {clients.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-medium">{c.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link to={`/agency/clients/${c.id}`} className="hover:underline">{c.name}</Link>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{c.niche.replace("_", " ")}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {c.website ? <a href={c.website} target="_blank" rel="noreferrer" className="text-accent hover:underline">{c.website.replace(/^https?:\/\//, "")}</a> : "—"}
-                    </td>
                     <td className="px-4 py-3"><span className="text-xs uppercase tracking-wide">{c.status}</span></td>
                     <td className="px-4 py-3 text-right">
+                      <Link to={`/agency/clients/${c.id}`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><ExternalLink className="h-3.5 w-3.5" /></Button>
+                      </Link>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </td>

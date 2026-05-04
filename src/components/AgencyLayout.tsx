@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, LogOut, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAgency } from "@/contexts/AgencyContext";
+import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,13 @@ import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { to: "/app", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/app/clients", icon: Users, label: "Clients" },
+  { to: "/agency", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/agency/clients", icon: Users, label: "Clients" },
 ];
 
-export default function AppLayout() {
-  const { profile, signOut } = useAuth();
-  const { currentAgency, currentRole } = useAgency();
+export default function AgencyLayout() {
+  const { signOut } = useAuth();
+  const { profile, agency } = useUser();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 
@@ -53,11 +53,9 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 gap-3 bg-background/80 backdrop-blur sticky top-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-accent" />
-              <span className="truncate text-sm font-medium">{currentAgency?.name || "No agency"}</span>
-              {currentRole && <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">{currentRole.replace("_", " ")}</Badge>}
-            </div>
+            <span className="h-2 w-2 rounded-full bg-accent" />
+            <span className="truncate text-sm font-medium">{agency?.name || "Agency"}</span>
+            {profile?.role && <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">{profile.role.replace("_", " ")}</Badge>}
           </div>
 
           <div className="flex items-center gap-2">
