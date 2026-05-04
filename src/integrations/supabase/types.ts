@@ -250,6 +250,42 @@ export type Database = {
         }
         Relationships: []
       }
+      client_platforms: {
+        Row: {
+          active: boolean
+          agency_id: string
+          client_id: string
+          created_at: string
+          handle: string | null
+          id: string
+          platform: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          active?: boolean
+          agency_id: string
+          client_id: string
+          created_at?: string
+          handle?: string | null
+          id?: string
+          platform: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          active?: boolean
+          agency_id?: string
+          client_id?: string
+          created_at?: string
+          handle?: string | null
+          id?: string
+          platform?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       client_users: {
         Row: {
           agency_id: string
@@ -286,8 +322,11 @@ export type Database = {
       clients: {
         Row: {
           agency_id: string
+          brand_color: string | null
           brand_voice: string | null
+          budget_estimate: number | null
           city: string | null
+          competitors: string | null
           contact_email: string | null
           contact_person: string | null
           contact_phone: string | null
@@ -301,15 +340,22 @@ export type Database = {
           notes: string | null
           objectives: string | null
           platforms: string[] | null
+          services: Json
+          social_links: Json
           start_date: string | null
           status: Database["public"]["Enums"]["client_status"]
+          target_audience: string | null
+          tone_of_voice: string | null
           updated_at: string
           website: string | null
         }
         Insert: {
           agency_id: string
+          brand_color?: string | null
           brand_voice?: string | null
+          budget_estimate?: number | null
           city?: string | null
+          competitors?: string | null
           contact_email?: string | null
           contact_person?: string | null
           contact_phone?: string | null
@@ -323,15 +369,22 @@ export type Database = {
           notes?: string | null
           objectives?: string | null
           platforms?: string[] | null
+          services?: Json
+          social_links?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["client_status"]
+          target_audience?: string | null
+          tone_of_voice?: string | null
           updated_at?: string
           website?: string | null
         }
         Update: {
           agency_id?: string
+          brand_color?: string | null
           brand_voice?: string | null
+          budget_estimate?: number | null
           city?: string | null
+          competitors?: string | null
           contact_email?: string | null
           contact_person?: string | null
           contact_phone?: string | null
@@ -345,8 +398,12 @@ export type Database = {
           notes?: string | null
           objectives?: string | null
           platforms?: string[] | null
+          services?: Json
+          social_links?: Json
           start_date?: string | null
           status?: Database["public"]["Enums"]["client_status"]
+          target_audience?: string | null
+          tone_of_voice?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -425,6 +482,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      custom_niche_fields: {
+        Row: {
+          agency_id: string
+          client_id: string
+          created_at: string
+          display_order: number
+          field_key: string
+          field_label: string
+          field_type: string
+          id: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          client_id: string
+          created_at?: string
+          display_order?: number
+          field_key: string
+          field_label: string
+          field_type?: string
+          id?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string
+          created_at?: string
+          display_order?: number
+          field_key?: string
+          field_label?: string
+          field_type?: string
+          id?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       documents: {
         Row: {
@@ -529,6 +625,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_goals: {
+        Row: {
+          agency_id: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          final_result: string | null
+          id: string
+          metric: string | null
+          month: string
+          notes: string | null
+          objective: string
+          owner: string | null
+          progress: number | null
+          status: string
+          target: number | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          final_result?: string | null
+          id?: string
+          metric?: string | null
+          month?: string
+          notes?: string | null
+          objective: string
+          owner?: string | null
+          progress?: number | null
+          status?: string
+          target?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          final_result?: string | null
+          id?: string
+          metric?: string | null
+          month?: string
+          notes?: string | null
+          objective?: string
+          owner?: string | null
+          progress?: number | null
+          status?: string
+          target?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       niche_custom_metrics: {
         Row: {
