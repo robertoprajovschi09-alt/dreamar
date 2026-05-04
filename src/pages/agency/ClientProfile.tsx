@@ -88,6 +88,7 @@ export default function ClientProfile() {
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
