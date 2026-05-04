@@ -626,7 +626,7 @@ function ClientDocumentsTab({ client }: any) {
   return <DocumentsList agencyId={client.agency_id} clientId={client.id} />;
 }
 
-
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-1.5"><Label>{label}</Label>{children}</div>;
 }
 function Row({ k, v }: { k: string; v: any }) {
