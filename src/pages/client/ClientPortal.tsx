@@ -20,6 +20,7 @@ import { initials } from "@/lib/format";
 import { MonthCalendar, type CalendarItem } from "@/components/content/MonthCalendar";
 import { statusMeta } from "@/lib/content";
 import { nicheLabel } from "@/lib/niches";
+import { ClientReportsView } from "@/components/reports/ClientReportsView";
 
 const monthInputDefault = () => {
   const d = new Date();
