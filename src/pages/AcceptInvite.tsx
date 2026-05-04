@@ -73,7 +73,7 @@ export default function AcceptInvite() {
       email, password,
       options: {
         emailRedirectTo: `${window.location.origin}/accept-invite?token=${token}`,
-        data: { full_name: fullName },
+        data: { full_name: fullName, invite_token: token },
       },
     });
     setBusy(false);
