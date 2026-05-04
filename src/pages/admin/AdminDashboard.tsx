@@ -63,7 +63,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-6 md:p-8 space-y-6">
-      <PageHeader title="SaaS admin" subtitle="All agencies on the platform" icon={<ShieldCheck className="h-5 w-5 text-accent" />} />
+      <PageHeader title="SaaS admin" subtitle="All agencies on the platform" />
 
       <div className="grid gap-4 md:grid-cols-4">
         <Kpi icon={<Building2 className="h-4 w-4" />} label="Agencies" value={totals.agencies} />
