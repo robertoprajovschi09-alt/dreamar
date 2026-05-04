@@ -14,10 +14,6 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
-import ClientDetail from "./pages/ClientDetail";
-import AgencyListPage from "./pages/AgencyListPage";
-import Billing from "./pages/Billing";
-import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,14 +34,6 @@ const App = () => (
                 <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route index element={<Dashboard />} />
                   <Route path="clients" element={<Clients />} />
-                  <Route path="clients/:id" element={<ClientDetail />} />
-                  <Route path="calendar" element={<AgencyListPage kind="calendar" />} />
-                  <Route path="videos" element={<AgencyListPage kind="videos" />} />
-                  <Route path="impact" element={<AgencyListPage kind="impact" />} />
-                  <Route path="documents" element={<AgencyListPage kind="documents" />} />
-                  <Route path="tasks" element={<AgencyListPage kind="tasks" />} />
-                  <Route path="billing" element={<Billing />} />
-                  <Route path="admin" element={<Admin />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
