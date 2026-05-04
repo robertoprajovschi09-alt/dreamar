@@ -17,6 +17,7 @@ import Clients from "./pages/agency/Clients";
 import ClientProfile from "./pages/agency/ClientProfile";
 import Calendar from "./pages/agency/Calendar";
 import Content from "./pages/agency/Content";
+import Performance from "./pages/agency/Performance";
 import ClientPortal from "./pages/client/ClientPortal";
 import NotFound from "./pages/NotFound";
 
@@ -49,6 +50,7 @@ const App = () => (
                   <Route path="clients/:id" element={<ClientProfile />} />
                   <Route path="calendar" element={<Calendar />} />
                   <Route path="content" element={<Content />} />
+                  <Route path="performance" element={<Performance />} />
                 </Route>
 
                 <Route
