@@ -21,6 +21,8 @@ import Performance from "./pages/agency/Performance";
 import Tasks from "./pages/agency/Tasks";
 import Campaigns from "./pages/agency/Campaigns";
 import Documents from "./pages/agency/Documents";
+import Reports from "./pages/agency/Reports";
+import Assistant from "./pages/agency/Assistant";
 import ClientPortal from "./pages/client/ClientPortal";
 import NotFound from "./pages/NotFound";
 
