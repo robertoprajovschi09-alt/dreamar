@@ -20,6 +20,7 @@ import { VideosTable } from "@/components/performance/VideosTable";
 import { VideoEditor } from "@/components/performance/VideoEditor";
 import { NichePanel } from "@/components/performance/NichePanel";
 import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
+import { getClientBrief, BRAND_TONES } from "@/lib/brief";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -629,6 +630,54 @@ function ClientCampaignsTab({ client }: any) {
 
 function ClientDocumentsTab({ client }: any) {
   return <DocumentsList agencyId={client.agency_id} clientId={client.id} />;
+}
+
+function BriefViewTab({ clientId }: { clientId: string }) {
+  const [brief, setBrief] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setLoading(true);
+    getClientBrief(clientId).then((b) => setBrief(b)).finally(() => setLoading(false));
+  }, [clientId]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (!brief) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Client hasn't filled out the brief yet. They'll see it on first login.</CardContent></Card>;
+  const tone = BRAND_TONES.find((t) => t.value === brief.brand_tone)?.label || brief.brand_tone || "—";
+  return (
+    <div className="space-y-3">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Client brief</CardTitle>
+            <Badge variant={brief.completed ? "default" : "secondary"} className="text-[10px] uppercase">{brief.completed ? "Submitted" : "Draft"}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <BriefRow label="Business" value={brief.business_description} />
+          <BriefRow label="Main 3-month objective" value={brief.main_objective} />
+          <BriefRow label="Ideal customer" value={brief.target_audience} />
+          <BriefRow label="Why them (USP)" value={brief.unique_selling_points} />
+          <BriefRow label="Competitors" value={brief.main_competitors} />
+          <BriefRow label="Brand tone" value={tone} />
+          <BriefRow label="Content do's" value={brief.content_dos} />
+          <BriefRow label="Content don'ts" value={brief.content_donts} />
+          <BriefRow label="Preferred platforms" value={(brief.preferred_platforms || []).join(", ") || "—"} />
+          <div className="grid grid-cols-2 gap-3">
+            <BriefRow label="Posting frequency" value={brief.posting_frequency} />
+            <BriefRow label="Budget" value={brief.budget_range} />
+          </div>
+          <BriefRow label="Extra notes" value={brief.extra_notes} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+function BriefRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm whitespace-pre-wrap mt-0.5">{value || "—"}</div>
+    </div>
+  );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
