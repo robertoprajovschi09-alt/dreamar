@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -55,6 +55,22 @@ export default function AgencyLayout() {
               {n.label}
             </NavLink>
           ))}
+          {profile?.is_saas_admin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors mt-2 border-t border-border pt-3",
+                  isActive
+                    ? "bg-accent/10 text-foreground border-l-2 border-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+                )
+              }
+            >
+              <ShieldCheck className="h-4 w-4" />
+              SaaS admin
+            </NavLink>
+          )}
         </nav>
       </aside>
 
