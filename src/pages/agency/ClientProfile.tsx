@@ -19,6 +19,7 @@ import { PerformanceStats } from "@/components/performance/PerformanceStats";
 import { VideosTable } from "@/components/performance/VideosTable";
 import { VideoEditor } from "@/components/performance/VideoEditor";
 import { NichePanel } from "@/components/performance/NichePanel";
+import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
