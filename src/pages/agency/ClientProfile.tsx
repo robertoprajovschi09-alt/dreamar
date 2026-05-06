@@ -709,3 +709,57 @@ function Stat({ label, value }: { label: string; value: any }) {
 function Block({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="text-sm whitespace-pre-wrap">{value}</div></div>;
 }
+
+function ClientContentTab({ client }: any) {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("content_posts").select("id,title,platform,status,scheduled_for").eq("client_id", client.id).order("scheduled_for", { ascending: false, nullsFirst: false });
+      setPosts(data || []); setLoading(false);
+    })();
+  }, [client.id]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  return (
+    <Card><CardContent className="pt-4">
+      <div className="flex justify-between mb-3"><div className="text-sm text-muted-foreground">{posts.length} posts</div><Link to={`/agency/content?client=${client.id}`}><Button size="sm" variant="outline">Open content board</Button></Link></div>
+      {posts.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">No content yet.</div>
+        : <ul className="divide-y divide-border">{posts.slice(0, 30).map((p) => (
+            <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
+              <div className="min-w-0"><div className="font-medium text-sm truncate">{p.title}</div><div className="text-[11px] text-muted-foreground">{p.platform || "—"} · {p.scheduled_for ? new Date(p.scheduled_for).toLocaleDateString() : "no date"}</div></div>
+              <Badge variant="outline" className="text-[10px] uppercase">{p.status?.replace("_", " ")}</Badge>
+            </li>))}</ul>}
+    </CardContent></Card>
+  );
+}
+
+function ClientCalendarLink({ client }: any) {
+  return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground space-y-3">
+    <div>The full calendar lives in the global content calendar, filtered to this client.</div>
+    <Link to={`/agency/calendar?client=${client.id}`}><Button variant="outline">Open calendar</Button></Link>
+  </CardContent></Card>;
+}
+
+function ClientApprovalsList({ clientId }: { clientId: string }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("content_approvals").select("id,decision,status,comment,created_at,content_post_id,content_posts:content_post_id(title)").eq("client_id", clientId).order("created_at", { ascending: false });
+      setItems(data || []); setLoading(false);
+    })();
+  }, [clientId]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (items.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No approval requests yet.</CardContent></Card>;
+  return <Card><CardContent className="pt-4"><ul className="divide-y divide-border">{items.map((a: any) => (
+    <li key={a.id} className="py-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-medium text-sm">{a.content_posts?.title || "—"}</div>
+        <Badge variant="outline" className="text-[10px] uppercase">{(a.decision || a.status || "pending").replace("_", " ")}</Badge>
+      </div>
+      <div className="text-[11px] text-muted-foreground mt-0.5">{new Date(a.created_at).toLocaleString()}</div>
+      {a.comment && <div className="text-sm mt-1 italic">"{a.comment}"</div>}
+    </li>))}</ul></CardContent></Card>;
+}
