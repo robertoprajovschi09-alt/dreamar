@@ -101,6 +101,7 @@ export default function Content() {
                   <th className="text-left px-4 py-3 font-medium">Type</th>
                   <th className="text-left px-4 py-3 font-medium">Scheduled</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-right px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -114,6 +115,19 @@ export default function Content() {
                       <td className="px-4 py-3 text-muted-foreground">{r.content_type || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{r.scheduled_for ? new Date(r.scheduled_for).toLocaleString() : "—"}</td>
                       <td className="px-4 py-3"><span className={cn("inline-block px-2 py-0.5 rounded text-[11px] font-medium", m.color)}>{m.label}</span></td>
+                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <SaveToSwipeButton defaults={{
+                          title: r.title,
+                          type: "video_idea",
+                          platform: r.platform || undefined,
+                          client_id: r.client_id || null,
+                          hook: r.hook || null,
+                          script: r.script || null,
+                          caption: r.caption || null,
+                          content_format: r.content_type || null,
+                          source_post_id: r.id,
+                        }} />
+                      </td>
                     </tr>
                   );
                 })}
