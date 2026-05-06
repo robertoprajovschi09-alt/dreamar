@@ -87,6 +87,15 @@ export default function AgencyDashboard() {
       setPendingApprovals(pendingList || []);
       setUrgentTasks(tasksList || []);
       setMissingBriefs(missing);
+
+      // Health scores (latest per client, sorted ascending so risk first)
+      const hs = await fetchAgencyLatest(agency.id);
+      hs.sort((a, b) => Number(a.total_score) - Number(b.total_score));
+      setHealthScores(hs.slice(0, 6));
+      const names: Record<string, string> = {};
+      (clientsList || []).forEach((c: any) => { names[c.id] = c.name; });
+      setClientNames(names);
+
       setLoading(false);
     })();
   }, [agency]);
