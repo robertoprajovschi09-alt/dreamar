@@ -10,6 +10,8 @@ import { Loader2, Sparkles, Check, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getNicheConfig } from "@/lib/nicheDashboardConfigs";
+import { getImpactConfig, type ImpactEntry } from "@/lib/businessImpactByNiche";
+import { BusinessImpactSection } from "./BusinessImpactSection";
 
 type Props = {
   agencyId: string;
