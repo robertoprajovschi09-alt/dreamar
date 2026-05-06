@@ -41,59 +41,10 @@ const DIRECTIONS = [
   { key: "other", label: "Altceva" },
 ] as const;
 
-const RESULT_METRICS_BY_NICHE: Record<string, { key: string; label: string }[]> = {
-  real_estate: [
-    { key: "leads", label: "Lead-uri" },
-    { key: "viewings", label: "Vizionări" },
-    { key: "messages", label: "Mesaje" },
-    { key: "calls", label: "Apeluri" },
-    { key: "price_inquiries", label: "Cereri de preț" },
-  ],
-  restaurant: [
-    { key: "bookings", label: "Rezervări" },
-    { key: "foot_traffic", label: "Trafic în locație" },
-    { key: "messages", label: "Mesaje" },
-    { key: "calls", label: "Apeluri" },
-    { key: "new_clients", label: "Clienți noi" },
-  ],
-  dental: [
-    { key: "appointments", label: "Programări" },
-    { key: "calls", label: "Apeluri" },
-    { key: "messages", label: "Mesaje" },
-    { key: "new_clients", label: "Pacienți noi" },
-    { key: "price_inquiries", label: "Cereri de preț" },
-  ],
-  fitness: [
-    { key: "new_clients", label: "Membri noi" },
-    { key: "bookings", label: "Trial booking" },
-    { key: "messages", label: "Mesaje" },
-    { key: "calls", label: "Apeluri" },
-  ],
-  ecommerce: [
-    { key: "sales", label: "Vânzări" },
-    { key: "leads", label: "Lead-uri" },
-    { key: "messages", label: "Mesaje" },
-    { key: "price_inquiries", label: "Cereri de preț" },
-  ],
-};
-
-const GENERIC_METRICS = [
-  { key: "leads", label: "Lead-uri" },
-  { key: "sales", label: "Vânzări" },
-  { key: "bookings", label: "Rezervări" },
-  { key: "appointments", label: "Programări" },
-  { key: "calls", label: "Apeluri" },
-  { key: "messages", label: "Mesaje" },
-  { key: "new_clients", label: "Clienți noi" },
-  { key: "foot_traffic", label: "Trafic în locație" },
-  { key: "price_inquiries", label: "Cereri de preț" },
-];
-
 const Schema = z.object({
   priority: z.string().min(1),
   priority_other: z.string().max(200).nullable(),
   promote_focus: z.string().trim().min(1, "Spune-ne ce vrei să promovăm").max(300),
-  results_observed: z.enum(["yes", "no", "unknown"]),
   customer_feedback: z.string().max(500).nullable(),
   important_note: z.string().max(500).nullable(),
   satisfaction: z.number().int().min(1).max(5),
