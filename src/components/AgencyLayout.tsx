@@ -22,6 +22,7 @@ const nav = [
   { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
   { to: "/agency/reports", icon: FileText, label: "Reports" },
   { to: "/agency/risk", icon: AlertTriangle, label: "Risk" },
+  { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
   { to: "/agency/assistant", icon: Sparkles, label: "Assistant" },
 ];
 
