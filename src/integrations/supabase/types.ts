@@ -508,6 +508,51 @@ export type Database = {
           },
         ]
       }
+      ai_knowledge_sources: {
+        Row: {
+          agency_id: string
+          client_id: string | null
+          content_summary: string | null
+          created_at: string
+          extracted_facts: Json
+          id: string
+          last_processed_at: string | null
+          source_id: string
+          source_type: string
+          status: Database["public"]["Enums"]["ai_knowledge_source_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          client_id?: string | null
+          content_summary?: string | null
+          created_at?: string
+          extracted_facts?: Json
+          id?: string
+          last_processed_at?: string | null
+          source_id: string
+          source_type: string
+          status?: Database["public"]["Enums"]["ai_knowledge_source_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string | null
+          content_summary?: string | null
+          created_at?: string
+          extracted_facts?: Json
+          id?: string
+          last_processed_at?: string | null
+          source_id?: string
+          source_type?: string
+          status?: Database["public"]["Enums"]["ai_knowledge_source_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_learning_events: {
         Row: {
           agency_id: string | null
@@ -680,6 +725,57 @@ export type Database = {
           source?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_memory_items: {
+        Row: {
+          agency_id: string
+          client_id: string | null
+          confidence_score: number
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          memory_type: Database["public"]["Enums"]["ai_memory_type"]
+          source_id: string
+          source_type: string
+          title: string
+          updated_at: string
+          visibility: Database["public"]["Enums"]["ai_memory_visibility"]
+        }
+        Insert: {
+          agency_id: string
+          client_id?: string | null
+          confidence_score?: number
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          memory_type: Database["public"]["Enums"]["ai_memory_type"]
+          source_id: string
+          source_type: string
+          title: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["ai_memory_visibility"]
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string | null
+          confidence_score?: number
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          memory_type?: Database["public"]["Enums"]["ai_memory_type"]
+          source_id?: string
+          source_type?: string
+          title?: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["ai_memory_visibility"]
         }
         Relationships: []
       }
@@ -3362,6 +3458,28 @@ export type Database = {
         | "auto_executed"
         | "cancelled"
       ai_action_risk: "low" | "medium" | "high" | "critical"
+      ai_knowledge_source_status:
+        | "pending"
+        | "processing"
+        | "processed"
+        | "failed"
+        | "archived"
+      ai_memory_type:
+        | "agency_preference"
+        | "client_brand_voice"
+        | "client_goal"
+        | "niche_insight"
+        | "content_pattern"
+        | "winning_hook"
+        | "failed_hook"
+        | "reporting_preference"
+        | "business_context"
+        | "audience_insight"
+        | "competitor_insight"
+      ai_memory_visibility:
+        | "internal_agency"
+        | "client_visible"
+        | "super_admin_only"
       app_role:
         | "saas_admin"
         | "agency_owner"
@@ -3546,6 +3664,31 @@ export const Constants = {
         "cancelled",
       ],
       ai_action_risk: ["low", "medium", "high", "critical"],
+      ai_knowledge_source_status: [
+        "pending",
+        "processing",
+        "processed",
+        "failed",
+        "archived",
+      ],
+      ai_memory_type: [
+        "agency_preference",
+        "client_brand_voice",
+        "client_goal",
+        "niche_insight",
+        "content_pattern",
+        "winning_hook",
+        "failed_hook",
+        "reporting_preference",
+        "business_context",
+        "audience_insight",
+        "competitor_insight",
+      ],
+      ai_memory_visibility: [
+        "internal_agency",
+        "client_visible",
+        "super_admin_only",
+      ],
       app_role: [
         "saas_admin",
         "agency_owner",
