@@ -89,14 +89,20 @@ export default function Clients() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clients</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage every client in {agency?.name}.</p>
         </div>
+        <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Plus className="h-4 w-4 mr-1.5" /> Add client
+        </Button>
+        {agency && (
+          <AddClientWizard
+            open={wizardOpen}
+            onOpenChange={setWizardOpen}
+            agencyId={agency.id}
+            onCreated={() => load()}
+          />
+        )}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Plus className="h-4 w-4 mr-1.5" /> Add client
-            </Button>
-          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? "Edit client" : "New client"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Edit client</DialogTitle></DialogHeader>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Client name *</Label>
@@ -133,7 +139,7 @@ export default function Clients() {
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                 <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Save" : "Create"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
                 </Button>
               </DialogFooter>
             </form>
