@@ -1241,6 +1241,96 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_strategies: {
+        Row: {
+          action_items: Json
+          agency_id: string
+          based_on_report_id: string | null
+          business_focus: Json
+          client_id: string
+          content_to_repeat: Json
+          content_to_stop: Json
+          created_at: string
+          created_by: string | null
+          executive_summary: string | null
+          id: string
+          key_insights: Json
+          missing_data: Json
+          month: number
+          new_tests: Json
+          recommended_campaigns: Json
+          recommended_content_formats: Json
+          recommended_hooks: Json
+          risks: Json
+          sent_to_client_at: string | null
+          status: string
+          strategy_title: string
+          suggested_calendar_plan: Json
+          updated_at: string
+          what_did_not_work: Json
+          what_worked: Json
+          year: number
+        }
+        Insert: {
+          action_items?: Json
+          agency_id: string
+          based_on_report_id?: string | null
+          business_focus?: Json
+          client_id: string
+          content_to_repeat?: Json
+          content_to_stop?: Json
+          created_at?: string
+          created_by?: string | null
+          executive_summary?: string | null
+          id?: string
+          key_insights?: Json
+          missing_data?: Json
+          month: number
+          new_tests?: Json
+          recommended_campaigns?: Json
+          recommended_content_formats?: Json
+          recommended_hooks?: Json
+          risks?: Json
+          sent_to_client_at?: string | null
+          status?: string
+          strategy_title?: string
+          suggested_calendar_plan?: Json
+          updated_at?: string
+          what_did_not_work?: Json
+          what_worked?: Json
+          year: number
+        }
+        Update: {
+          action_items?: Json
+          agency_id?: string
+          based_on_report_id?: string | null
+          business_focus?: Json
+          client_id?: string
+          content_to_repeat?: Json
+          content_to_stop?: Json
+          created_at?: string
+          created_by?: string | null
+          executive_summary?: string | null
+          id?: string
+          key_insights?: Json
+          missing_data?: Json
+          month?: number
+          new_tests?: Json
+          recommended_campaigns?: Json
+          recommended_content_formats?: Json
+          recommended_hooks?: Json
+          risks?: Json
+          sent_to_client_at?: string | null
+          status?: string
+          strategy_title?: string
+          suggested_calendar_plan?: Json
+          updated_at?: string
+          what_did_not_work?: Json
+          what_worked?: Json
+          year?: number
+        }
+        Relationships: []
+      }
       niche_custom_metrics: {
         Row: {
           agency_id: string
