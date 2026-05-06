@@ -106,7 +106,8 @@ export default function AiPrompts() {
     if (ev.proposed_prompt_version_id) {
       const { data: prop } = await supabase.from("ai_prompts").select("*").eq("id", ev.proposed_prompt_version_id).maybeSingle();
       if (prop) {
-        await supabase.from("ai_prompts").update({ is_active: false }).eq("key", prop.key).is("agency_id", prop.agency_id);
+        const deact = supabase.from("ai_prompts").update({ is_active: false }).eq("key", prop.key);
+        await (prop.agency_id ? deact.eq("agency_id", prop.agency_id) : deact.is("agency_id", null));
         await supabase.from("ai_prompts").update({ is_active: true }).eq("id", prop.id);
       }
     }
