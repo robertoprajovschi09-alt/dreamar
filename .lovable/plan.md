@@ -1,124 +1,153 @@
-# AI Learning & Improvement Loop — Plan
 
-The Core Engine already has `ai_feedback`, `ai_prompts` (versioned), `ai_evaluations`, and `ai_prompt_runs` (= `ai_outputs`). This task extends them rather than creating duplicate tables, and adds the missing piece: `ai_learning_events` plus the full admin loop UI and scoring.
+# OpenAI AI Core — Edge Function unificat
 
-## 1. Database (one migration)
+Construim un singur entry-point backend pentru toate feature-urile AI, cu output JSON strict, control de rol și logging complet. Toate apelurile la OpenAI rămân pe server; cheia nu ajunge niciodată în frontend.
 
-### Extend existing tables (no duplicates)
+## 1. Bază de date — migrație nouă
 
-**`ai_feedback`** — add columns:
-- `ai_feature text` (denormalized from run.prompt_key for fast filtering)
-- `feedback_type text` enum: `inaccurate | too_generic | missing_context | great_output | bad_tone | wrong_strategy | hallucinated_data | useful | not_useful`
-- `was_useful boolean`
-- `correction text` (the user's edited/correct version)
-- `client_id uuid null` (already existed on runs; add here)
+Tabela nouă `ai_outputs` (separată de `ai_prompt_runs`, dedicată output-urilor structurate per feature):
 
-**`ai_prompt_runs`** (acts as `ai_outputs`) — add columns:
-- `feature text` (alias for prompt_key, indexed for analytics)
-- `output_json jsonb`
-- `prompt_version_id uuid` (FK → `ai_prompts.id`, replaces loose `prompt_version` int)
+```text
+ai_outputs
+  id uuid PK
+  agency_id uuid (nullable pentru saas_admin global)
+  client_id uuid nullable
+  user_id uuid not null
+  feature text not null            -- ex: monthly_report_generation
+  context_type text                -- ex: client_dashboard, agency_overview, admin_panel
+  prompt_key text
+  prompt_version int
+  prompt_version_id uuid FK ai_prompts(id) on delete set null
+  model text
+  input_payload jsonb              -- ce a trimis caller-ul (sanitizat)
+  output_json jsonb                -- răspunsul structurat
+  output_text text                 -- generated_text
+  tokens_in int, tokens_out int
+  cost_usd numeric
+  latency_ms int
+  status text default 'success'    -- success | blocked | error | missing_data
+  error_text text
+  safety_flags jsonb default '[]'
+  confidence_score numeric
+  missing_data jsonb default '[]'
+  warnings jsonb default '[]'
+  created_at timestamptz default now()
+```
 
-**`ai_prompts`** (acts as `ai_prompt_versions`) — add columns:
-- `version_name text`
-- `developer_prompt text`
-- `user_prompt_template text`
-- `output_schema jsonb`
-- `performance_score numeric` (cached, recomputed by SQL view)
-- `feature text` (alias of `key` for the spec's naming)
+RLS:
+- `select`: `is_saas_admin(uid) OR is_member_of(uid, agency_id) OR (client_id IS NOT NULL AND is_client_viewer_of(uid, client_id))`
+- `insert`: `user_id = auth.uid()` AND (saas_admin OR membru al agency_id-ului scris)
+- fără `delete` / `update` (append-only); doar saas_admin poate update pentru audit.
 
-**`ai_evaluations`** — add columns:
-- `feature text` (alias of `prompt_key`)
-- `test_name text`
-- `input_sample jsonb`
-- `expected_behavior text`
-- `actual_output text`
-- `evaluator_notes text`
-- `passed boolean`
-- `prompt_version_id uuid` (FK → `ai_prompts.id`)
+Index pe `(agency_id, feature, created_at desc)`, `(client_id, created_at desc)`, `(user_id)`.
 
-### New table
+## 2. Edge function nouă: `supabase/functions/openai-ai-core/index.ts`
 
-**`ai_learning_events`**
-- `id`, `agency_id null`, `client_id null`
-- `event_type text` (negative_feedback_pattern | hallucination_spike | low_acceptance | prompt_improvement_proposal | version_promoted | version_rolled_back)
-- `source text` (feedback | evaluation | run_metrics | manual)
-- `summary text`
-- `recommended_change text`
-- `proposed_prompt_version_id uuid null` → `ai_prompts.id`
-- `status text` default `'new'` (new | reviewed | approved | rejected | applied)
-- `reviewed_by uuid`, `reviewed_at`, `created_at`, `updated_at`
-- RLS: SaaS Admin full; agency owners read/update their own.
+Reutilizează helperele din `_shared/openai.ts` (deja avem `userClient`, `serviceClient`, `requireUser`, `getActivePrompt`, `runSafety`, `estimateCost`, `OPENAI_*`).
 
-### Scoring view
+**Request body**:
+```ts
+{
+  feature: string,            // obligatoriu, din whitelist
+  agency_id?: string,         // obligatoriu (excepție: super_admin features)
+  client_id?: string | null,
+  input: Record<string, unknown> | string,
+  context_type?: string,      // 'client_dashboard' | 'agency_overview' | 'admin_panel' | ...
+  prompt_version_id?: string  // override versiune
+}
+```
+(`user_id` îl ia din JWT, nu din body — anti-spoofing.)
 
-`ai_prompt_scoreboard` (SQL view) — per `prompt_id`:
-- `runs_count`, `feedback_count`, `avg_rating`, `useful_count`, `hallucinated_count`, `accepted_count` (via implemented suggestions / approved actions where applicable), `acceptance_rate`, `last_used_at`.
+**Flow**:
+1. CORS preflight.
+2. `requireUser` → JWT valid; `userId` din claims.
+3. Citește `profiles` (role, agency_id, client_id, is_saas_admin).
+4. **Whitelist feature** + maparea `feature → required_role_scope`:
+   - admin-only: `lovable_fix_prompt_generator`, `website_audit` (la nivel super) → doar `saas_admin`.
+   - agency-level: `monthly_report_generation`, `next_month_strategy`, `content_idea_generation`, `video_performance_analysis`, `health_score_explanation`, `risk_detector_analysis`, `competitor_insights`, `swipe_file_variations`, `analytics_interpretation`, `document_summary` → `agency_owner` / `agency_member` din agency_id-ul cerut.
+   - client-visible: dacă userul e `client_viewer`, permitem doar `health_score_explanation`, `monthly_report_generation` și doar pentru `client_id`-ul de care aparține; restul → 403.
+5. **Cross-agency guard**: dacă userul nu e saas_admin și `agency_id` ≠ profil/membership → 403. Dacă `client_id` setat, verifică `clients.agency_id = agency_id`.
+6. Încarcă promptul:
+   - dacă `prompt_version_id` → fetch by id;
+   - altfel `getActivePrompt(svc, feature, agency_id)` (cheia = `feature`).
+   - 404 dacă lipsește, cu hint clar.
+7. Construiește **context permis** prin helper intern `loadContext(feature, role, agency_id, client_id)`:
+   - client_viewer: doar date despre `client_id` propriu (KPI-uri publice ale clientului).
+   - agency: date din `agency_id` (clienti, KPI agregat).
+   - saas_admin: agregat global / metadata sistem.
+   - dacă o sursă lipsește, adaugă în `missing_data`.
+8. Safety pe input + context (`runSafety`). Dacă `block` → log status='blocked' și 422.
+9. Compose messages:
+   - system = `promptRow.developer_prompt || promptRow.content` + reguli globale (vezi mai jos).
+   - user = JSON cu `{ feature, context_type, input, context, missing_data }`.
+10. **Apel OpenAI** la `${OPENAI_BASE_URL}/chat/completions` cu:
+    - `model = promptRow.model || OPENAI_MODEL || 'gpt-5.2'` (fallback in code, easy override via env).
+    - `response_format: { type: 'json_object' }`.
+    - `temperature = promptRow.temperature ?? 0.2`.
+11. Parse JSON. Dacă fail → re-prompt cu mesaj de corecție o singură dată; dacă tot eșuează → status='error', salvează raw în `output_text`, return 502.
+12. Validează cheile cerute (vezi schema mai jos); completează cu null/[] dacă lipsesc.
+13. Safety pe output. Dacă `block` → status='blocked'.
+14. Insert în `ai_outputs` (input sanitizat, output_json, tokens, cost via `estimateCost`, latency, status, safety_flags, confidence_score, missing_data, warnings).
+15. Mirror minimal în `ai_prompt_runs` (compatibilitate cu Learning Loop existent).
+16. Răspunde cu `{ output_id, output: <json structurat>, tokens, cost_usd, model, prompt_version }`.
 
-## 2. Edge functions (two new)
+**Reguli globale injectate în system prompt**:
+- "Răspunde STRICT cu JSON valid în acest schema." + schema text.
+- "Folosește doar datele primite. Dacă lipsesc, adaugă-le în `missing_data` și NU inventa cifre."
+- "Nu menționa alte agenții sau date interne." (relevant când rolul e client_viewer).
 
-**`ai-feedback-submit`** (extend existing) — accept new fields (`feedback_type`, `was_useful`, `correction`, `ai_feature`); after insert, run a debounced detector: if last 10 feedbacks for the same `ai_feature` + agency have ≥ 5 negative (`rating ≤ 2` or `feedback_type` in negative set), insert an `ai_learning_events` row with `event_type='negative_feedback_pattern'`.
+**Schema răspuns enforced**:
+```json
+{
+  "title": "string",
+  "summary": "string",
+  "insights": ["string"],
+  "recommendations": ["string"],
+  "missing_data": ["string"],
+  "confidence_score": 0.0,
+  "action_items": [{ "title": "string", "priority": "low|medium|high", "owner": "string|null" }],
+  "warnings": ["string"],
+  "generated_text": "string"
+}
+```
 
-**`ai-propose-prompt-improvement`** (new)
-- Input: `{ feature, agency_id? }`
-- Loads recent negative feedback + worst runs for the feature.
-- Asks OpenAI to draft an improved system prompt with rationale. Output JSON: `{ proposed_system_prompt, rationale, expected_improvement }`.
-- Inserts a new draft `ai_prompts` row (`is_active=false`, version = max+1, `version_name='AI proposal'`, `created_by=user`).
-- Inserts `ai_learning_events` row `event_type='prompt_improvement_proposal'`, `proposed_prompt_version_id` linking to the draft, `status='new'`.
-- Does NOT activate. Admin must approve via UI → calls SQL update to flip `is_active`.
+## 3. Securitate
 
-**`ai-run-evaluation`** (new)
-- Input: `{ prompt_version_id, dataset?: [{ test_name, input_sample, expected_behavior }] }`
-- Runs each sample against OpenAI using that prompt version. Scores via a rubric (LLM-as-judge): 0-1 per test. Inserts rows in `ai_evaluations` with `passed`, `score`, `actual_output`, `evaluator_notes`. Updates the prompt's cached `performance_score` to the avg.
+- `OPENAI_API_KEY` rămâne secret Supabase (deja există). Nu e expus niciodată.
+- Toate apelurile OpenAI se fac din această edge function.
+- RLS pe `ai_outputs` + verificare aplicativă a rolului înainte de fetch context.
+- Client viewer NU primește context intern (lista clienților agenției, KPI agency-wide, billing, etc.) — `loadContext` filtrează la sursă.
+- Agency members NU pot citi date din alte agency_id (verificare explicită + RLS pe sursele de context).
+- Saas admin nu primește date operaționale ale clienților decât prin features marcate „admin” (zonele administrative).
 
-## 3. Admin Panel (new tabs in `/admin/ai-prompts`)
+## 4. Frontend
 
-The current `AiPrompts.tsx` lists prompts. Rebuild into a full panel with tabs:
+- Nu modificăm UI-ul existent acum. Doar adăugăm un helper `src/lib/aiCore.ts` care invocă funcția:
+```ts
+supabase.functions.invoke("openai-ai-core", { body: {...} })
+```
+Componente existente (AiActions, AiAssistant, rapoarte) pot migra ulterior la acest endpoint unificat.
 
-**Versions tab** (per feature): list versions, performance score, runs, avg rating, hallucination count. Buttons: **Create New Prompt Version**, **Run Evaluation**, **Set as Active** (with confirm), **View Diff**.
+## 5. Whitelist features (constantă în function)
 
-**Performance tab**: per-feature dashboard from `ai_prompt_scoreboard` — accepted / edited / rejected, avg rating, useful%, hallucinated%, best/worst prompts.
+```ts
+const FEATURES = [
+  "monthly_report_generation","next_month_strategy","content_idea_generation",
+  "video_performance_analysis","health_score_explanation","risk_detector_analysis",
+  "website_audit","lovable_fix_prompt_generator","document_summary",
+  "competitor_insights","swipe_file_variations","analytics_interpretation"
+];
+```
+Orice `feature` în afara listei → 400.
 
-**Feedback tab**: filterable list of `ai_feedback`, with type, rating, correction text, link to the originating run + prompt version.
+## 6. Config
 
-**Failed outputs tab**: runs where `status='error'` or where feedback marked `hallucinated_data` / rating 1.
-
-**Learning events tab**: list of `ai_learning_events` with **Approve & Apply** (promotes the proposed prompt version to active and marks event `applied`), **Reject**.
-
-Add a feature-level **"Propose improvement"** button that calls `ai-propose-prompt-improvement`.
-
-## 4. Frontend wiring
-
-- `src/components/ai/FeedbackButtons.tsx` — extend with feedback-type dropdown + correction textarea on negative ratings; pass `ai_feature` and optional `correction`.
-- `src/lib/aiLearning.ts` — small helper to fetch scoreboard data via Supabase view.
-
-## 5. Reality-grounding
-
-Add a global instruction to all AI Core prompts (in seed prompt content + edge functions): *"If required data is missing, output `Missing data: <field>` and stop. Never fabricate numbers."* Already partly enforced; ensure it's present in the seeded `ai_prompts` rows for each feature key.
-
-## 6. Safety / rules enforced
-
-- AI cannot flip `is_active` on its own. Edge function only inserts draft prompts (`is_active=false`).
-- All versions retained (no DELETE used in flow; `ai_prompts` already has owner-only delete policy).
-- Every run already logs `prompt_key` + `prompt_version`; this migration adds FK `prompt_version_id` for joins.
-- Negative-feedback detector creates a `learning_event`, never auto-applies.
+- `supabase/config.toml`: nu modificăm (deploy default `verify_jwt=false`, validăm în cod cu `getClaims`).
+- Modelul se schimbă doar din env (`OPENAI_MODEL`), fallback hardcodat `gpt-5.2`.
 
 ## Files
 
-**Created**
-- `supabase/migrations/<ts>_ai_learning_loop.sql`
-- `supabase/functions/ai-propose-prompt-improvement/index.ts`
-- `supabase/functions/ai-run-evaluation/index.ts`
-- `src/lib/aiLearning.ts`
-- `src/components/admin/learning/ScoreboardCard.tsx`
-- `src/components/admin/learning/LearningEventCard.tsx`
-
-**Edited**
-- `supabase/functions/ai-feedback-submit/index.ts` (new fields + pattern detector)
-- `src/pages/admin/AiPrompts.tsx` (rebuild with tabs)
-- `src/components/ai/FeedbackButtons.tsx` (feedback_type + correction)
-
-## Out of scope
-
-- Auto-promotion of prompt versions (always admin-approved).
-- Fine-tuning OpenAI models (only system-prompt iteration).
-- Cron-scheduled evaluations (manual trigger; cron can be added later).
+- create `supabase/migrations/<ts>_ai_outputs.sql`
+- create `supabase/functions/openai-ai-core/index.ts`
+- create `src/lib/aiCore.ts`
+- edit `src/integrations/supabase/types.ts` (auto-regenerate)
