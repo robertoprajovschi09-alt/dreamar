@@ -1467,6 +1467,126 @@ export type Database = {
         }
         Relationships: []
       }
+      client_checkins: {
+        Row: {
+          agency_id: string
+          ai_processed: boolean
+          client_id: string
+          client_user_id: string
+          created_at: string
+          customer_feedback: string | null
+          direction_change_custom: string | null
+          id: string
+          important_notes: string | null
+          main_priority: string
+          month: number
+          observed_real_results: string
+          priority_custom: string | null
+          promoted_focus: string | null
+          real_results_data: Json
+          requested_direction_change: string | null
+          satisfaction_score: number | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          agency_id: string
+          ai_processed?: boolean
+          client_id: string
+          client_user_id: string
+          created_at?: string
+          customer_feedback?: string | null
+          direction_change_custom?: string | null
+          id?: string
+          important_notes?: string | null
+          main_priority: string
+          month: number
+          observed_real_results?: string
+          priority_custom?: string | null
+          promoted_focus?: string | null
+          real_results_data?: Json
+          requested_direction_change?: string | null
+          satisfaction_score?: number | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          agency_id?: string
+          ai_processed?: boolean
+          client_id?: string
+          client_user_id?: string
+          created_at?: string
+          customer_feedback?: string | null
+          direction_change_custom?: string | null
+          id?: string
+          important_notes?: string | null
+          main_priority?: string
+          month?: number
+          observed_real_results?: string
+          priority_custom?: string | null
+          promoted_focus?: string | null
+          real_results_data?: Json
+          requested_direction_change?: string | null
+          satisfaction_score?: number | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      client_dashboard_contexts: {
+        Row: {
+          agency_id: string
+          agency_internal_notes: string | null
+          ai_priorities: Json
+          client_friendly_insights: Json
+          client_id: string
+          confidence_score: number | null
+          created_at: string
+          generated_by_ai_output_id: string | null
+          generated_summary: string | null
+          id: string
+          missing_data: Json
+          month: number
+          recommended_widgets: Json
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          agency_id: string
+          agency_internal_notes?: string | null
+          ai_priorities?: Json
+          client_friendly_insights?: Json
+          client_id: string
+          confidence_score?: number | null
+          created_at?: string
+          generated_by_ai_output_id?: string | null
+          generated_summary?: string | null
+          id?: string
+          missing_data?: Json
+          month: number
+          recommended_widgets?: Json
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          agency_id?: string
+          agency_internal_notes?: string | null
+          ai_priorities?: Json
+          client_friendly_insights?: Json
+          client_id?: string
+          confidence_score?: number | null
+          created_at?: string
+          generated_by_ai_output_id?: string | null
+          generated_summary?: string | null
+          id?: string
+          missing_data?: Json
+          month?: number
+          recommended_widgets?: Json
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       client_feedback: {
         Row: {
           agency_id: string
