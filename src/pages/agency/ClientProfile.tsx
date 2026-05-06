@@ -103,6 +103,7 @@ export default function ClientProfile() {
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
+        <TabsContent value="health"><HealthScoreCard clientId={client.id} /></TabsContent>
         <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
         <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
         <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
