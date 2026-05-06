@@ -572,6 +572,15 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+          {hasDraft && !draftLoaded && (
+            <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-accent/40 bg-accent/5 text-sm">
+              <span>Am găsit un draft salvat. Continui de unde ai rămas?</span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={discardDraft}>Șterge</Button>
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={continueDraft}>Continuă</Button>
+              </div>
+            </div>
+          )}
           {/* STEP 1 */}
           {step === 1 && (
             <div className="space-y-4">
