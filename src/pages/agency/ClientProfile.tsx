@@ -108,6 +108,7 @@ export default function ClientProfile() {
         <TabsContent value="overview">
           <div className="space-y-4">
             <HealthScoreCard clientId={client.id} />
+            <DashboardContextCard agencyId={client.agency_id} clientId={client.id} />
             <LatestCheckInCard clientId={client.id} />
             <OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} />
           </div>
