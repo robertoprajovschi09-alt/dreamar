@@ -910,3 +910,72 @@ function SummaryCard({ title, children }: { title: string; children: React.React
     </div>
   );
 }
+
+function KpiEditor({
+  title, description, items, onAdd, onRemove, onUpdate,
+}: {
+  title: string; description?: string; items: KpiField[];
+  onAdd: () => void; onRemove: (i: number) => void;
+  onUpdate: (i: number, patch: Partial<KpiField>) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>{title}</Label>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd}><Plus className="h-3 w-3 mr-1" />Add KPI</Button>
+      </div>
+      <div className="space-y-2">
+        {items.map((f, i) => (
+          <div key={i} className="rounded-md border p-2 space-y-2 bg-muted/20">
+            <div className="flex gap-2 items-center">
+              <Input
+                className="flex-1"
+                value={f.label}
+                onChange={(e) => onUpdate(i, { label: e.target.value })}
+                placeholder="KPI name (e.g. Qualified leads)"
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(i)}><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <Select
+                value={f.kpi_type || "number"}
+                onValueChange={(v) => onUpdate(i, { kpi_type: v as any, type: mapKpiTypeToLegacy(v) })}
+              >
+                <SelectTrigger className="col-span-4"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="currency">Currency</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="boolean">Boolean</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={f.reporting_frequency || "monthly"}
+                onValueChange={(v) => onUpdate(i, { reporting_frequency: v as any })}
+              >
+                <SelectTrigger className="col-span-4"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+              <label className="col-span-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch
+                  checked={f.visible_to_client !== false}
+                  onCheckedChange={(v) => onUpdate(i, { visible_to_client: v })}
+                />
+                Visible to client
+              </label>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-xs text-muted-foreground">No KPIs yet. Add one to get started.</p>}
+      </div>
+    </div>
+  );
+}
