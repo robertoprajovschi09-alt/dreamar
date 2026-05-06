@@ -130,6 +130,11 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
   const [reHasNewProperties, setReHasNewProperties] = useState<"yes" | "no">("no");
   const [reLeadQuality, setReLeadQuality] = useState<"good" | "mixed" | "weak" | "none">("mixed");
 
+  // Generic per-niche extras driven by NICHE_CONFIGS
+  const nicheCfg = getNicheConfig(niche);
+  const [nicheExtras, setNicheExtras] = useState<Record<string, any>>({});
+  const setExtra = (k: string, v: any) => setNicheExtras((s) => ({ ...s, [k]: v }));
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
