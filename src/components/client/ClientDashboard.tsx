@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PriorityKpiCard, type KpiType, type PriorityKpi } from "./PriorityKpiCard";
 import { BusinessImpactQuickForm } from "./BusinessImpactQuickForm";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
+import { RealEstateDashboardSection } from "./RealEstateDashboardSection";
 
 type Personalization = {
   greeting?: string;
