@@ -32,6 +32,7 @@ export default function AgencyDashboard() {
   const [missingBriefs, setMissingBriefs] = useState<any[]>([]);
   const [healthScores, setHealthScores] = useState<HealthScore[]>([]);
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
+  const [riskAlerts, setRiskAlerts] = useState<RiskAlert[]>([]);
 
   useEffect(() => {
     if (!agency) return;
