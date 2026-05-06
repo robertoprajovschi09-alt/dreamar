@@ -416,3 +416,9 @@ function cleanMetrics(metrics: Record<string, string>, other: string): Record<st
   if (other.trim()) out.other = other.trim().slice(0, 200);
   return out;
 }
+
+function numOrNull(v: string): number | null {
+  if (v === "" || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
