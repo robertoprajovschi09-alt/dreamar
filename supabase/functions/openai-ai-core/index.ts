@@ -366,5 +366,38 @@ async function loadContext(svc: any, a: CtxArgs): Promise<{ data: any; missing: 
       if (!clients?.length) missing.push("clients"); else data.clients = clients;
     }
   }
+
+  // Inject curated AI memory items (source-cited). Visibility is enforced here
+  // mirroring RLS: client viewers only see 'client_visible'; agency members see
+  // internal_agency + client_visible; admins see everything.
+  try {
+    let q = svc.from("ai_memory_items")
+      .select("id,memory_type,title,content,source_type,source_id,visibility,confidence_score,client_id")
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .limit(40);
+    if (a.agency_id) q = q.eq("agency_id", a.agency_id);
+    if (a.client_id) q = q.or(`client_id.eq.${a.client_id},client_id.is.null`);
+    const { data: mems } = await q;
+    let visible = mems || [];
+    if (a.role === "client_viewer") {
+      visible = visible.filter((m: any) => m.visibility === "client_visible" && m.client_id === a.client_id);
+    } else if (!a.isAdmin) {
+      visible = visible.filter((m: any) => m.visibility !== "super_admin_only");
+    }
+    if (visible.length) {
+      data.known_facts = visible.map((m: any) => ({
+        type: m.memory_type,
+        title: m.title,
+        content: m.content,
+        confidence: m.confidence_score,
+        citation: `[${m.source_type}:${m.source_id}]`,
+      }));
+      data.memory_rule = "Use known_facts only when relevant. ALWAYS cite the citation tag inline. If no known_fact applies, use only the current data and never invent values.";
+    } else {
+      data.memory_rule = "No memory items available. Use only current data; never invent values.";
+    }
+  } catch (_e) { /* memory is optional */ }
+
   return { data, missing };
 }
