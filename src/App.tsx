@@ -95,6 +95,7 @@ const App = () => (
                   <Route path="admin/ai-safety" element={<AiSafety />} />
                   <Route path="admin/ai-maintainer" element={<AiMaintainer />} />
                   <Route path="admin/ai-actions" element={<AiActionsApprovalQueue />} />
+                  <Route path="admin/continuous-improvement" element={<ContinuousImprovement />} />
                 </Route>
 
                 <Route
