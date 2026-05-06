@@ -26,6 +26,7 @@ import { ClientReportsView } from "@/components/reports/ClientReportsView";
 import { QuickClientOnboarding } from "@/components/client/QuickClientOnboarding";
 import { getClientBrief } from "@/lib/brief";
 import { ClientDashboard } from "@/components/client/ClientDashboard";
+import { ClientQuickCheckIn } from "@/components/client/ClientQuickCheckIn";
 
 
 const monthInputDefault = () => {
