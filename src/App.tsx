@@ -24,6 +24,7 @@ import Documents from "./pages/agency/Documents";
 import Reports from "./pages/agency/Reports";
 import Assistant from "./pages/agency/Assistant";
 import Risk from "./pages/agency/Risk";
+import SwipeLibrary from "./pages/agency/SwipeLibrary";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
