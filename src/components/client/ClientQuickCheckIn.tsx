@@ -183,7 +183,35 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
       const { error } = await supabase.from("client_feedback").insert(insertRow);
       if (error) throw error;
 
+      // Also persist the structured monthly check-in
+      const d = new Date();
+      const checkinRow = {
+        agency_id: agencyId,
+        client_id: clientId,
+        client_user_id: userId,
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        main_priority: payload.priority,
+        priority_custom: payload.priority_other,
+        promoted_focus: payload.promote_focus,
+        observed_real_results: payload.results_observed,
+        real_results_data: cleanedMetrics,
+        customer_feedback: payload.customer_feedback,
+        important_notes: payload.important_note,
+        satisfaction_score: payload.satisfaction,
+        requested_direction_change: payload.direction_change,
+        direction_change_custom: payload.direction_change_other,
+      };
+      // Upsert so a re-submit (rare) still works
+      await supabase.from("client_checkins").upsert(checkinRow, { onConflict: "client_id,year,month" });
+
       toast.success("Mulțumim! Răspunsurile au fost trimise agenției.");
+
+      // Fire-and-forget AI context generation; do not block the UI on it.
+      supabase.functions.invoke("client-dashboard-context-generate", {
+        body: { client_id: clientId },
+      }).catch(() => { /* silent */ });
+
       onDone();
     } catch (e: any) {
       toast.error(e.message);
