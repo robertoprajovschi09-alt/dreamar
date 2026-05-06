@@ -24,6 +24,7 @@ import { ClientReportsView } from "@/components/reports/ClientReportsView";
 import { BriefWizard } from "@/components/client/BriefWizard";
 import { getClientBrief } from "@/lib/brief";
 import { NicheSummaryCard } from "@/components/client/NicheSummaryCard";
+import { HealthScoreCard } from "@/components/health/HealthScoreCard";
 
 const monthInputDefault = () => {
   const d = new Date();
@@ -116,6 +117,7 @@ export default function ClientPortal() {
         <Tabs defaultValue="overview">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -123,6 +125,7 @@ export default function ClientPortal() {
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab clientId={client.id} niche={client.niche} /></TabsContent>
+          <TabsContent value="health"><HealthScoreCard clientId={client.id} readOnly /></TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
           <TabsContent value="approvals"><ApprovalsTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
           <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>

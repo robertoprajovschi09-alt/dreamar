@@ -21,6 +21,7 @@ import { VideoEditor } from "@/components/performance/VideoEditor";
 import { NichePanel } from "@/components/performance/NichePanel";
 import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
 import { getClientBrief, BRAND_TONES } from "@/lib/brief";
+import { HealthScoreCard } from "@/components/health/HealthScoreCard";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -85,6 +86,7 @@ export default function ClientProfile() {
       <Tabs defaultValue="overview">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="health">Health</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
@@ -101,6 +103,7 @@ export default function ClientProfile() {
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
+        <TabsContent value="health"><HealthScoreCard clientId={client.id} /></TabsContent>
         <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
         <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
         <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
