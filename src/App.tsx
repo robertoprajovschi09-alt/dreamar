@@ -25,6 +25,7 @@ import Reports from "./pages/agency/Reports";
 import Assistant from "./pages/agency/Assistant";
 import Risk from "./pages/agency/Risk";
 import SwipeLibrary from "./pages/agency/SwipeLibrary";
+import Approvals from "./pages/agency/Approvals";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -66,6 +67,7 @@ const App = () => (
                   <Route path="assistant" element={<Assistant />} />
                   <Route path="risk" element={<Risk />} />
                   <Route path="swipe" element={<SwipeLibrary />} />
+                  <Route path="approvals" element={<Approvals />} />
                 </Route>
 
                 <Route
