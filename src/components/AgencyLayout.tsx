@@ -18,6 +18,7 @@ const nav = [
   { to: "/agency/content", icon: FileVideo, label: "Content" },
   { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
   { to: "/agency/performance", icon: BarChart3, label: "Performance" },
+  { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
   { to: "/agency/tasks", icon: ListTodo, label: "Tasks" },
   { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
   { to: "/agency/documents", icon: FolderOpen, label: "Documents" },

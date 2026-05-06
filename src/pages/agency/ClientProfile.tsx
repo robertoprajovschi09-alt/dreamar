@@ -24,6 +24,7 @@ import { getClientBrief, BRAND_TONES } from "@/lib/brief";
 import { HealthScoreCard } from "@/components/health/HealthScoreCard";
 import { CompetitorsTab } from "@/components/competitors/CompetitorsTab";
 import { ClientStrategiesTab } from "@/components/strategies/ClientStrategiesTab";
+import { ClientAnalyticsTab } from "@/components/analytics/ClientAnalyticsTab";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -90,6 +91,7 @@ export default function ClientProfile() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="health">Health</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -109,6 +111,7 @@ export default function ClientProfile() {
         <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
         <TabsContent value="health"><HealthScoreCard clientId={client.id} /></TabsContent>
         <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
+        <TabsContent value="analytics"><ClientAnalyticsTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
         <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
         <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
         <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
