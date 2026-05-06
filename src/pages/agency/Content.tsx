@@ -9,6 +9,8 @@ import { Plus, Loader2, Search } from "lucide-react";
 import { ContentEditor } from "@/components/content/ContentEditor";
 import { POST_STATUSES, PLATFORM_OPTIONS, statusMeta } from "@/lib/content";
 import { SaveToSwipeButton } from "@/components/swipe/SaveToSwipeButton";
+import { SendForApprovalDialog } from "@/components/approvals/SendForApprovalDialog";
+import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Content() {
@@ -18,6 +20,7 @@ export default function Content() {
   const [loading, setLoading] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [sendPost, setSendPost] = useState<any | null>(null);
   const [filterClient, setFilterClient] = useState("all");
   const [filterPlatform, setFilterPlatform] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -28,7 +31,7 @@ export default function Content() {
     setLoading(true);
     const [{ data: posts }, { data: cls }] = await Promise.all([
       supabase.from("content_posts")
-        .select("id,title,platform,status,scheduled_for,content_type,client_id,hook,script,caption,clients(name)")
+        .select("id,title,platform,status,scheduled_for,content_type,client_id,agency_id,hook,script,caption,clients(name)")
         .eq("agency_id", agency.id)
         .order("scheduled_for", { ascending: false, nullsFirst: false }),
       supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
@@ -115,7 +118,12 @@ export default function Content() {
                       <td className="px-4 py-3 text-muted-foreground">{r.content_type || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{r.scheduled_for ? new Date(r.scheduled_for).toLocaleString() : "—"}</td>
                       <td className="px-4 py-3"><span className={cn("inline-block px-2 py-0.5 rounded text-[11px] font-medium", m.color)}>{m.label}</span></td>
-                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-4 py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                        {(r.status === "ready_for_client" || r.status === "changes_requested" || r.status === "internal_review") && (
+                          <Button size="sm" variant="outline" className="h-8" onClick={() => setSendPost(r)}>
+                            <Send className="h-3.5 w-3.5 mr-1" /> Send
+                          </Button>
+                        )}
                         <SaveToSwipeButton defaults={{
                           title: r.title,
                           type: "video_idea",
@@ -138,6 +146,7 @@ export default function Content() {
       </Card>
 
       <ContentEditor open={editorOpen} onOpenChange={setEditorOpen} postId={editingId} onSaved={load} />
+      <SendForApprovalDialog open={!!sendPost} onOpenChange={(v) => !v && setSendPost(null)} post={sendPost} onSent={load} />
     </div>
   );
 }
