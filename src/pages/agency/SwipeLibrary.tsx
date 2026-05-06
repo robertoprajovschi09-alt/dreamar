@@ -33,7 +33,7 @@ export default function SwipeLibrary() {
   const [active, setActive] = useState<SwipeFile | null>(null);
   const [calOpen, setCalOpen] = useState(false);
 
-  const enabled = (plan as any)?.swipe_file ?? true;
+  const enabled = true;
 
   const load = async () => {
     if (!agency) return;
