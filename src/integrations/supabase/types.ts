@@ -555,6 +555,60 @@ export type Database = {
         }
         Relationships: []
       }
+      client_risk_alerts: {
+        Row: {
+          agency_id: string
+          ai_generated_at: string | null
+          ai_summary: string | null
+          client_id: string
+          created_at: string
+          detected_at: string
+          id: string
+          recommended_actions: Json
+          resolved_at: string | null
+          resolved_by: string | null
+          risk_level: string
+          risk_reasons: Json
+          risk_score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          ai_generated_at?: string | null
+          ai_summary?: string | null
+          client_id: string
+          created_at?: string
+          detected_at?: string
+          id?: string
+          recommended_actions?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          risk_level?: string
+          risk_reasons?: Json
+          risk_score?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          ai_generated_at?: string | null
+          ai_summary?: string | null
+          client_id?: string
+          created_at?: string
+          detected_at?: string
+          id?: string
+          recommended_actions?: Json
+          resolved_at?: string | null
+          resolved_by?: string | null
+          risk_level?: string
+          risk_reasons?: Json
+          risk_score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_users: {
         Row: {
           agency_id: string
@@ -1375,6 +1429,7 @@ export type Database = {
           niche_dashboards: boolean
           premium_pdf: boolean
           price_eur: number
+          risk_detector: boolean
           stripe_price_id: string | null
           tier: Database["public"]["Enums"]["plan_tier"]
           white_label: boolean
@@ -1394,6 +1449,7 @@ export type Database = {
           niche_dashboards?: boolean
           premium_pdf?: boolean
           price_eur: number
+          risk_detector?: boolean
           stripe_price_id?: string | null
           tier: Database["public"]["Enums"]["plan_tier"]
           white_label?: boolean
@@ -1413,6 +1469,7 @@ export type Database = {
           niche_dashboards?: boolean
           premium_pdf?: boolean
           price_eur?: number
+          risk_detector?: boolean
           stripe_price_id?: string | null
           tier?: Database["public"]["Enums"]["plan_tier"]
           white_label?: boolean

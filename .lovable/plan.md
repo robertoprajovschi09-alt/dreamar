@@ -1,146 +1,156 @@
-# Modul 1 — Client Health Score
+# Module 2 — AI Client Risk Detector
 
-Sistem de scoring 0-100 per client/lună, calculat din 5 componente, cu AI recommendation on-demand. Calculul rulează server-side într-un edge function (deterministic, reproducibil), AI-ul produce doar explicația narativă.
+Internal-only module for agency. Detects clients at risk of churn using deterministic signals + AI narrative. Reuses the Module 1 pattern (deterministic edge function + AI edge function + premium gate).
 
-## 1. Schema DB (migration nouă)
+## 1. Database (new migration)
 
-### Tabel `client_health_scores`
+### Table `client_risk_alerts`
 ```
 id              uuid pk
 agency_id       uuid not null
 client_id       uuid not null
-month           int  not null   -- 1-12
-year            int  not null
-period_start    date not null   -- prima zi din lună (pt. query rapid + index)
-period_end      date not null
-total_score                 numeric(5,2) not null
-content_consistency_score   numeric(5,2)
-performance_score           numeric(5,2)
-goal_progress_score         numeric(5,2)
-client_engagement_score     numeric(5,2)
-business_impact_score       numeric(5,2)
-score_status    text not null  -- 'critical' | 'at_risk' | 'healthy' | 'excellent'
-summary         text           -- explicație scurtă auto-generată (deterministic)
-ai_recommendation text        -- text lung de la AI, on-demand
+risk_level      text not null   -- 'low' | 'medium' | 'high' | 'critical'
+risk_score      numeric(5,2) not null   -- 0-100, higher = riskier
+risk_reasons    jsonb not null default '[]'   -- [{code, label, severity, value}]
+ai_summary      text
+recommended_actions jsonb default '[]'   -- [{title, description, priority}]
 ai_generated_at timestamptz
-missing_data    jsonb default '[]'  -- lista de componente fără date
-breakdown       jsonb default '{}'  -- raw inputs: planned/published, MoM deltas, etc.
+status          text not null default 'active'  -- active|acknowledged|resolved|ignored
+detected_at     timestamptz not null default now()
+resolved_at     timestamptz
+resolved_by     uuid
 created_at, updated_at timestamptz
-unique (client_id, year, month)
+unique (client_id, status) WHERE status = 'active'  -- partial unique: only one active alert per client
 ```
 
-Trigger `tg_set_updated_at`. Index pe `(agency_id, client_id, period_start desc)`.
+Index `(agency_id, status, risk_score desc)`. Trigger `tg_set_updated_at`.
 
-### RLS (4 policies, pattern existent)
-- read: `is_member_of(auth.uid(), agency_id) OR is_client_viewer_of(auth.uid(), client_id) OR is_saas_admin(auth.uid())`
-- insert/update/delete: `is_member_of(auth.uid(), agency_id)` (edge function rulează cu service role oricum)
+### RLS — agency-only (no client_viewer access)
+- read/insert/update/delete: `is_member_of(auth.uid(), agency_id) OR is_saas_admin(auth.uid())`
 
-## 2. Logica de calcul (deterministic, în edge function)
+### Plans flag
+Add `risk_detector boolean default false` to `plans`. Enable on Growth+, Unlimited, White Label.
 
-Edge function: `compute-health-score` (verify_jwt în cod, accept agency member token).
-Input: `{ client_id, month, year }`.
+## 2. Deterministic detector — edge function `detect-client-risk`
 
-Pentru fiecare componentă, dacă lipsesc datele de bază → componenta marcată în `missing_data`, scor neutru `50`, nu intră în penalizare nedreaptă.
+Input: `{ client_id }` or `{ agency_id }` (batch all active clients).
 
-### a) Content Consistency (20%)
-Sursă: `content_posts` în lună.
-- planned = count(status in ('planned','scheduled','idea') OR scheduled_for în lună)
-- published = count(status='published')
-- late = count(status='published' AND published_at > scheduled_for) — dacă nu avem `published_at`, folosim `updated_at` ca proxy
-- score = `100 * published/planned − 30 * (late/planned)`, clamp 0-100
-- dacă planned=0 → missing_data
+Reads, for current month + previous month:
+- `client_health_scores` (latest)
+- `videos` (engagement delta MoM)
+- `monthly_goals` (avg progress, count missed)
+- `content_approvals` (pending count, avg response hours, rejection rate)
+- `business_impact_entries` (presence + sum delta)
+- `reports` (most recent created_at)
+- `tasks` (overdue count for client)
+- `client_feedback` / brief (last activity)
+- `campaigns` (active without metrics)
 
-### b) Performance (25%)
-Sursă: `videos` în luna curentă vs luna precedentă.
-- agregăm: views, reach, likes+comments+shares+saves (engagement), apoi calculăm engagement_rate
-- delta% per metric față de luna trecută
-- score = `50 + media(delta%)` clamp 0-100 (creștere 50% → 100, scădere 50% → 0)
-- dacă 0 videos în ambele luni → missing_data
+Scoring — sum of weighted signal points (cap 100):
 
-### c) Goal Progress (25%)
-Sursă: `monthly_goals` luna curentă.
-- per goal: `progress/target * 100`
-- score = media goalurilor, clamp 0-100
-- dacă 0 goals → missing_data
+```
+performance_drop      MoM engagement < -15%      +20
+goals_missed          avg progress < 50%          +15
+no_client_feedback    no entry in 30d             +8
+late_approvals        avg response > 72h OR ≥3 pending  +10
+high_rejection        rejection rate > 30%        +10
+no_business_impact    0 entries in last 30d       +8
+stale_reports         no report in 45d            +7
+overdue_tasks         ≥3 overdue                  +7
+campaign_no_results   active campaign, no goal progress  +5
+low_health            health_score < 50           +15
+engagement_drop       likes+comments MoM < -20%   +10
+no_monthly_progress   all goals at 0 progress     +10
+```
 
-### d) Client Engagement (15%)
-Sursă: `content_approvals` în lună.
-- approval_rate = approved / total_decided
-- avg_response_time = avg(decided_at - created_at) în ore — folosim `updated_at` când `decision != 'pending'`
-- score = `60 * approval_rate + 40 * (1 - clamp(avg_hours/72, 0, 1))`
-- dacă 0 approvals → missing_data
+Levels: 0-19 low, 20-44 medium, 45-69 high, 70+ critical.
 
-### e) Business Impact (15%)
-Sursă: `business_impact_entries` în lună.
-- sum metrics (calls, dms, sales, bookings, etc.) vs luna trecută
-- score = `50 + delta%`, clamp 0-100
-- dacă 0 entries → missing_data, score neutru 50
+Each triggered signal pushed to `risk_reasons` with `{code, label, severity, value}`. `summary` (deterministic, short) auto-generated from top 3 reasons.
 
-### Total
-`total = 0.20*A + 0.25*B + 0.25*C + 0.15*D + 0.15*E` (componentele missing intră ca 50).
-Status mapping: 0-39 critical, 40-59 at_risk, 60-79 healthy, 80-100 excellent.
+Behavior:
+- If active alert exists for client → update score/reasons (idempotent)
+- If no signals → if active alert exists, mark it `resolved` with `resolved_at = now()`
+- Batch mode: iterate all `clients` rows for the agency
 
-`summary` = string scurt generat în cod: ex. *"Healthy — content publicat la timp, performanță în creștere, dar 2 obiective în urmă."* (template-uri pe baza componentelor).
+## 3. AI edge function `risk-analysis`
 
-Edge function face `upsert` în `client_health_scores` pe `(client_id, year, month)`.
+Input: `{ alert_id }`. Reads alert + signal context + last month's health breakdown + recent videos snippet.
 
-## 3. Edge function `health-score-recommendation` (AI)
+Lovable AI Gateway, model `google/gemini-3-flash-preview`, with tool-calling for structured output:
+```
+{
+  why_at_risk: string,
+  whats_changed: string,
+  warning_signals: string[],
+  urgency: 'low'|'medium'|'high'|'critical',
+  agency_actions: string[],
+  recovery_plan: [{ title, description, priority }]
+}
+```
 
-- Input: `{ score_id }`
-- Citește scorul + breakdown + missing_data + ultimele 30 zile relevante (videos top/flop, goals, briefuri)
-- Lovable AI Gateway, model `google/gemini-3-flash-preview`
-- System prompt clar: "Folosește DOAR datele din context. Dacă o componentă e în `missing_data`, spune explicit ce lipsește. Nu inventa numere."
-- Tool calling pentru output structurat: `{ why_this_score, whats_working[], whats_broken[], next_month_actions[] }`
-- Salvează rezultatul în `ai_recommendation` + `ai_generated_at`
-- Handle 429/402 → eroare clară în UI
+System prompt: use only provided data, never invent numbers, mention missing data explicitly. Save into `ai_summary` + `recommended_actions` + `ai_generated_at`. Handle 429/402.
 
-## 4. UI
+## 4. Recovery tasks — edge function `generate-recovery-tasks`
 
-### Lib helper `src/lib/healthScore.ts`
-Tipuri + funcții: `getCurrentScore(clientId)`, `triggerCompute(clientId)`, `triggerAi(scoreId)`, `getHistory(clientId, n)`.
+Input: `{ alert_id }`. Reads `recommended_actions`. Inserts into `tasks` (one row per action) with:
+- `agency_id`, `client_id` from alert
+- `title` from action
+- `description` from action description
+- `task_type = 'recovery'`
+- `priority = 'high'` for critical/high alerts, else 'medium'
+- `deadline = now() + 7 days`
+- `created_by = auth.uid()`
 
-### Componentă reutilizabilă `src/components/health/HealthScoreCard.tsx`
-- Card mare: progress ring (SVG simplu) cu scorul în mijloc
-- Badge color-coded (critical=rose, at_risk=amber, healthy=emerald, excellent=indigo)
-- Trend arrow vs luna trecută (Δ puncte)
-- Breakdown: 5 mini progress bars (Content / Performance / Goals / Engagement / Impact)
-- Toggle "Why this score?" → afișează `summary` + lista `missing_data` cu badge "Missing data"
-- Buton "Generate AI recommendation" (loading state) → afișează 4 secțiuni (de ce / ce merge / ce nu / acțiuni)
-- Buton "Recompute" (vizibil doar pentru agency members) → re-rulează edge function
+If action list empty, falls back to a fixed default set (Schedule strategic call, Analyze 5 worst videos, Propose 10 new hooks, Request business impact feedback, Build next-month strategy).
 
-### Integrare Agency
-- **`/agency` (Dashboard)**: grid cu `HealthScoreCard` compact pentru fiecare client (top 6, sortate ascendent — cei în pericol primii)
-- **`/agency/clients/:id` (ClientProfile)**: tab nou "Health" cu cardul full + istoric ultimele 6 luni (sparkline)
-- Auto-trigger compute la deschidere dacă scorul lunii curente lipsește sau e mai vechi de 24h
+Returns inserted task IDs. UI shows toast "X recovery tasks created" with link to /agency/tasks.
 
-### Integrare Client Portal
-- Tab nou "Health" în `ClientPortal` cu același `HealthScoreCard` (read-only, fără butoane Recompute; AI recommendation visible doar dacă agency a generat-o — gating prin câmp `client_visible boolean default true` pe scor, sau by default visible)
+## 5. Frontend
 
-## 5. Premium gating
+### Helper `src/lib/risk.ts`
+Types + functions: `fetchAgencyAlerts(agencyId, statusFilter?)`, `detectForClient(clientId)`, `detectForAgency(agencyId)`, `runRiskAnalysis(alertId)`, `generateRecoveryTasks(alertId)`, `updateAlertStatus(id, status)`.
 
-Adăugăm coloană în `plans`: `health_score boolean default false`. Activăm pe `pro`+ via update SQL. În UI, dacă `agency.plan` nu o are, afișăm overlay "Upgrade to Pro" peste card (componentă `<PremiumGate feature="health_score">`).
+### Components
+- `src/components/risk/RiskBadge.tsx` — color-coded pill (low=slate, medium=amber, high=orange, critical=rose)
+- `src/components/risk/RiskAlertCard.tsx` — compact card: client name, level, score, top reason, last report date, mini health score, buttons "View Risk Analysis" + "Create Recovery Plan"
+- `src/components/risk/RiskAnalysisDialog.tsx` — modal showing reasons list, AI sections (why / what changed / warnings / urgency / actions / recovery plan), buttons to generate AI (if missing), "Generate Recovery Tasks", "Acknowledge", "Resolve", "Ignore"
+- `src/pages/agency/Risk.tsx` — full page `/agency/risk` listing all alerts with filters by status + level, "Run detection now" button (calls `detectForAgency`)
 
-## 6. Fișiere create/modificate
+### Integrations
+- **AgencyDashboard**: new "Clients at Risk" section above Client Health, shows top 4 active alerts sorted by score desc, with "View all" → `/agency/risk`
+- **AgencyLayout**: nav link "Risk" with `AlertTriangle` icon (visible only to agency members; gated by plan)
+- **ClientProfile**: small banner if active alert exists, link to open analysis dialog
+- **Auto-detection**: on dashboard mount, call `detectForAgency` if last detection > 24h (stored as `last_risk_detection_at` in `localStorage` per agency to avoid hammering)
+- **Client Portal**: NOT exposed — module fully internal, RLS already blocks client_viewer
 
-**Noi:**
-- `supabase/migrations/<ts>_health_scores.sql`
-- `supabase/functions/compute-health-score/index.ts`
-- `supabase/functions/health-score-recommendation/index.ts`
-- `src/lib/healthScore.ts`
-- `src/components/health/HealthScoreCard.tsx`
-- `src/components/health/HealthScoreRing.tsx`
-- `src/components/PremiumGate.tsx` (reutilizabil pt. modulele următoare)
+### Premium gating
+Reusable `<PremiumGate feature="risk_detector">` wraps the page and dashboard section. If plan lacks it, show upgrade overlay.
 
-**Modificate:**
-- `src/pages/agency/AgencyDashboard.tsx` — secțiune "Client Health"
-- `src/pages/agency/ClientProfile.tsx` — tab "Health"
-- `src/pages/client/ClientPortal.tsx` — tab "Health"
+## 6. Files
+
+**New:**
+- `supabase/migrations/<ts>_client_risk_alerts.sql`
+- `supabase/functions/detect-client-risk/index.ts`
+- `supabase/functions/risk-analysis/index.ts`
+- `supabase/functions/generate-recovery-tasks/index.ts`
+- `src/lib/risk.ts`
+- `src/components/risk/RiskBadge.tsx`
+- `src/components/risk/RiskAlertCard.tsx`
+- `src/components/risk/RiskAnalysisDialog.tsx`
+- `src/pages/agency/Risk.tsx`
+
+**Modified:**
+- `src/App.tsx` — route `/agency/risk`
+- `src/components/AgencyLayout.tsx` — nav link
+- `src/pages/agency/AgencyDashboard.tsx` — "Clients at Risk" section
+- `src/pages/agency/ClientProfile.tsx` — risk banner
 
 ## 7. Edge cases
 
-- Client nou (< 1 lună): toate missing_data → `total=50`, status `at_risk`, summary "Not enough data yet — log content and goals to see your score."
-- Recompute idempotent (upsert pe unique constraint)
-- AI recommendation poate fi regenerată (overwrite + nou `ai_generated_at`)
-- Dacă AI returnează 402/429 → toast clar, fără să corupă scorul
+- New client (<30 days, no data): no signals → no alert created
+- Detection idempotent: re-running updates same active alert; resolves alerts when signals clear
+- AI failure (402/429): toast clear error, alert keeps deterministic data intact
+- Recovery task generation idempotent per click (no dedup — agency may want multiple rounds)
+- Agency Owner / Team / SaaS Admin all see; Client User blocked by RLS
 
-Aprobă planul și implementez tot end-to-end (migration + 2 edge functions + UI + integrare în 3 dashboard-uri).
+Approve and I implement end-to-end (migration + 3 edge functions + UI + dashboard integration).
