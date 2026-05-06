@@ -65,19 +65,21 @@ const App = () => (
                   <Route path="clients/:id" element={<ClientProfile />} />
                   <Route path="calendar" element={<Calendar />} />
                   <Route path="content" element={<Content />} />
-                  <Route path="performance" element={<Performance />} />
-                  <Route path="tasks" element={<Tasks />} />
-                  <Route path="campaigns" element={<Campaigns />} />
-                  <Route path="documents" element={<Documents />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="assistant" element={<Assistant />} />
-                  <Route path="risk" element={<Risk />} />
-                  <Route path="swipe" element={<SwipeLibrary />} />
                   <Route path="approvals" element={<Approvals />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="campaigns" element={<Campaigns />} />
+                  <Route path="reports" element={<Reports />} />
                   <Route path="strategies" element={<Strategies />} />
                   <Route path="strategies/:id" element={<StrategyDetail />} />
                   <Route path="strategies/:id/print" element={<StrategyPrint />} />
-                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="documents" element={<Documents />} />
+                  <Route path="tasks" element={<Tasks />} />
+                  <Route path="swipe" element={<SwipeLibrary />} />
+                  <Route path="competitors" element={<Competitors />} />
+                  <Route path="assistant" element={<Assistant />} />
+                  <Route path="team" element={<Team />} />
+                  <Route path="billing" element={<Billing />} />
+                  <Route path="settings" element={<Settings />} />
                 </Route>
 
                 <Route
