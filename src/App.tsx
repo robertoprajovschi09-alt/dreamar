@@ -29,6 +29,7 @@ import Approvals from "./pages/agency/Approvals";
 import Strategies from "./pages/agency/Strategies";
 import StrategyDetail from "./pages/agency/StrategyDetail";
 import StrategyPrint from "./pages/agency/StrategyPrint";
+import Analytics from "./pages/agency/Analytics";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -74,6 +75,7 @@ const App = () => (
                   <Route path="strategies" element={<Strategies />} />
                   <Route path="strategies/:id" element={<StrategyDetail />} />
                   <Route path="strategies/:id/print" element={<StrategyPrint />} />
+                  <Route path="analytics" element={<Analytics />} />
                 </Route>
 
                 <Route

@@ -162,6 +162,126 @@ export type Database = {
           },
         ]
       }
+      analytics_entries: {
+        Row: {
+          ad_spend: number | null
+          agency_id: string
+          bookings: number | null
+          calls: number | null
+          client_id: string
+          comments: number | null
+          cost_per_lead: number | null
+          cost_per_purchase: number | null
+          created_at: string
+          created_by: string | null
+          date_end: string | null
+          date_start: string | null
+          engagement_rate: number | null
+          followers_end: number | null
+          followers_gained: number | null
+          followers_start: number | null
+          id: string
+          impressions: number | null
+          leads: number | null
+          likes: number | null
+          messages: number | null
+          month: number | null
+          notes: string | null
+          period_type: string
+          platform: string
+          profile_visits: number | null
+          reach: number | null
+          revenue: number | null
+          roas: number | null
+          sales: number | null
+          saves: number | null
+          shares: number | null
+          source: string
+          updated_at: string
+          views: number | null
+          website_clicks: number | null
+          year: number | null
+        }
+        Insert: {
+          ad_spend?: number | null
+          agency_id: string
+          bookings?: number | null
+          calls?: number | null
+          client_id: string
+          comments?: number | null
+          cost_per_lead?: number | null
+          cost_per_purchase?: number | null
+          created_at?: string
+          created_by?: string | null
+          date_end?: string | null
+          date_start?: string | null
+          engagement_rate?: number | null
+          followers_end?: number | null
+          followers_gained?: number | null
+          followers_start?: number | null
+          id?: string
+          impressions?: number | null
+          leads?: number | null
+          likes?: number | null
+          messages?: number | null
+          month?: number | null
+          notes?: string | null
+          period_type?: string
+          platform?: string
+          profile_visits?: number | null
+          reach?: number | null
+          revenue?: number | null
+          roas?: number | null
+          sales?: number | null
+          saves?: number | null
+          shares?: number | null
+          source?: string
+          updated_at?: string
+          views?: number | null
+          website_clicks?: number | null
+          year?: number | null
+        }
+        Update: {
+          ad_spend?: number | null
+          agency_id?: string
+          bookings?: number | null
+          calls?: number | null
+          client_id?: string
+          comments?: number | null
+          cost_per_lead?: number | null
+          cost_per_purchase?: number | null
+          created_at?: string
+          created_by?: string | null
+          date_end?: string | null
+          date_start?: string | null
+          engagement_rate?: number | null
+          followers_end?: number | null
+          followers_gained?: number | null
+          followers_start?: number | null
+          id?: string
+          impressions?: number | null
+          leads?: number | null
+          likes?: number | null
+          messages?: number | null
+          month?: number | null
+          notes?: string | null
+          period_type?: string
+          platform?: string
+          profile_visits?: number | null
+          reach?: number | null
+          revenue?: number | null
+          roas?: number | null
+          sales?: number | null
+          saves?: number | null
+          shares?: number | null
+          source?: string
+          updated_at?: string
+          views?: number | null
+          website_clicks?: number | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       business_impact_entries: {
         Row: {
           agency_id: string
@@ -941,6 +1061,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_metrics: {
+        Row: {
+          agency_id: string
+          average_view_duration: number | null
+          bookings: number | null
+          client_id: string
+          comments: number | null
+          completion_rate: number | null
+          content_item_id: string
+          created_at: string
+          created_by: string | null
+          followers_gained: number | null
+          hook_rate: number | null
+          id: string
+          impressions: number | null
+          leads: number | null
+          likes: number | null
+          notes: string | null
+          platform: string | null
+          reach: number | null
+          retention_rate: number | null
+          revenue: number | null
+          sales: number | null
+          saves: number | null
+          shares: number | null
+          source: string
+          updated_at: string
+          views: number | null
+          watch_time: number | null
+        }
+        Insert: {
+          agency_id: string
+          average_view_duration?: number | null
+          bookings?: number | null
+          client_id: string
+          comments?: number | null
+          completion_rate?: number | null
+          content_item_id: string
+          created_at?: string
+          created_by?: string | null
+          followers_gained?: number | null
+          hook_rate?: number | null
+          id?: string
+          impressions?: number | null
+          leads?: number | null
+          likes?: number | null
+          notes?: string | null
+          platform?: string | null
+          reach?: number | null
+          retention_rate?: number | null
+          revenue?: number | null
+          sales?: number | null
+          saves?: number | null
+          shares?: number | null
+          source?: string
+          updated_at?: string
+          views?: number | null
+          watch_time?: number | null
+        }
+        Update: {
+          agency_id?: string
+          average_view_duration?: number | null
+          bookings?: number | null
+          client_id?: string
+          comments?: number | null
+          completion_rate?: number | null
+          content_item_id?: string
+          created_at?: string
+          created_by?: string | null
+          followers_gained?: number | null
+          hook_rate?: number | null
+          id?: string
+          impressions?: number | null
+          leads?: number | null
+          likes?: number | null
+          notes?: string | null
+          platform?: string | null
+          reach?: number | null
+          retention_rate?: number | null
+          revenue?: number | null
+          sales?: number | null
+          saves?: number | null
+          shares?: number | null
+          source?: string
+          updated_at?: string
+          views?: number | null
+          watch_time?: number | null
+        }
+        Relationships: []
       }
       content_posts: {
         Row: {

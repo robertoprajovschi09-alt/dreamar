@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ClientMarketInsightsTab } from "@/components/competitors/ClientMarketInsightsTab";
 import { ClientApprovalsTab } from "@/components/approvals/ClientApprovalsTab";
 import { ClientStrategyTab } from "@/components/strategies/ClientStrategyTab";
+import { ClientPortalAnalyticsTab } from "@/components/analytics/ClientPortalAnalyticsTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -125,6 +126,7 @@ export default function ClientPortal() {
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="strategy">Strategy</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="market">Market Insights</TabsTrigger>
@@ -135,6 +137,7 @@ export default function ClientPortal() {
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
+          <TabsContent value="analytics"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
           <TabsContent value="strategy"><ClientStrategyTab clientId={client.id} /></TabsContent>
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
           <TabsContent value="market"><ClientMarketInsightsTab clientId={client.id} /></TabsContent>
