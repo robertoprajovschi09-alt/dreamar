@@ -21,6 +21,7 @@ import { VideoEditor } from "@/components/performance/VideoEditor";
 import { NichePanel } from "@/components/performance/NichePanel";
 import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
 import { getClientBrief, BRAND_TONES } from "@/lib/brief";
+import { HealthScoreCard } from "@/components/health/HealthScoreCard";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
