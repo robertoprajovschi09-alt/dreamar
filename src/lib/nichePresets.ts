@@ -1,7 +1,17 @@
 // Niche presets — KPI fields, business impact fields, monthly questions
 // Used by Add Client Wizard to pre-fill metric structure per niche.
 
-export type KpiField = { key: string; label: string; unit?: string; type?: "number" | "currency" | "percent" | "text" };
+export type KpiField = {
+  key: string;
+  label: string;
+  unit?: string;
+  type?: "number" | "currency" | "percent" | "text";
+  // Custom KPI extras (used by Custom Niche editor)
+  kpi_type?: "number" | "percentage" | "currency" | "text" | "boolean";
+  field_type?: "number" | "percentage" | "currency" | "text" | "boolean";
+  reporting_frequency?: "daily" | "weekly" | "monthly";
+  visible_to_client?: boolean;
+};
 export type Question = { key: string; label: string };
 
 export type NichePreset = {
