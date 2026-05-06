@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { NICHES, STATUSES, nicheLabel } from "@/lib/niches";
+import { NICHES, STATUSES, displayNiche } from "@/lib/niches";
+import { AddClientWizard } from "@/components/client/AddClientWizard";
 
 type Client = {
-  id: string; name: string; niche: string; city: string | null;
+  id: string; name: string; niche: string; custom_niche: string | null; city: string | null;
   website: string | null; status: string; created_at: string;
 };
 
