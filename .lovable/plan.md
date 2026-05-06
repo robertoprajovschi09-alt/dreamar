@@ -1,59 +1,85 @@
 ## Obiectiv
 
-Refacem Business Impact ca **secțiune dinamică pe nișă** integrată în Quick Check-In, înlocuind formularul lung separat (`BusinessImpactQuickForm`). Fiecare câmp permite 4 moduri de input: **exact / aproximativ / nu știu / nu se aplică**. „Nu știu" marchează missing data dar nu blochează submit-ul.
+Adăugăm nișa **Hotels / Hospitality / Tourism** ca o nișă completă, premium, integrată în întreg pipeline-ul: Add Client Wizard, Client Dashboard, Quick Check-In, Business Impact, Analytics, Reports și AI generators. Cheia canonică: **`hospitality`** (acoperă hoteluri, pensiuni, boutique hotels, resorturi, vile turistice, Airbnb/short-stay, glamping, retreat-uri, event venues cu cazare).
 
-## Field configs per nișă
+## Modificări per fișier
 
-Toate definițiile centralizate în `src/lib/businessImpactByNiche.ts`:
+### 1. `src/lib/niches.ts`
+- Adaug `{ value: "hospitality", label: "Hotels / Hospitality" }` în `NICHES` (înainte de `custom`).
 
-- **Real Estate**: lead-uri primite, vizionări programate, proprietăți rezervate/vândute, calitatea lead-urilor (chips)
-- **Restaurants**: rezervări, comenzi, trafic în locație, evenimente, feedback clienți (text)
-- **Beauty**: programări, cereri de preț, servicii cerute (text), clienți noi, before/after (număr)
-- **E-commerce**: vânzări, revenue, produse vândute, campanii active (text), stocuri (chips)
-- **Fitness**: trial-uri, abonamente, înscrieri, testimoniale, transformări
-- **Medical**: programări, apeluri, mesaje, pacienți noi
-- **Custom**: câmpuri din `client_kpi_schemas.business_impact_fields`
-- **Fallback**: lead-uri, apeluri, rezervări, vânzări, revenue
+### 2. `src/lib/nichePresets.ts`
+- Adaug preset `hospitality` cu KPI fields complete:
+  - `bookings`, `reservation_requests`, `direct_inquiries`, `occupancy_rate`, `booked_nights`, `room_inquiries`, `package_inquiries`, `booking_engine_clicks`, `website_clicks`, `whatsapp_inquiries`, `calls`, `messages`, `guest_reviews`, `review_score`, `revenue` (manual), `cost_per_booking` (when ad spend), `roas` (when ad spend).
+- `business_impact_fields`: bookings, reservation_requests, calls, messages, revenue_estimate, contracts (pt event venues / nunți).
+- `monthly_questions`: cele 7 întrebări din brief.
+- Adaug în `NICHE_PRESET_OPTIONS`.
 
-Fiecare câmp numeric mapează la o coloană din `business_impact_entries` (`db_field`) — dashboard-urile existente continuă să agrege fără modificări.
+### 3. `src/lib/nicheDashboard.ts`
+- Înlocuiesc cheia veche `hotel` (parțial folosită) cu `hospitality` care include:
+  - `hero_eyebrow: "Luna aceasta în hospitality"`
+  - `impact_section_title: "Rezervări & oaspeți"`
+  - `primary_kpi_keys: ["bookings", "reservation_requests", "occupancy_rate"]`
+  - `show_latest_report: true`
 
-## Componentă nouă
+### 4. `src/lib/nicheDashboardConfigs.ts`
+- Adaug `hospitality` în `NICHE_CONFIGS` cu **7 carduri principale** (engine generic le va randa):
+  1. Bookings / Reservations (impact_sum: bookings + checkin viewing fallback)
+  2. Reservation Requests (checkin: reservation_requests)
+  3. Room / Package Interest (checkin_text: room_package_interest)
+  4. Guest Messages & Inquiries (impact_sum: dms + calls)
+  5. Best Performing Content (top_published_posts)
+  6. Reviews / Guest Feedback (checkin_text: guest_reviews)
+  7. Next Recommended Actions (AI next_actions)
+- `checkin_extras`: cele 7 întrebări (reservation_received Y/N/?, promote_focus chips multi, low_availability_periods text, target_guest_type chips, important_reviews text long, best_package text, important_note text long).
 
-`src/components/client/BusinessImpactSection.tsx`:
-- Header cu titlu + intro nișă-specific + badge cu count „nu știu"
-- Pentru fiecare câmp: label + 4 chips mod (Exact / Aprox. / Nu știu / N/A) + input adecvat (number / textarea / chips choice)
-- Disclaimer jos: "„Nu știu" și „Nu se aplică" nu blochează trimiterea"
+### 5. `src/lib/businessImpactByNiche.ts`
+- Adaug `hospitality` config cu câmpuri:
+  - `bookings` (number → db `bookings`)
+  - `reservation_requests` (number → db `dms`)
+  - `direct_inquiries` (number → db `dms`)
+  - `booked_nights` (number)
+  - `revenue` (currency → db `revenue_estimate`)
+  - `guest_reviews_count` (number)
+  - `review_score` (number — average 1–5)
+  - `occupancy_rate` (number — percent 0–100)
+- Toate cu cele 4 moduri: exact / approx / unknown / N/A.
 
-## Integrare în ClientQuickCheckIn
+### 6. `src/components/client/ClientDashboard.tsx`
+- Adaug `hospitality: "Hotels"` în `NICHE_BADGES`.
+- Engine-ul generic `NicheDashboardSection` îl randează automat odată ce `hospitality` e în `NICHE_CONFIGS`. Nu trebuie listă specială.
+- Verific check-list-ul `["real_estate", "restaurant", "beauty", "ecommerce", "fitness", "medical", "custom"]` din `ClientDashboard.tsx` — nu mai e folosit după refactor anterior, dar ascund duplicate approval cards dacă există.
 
-În `src/components/client/ClientQuickCheckIn.tsx`:
+### 7. `src/components/client/ClientQuickCheckIn.tsx`
+- Nicio modificare directă — `nicheCfg` din `getNicheConfig("hospitality")` randează automat noile întrebări, iar `getImpactConfig("hospitality")` randează automat câmpurile Business Impact.
 
-1. Înlocuim **Section 3** ("Ai observat rezultate reale...") cu noul `<BusinessImpactSection>` (devine Section 3 — Impact business).
-2. Eliminăm vechile `RESULT_METRICS_BY_NICHE`, `GENERIC_METRICS`, `resultsMetrics`, `otherResults`, `resultsObserved`.
-3. Eliminăm blocul Real Estate manual (proprietăți, lead quality etc.) — acum acoperit prin `BusinessImpactSection` + `nicheCfg.checkin_extras` rămas.
-4. State nou: `impactValues: Record<string, { mode, value }>`.
-5. La submit:
-   - Fetch `client_kpi_schemas.business_impact_fields` pentru clienți custom.
-   - Calculăm `impact_data` (toate valorile, inclusiv mode-urile) → salvat în `client_checkins.real_results_data.business_impact`.
-   - `missing_fields[]` = chei cu `mode === "unknown"` → tot în `real_results_data.business_impact_missing`.
-   - Pentru fiecare câmp `mode === "exact" | "approx"` cu `db_field` și valoare numerică validă → construim un `business_impact_entries` row (single insert pentru întreaga lună, agregat). `mode === "approx"` adaugă flag `qualitative_feedback: "approximate values"`.
-   - `observed_real_results` derivat: dacă există valori cu mod exact/approx → `"yes"`; dacă tot ce există e unknown/N/A → `"unknown"`.
+### 8. `supabase/functions/ai-assistant/index.ts` & `supabase/functions/ai-report/index.ts`
+- Adaug în mapa `NICHE_LABELS`: `hospitality: "hotel / hospitality / tourism"` pentru ca AI-ul să folosească tonalitate și terminologie corectă (room rates, occupancy, ADR, RevPAR, seasonality, direct booking vs OTA).
+- AI-ul folosește deja `client_dashboard_contexts` + `client_checkins.real_results_data` ca input → primește automat datele noi prin generator-ul existent (`client-dashboard-context-generate`). Nu sunt necesare modificări la edge functions noi.
 
-## Curățenie
+### 9. AI Smart Dashboard Generator (`client-dashboard-context-generate`)
+- Generator-ul actual ia `niche` din `clients` și-l pasează modelului. Voi adăuga în prompt-ul system un fragment specific pentru `hospitality` (booking-driven insights, ce conținut aduce cereri, perioade de promovat, review-uri ca content, CTA-uri pentru direct booking) — un short string concatenat doar când `niche === "hospitality"`.
 
-- Component `BusinessImpactQuickForm` rămâne în repo (nu mai e importat din `ClientDashboard`, deja eliminat) — nu îl ștergem, în caz că agenția îl folosește în alt context (verific cu `rg`).
-- Schema zod actualizată: scot `results_observed` enum hard, devine derivat.
+## AI Insights specifice (livrate prin generator)
 
-## Fișiere
+Generator-ul va fi instruit să producă insight-uri și `ai_priorities` pentru hospitality care să acopere:
+- ce conținut aduce cereri de rezervare;
+- ce pachete / camere atrag interes;
+- ce perioade au low-occupancy de promovat;
+- ce review-uri pot deveni content (UGC / testimonial);
+- ce campanii sezoniere de testat;
+- ce CTA-uri cresc rezervările directe (vs OTA).
 
-**Noi:**
-- `src/lib/businessImpactByNiche.ts` — config + tipuri
-- `src/components/client/BusinessImpactSection.tsx` — UI
+## Missing data handling
 
-**Editate:**
-- `src/components/client/ClientQuickCheckIn.tsx` — înlocuire Section 3 + logică submit + curățenie state vechi
+- Business Impact fields cu mode `unknown` → `client_checkins.real_results_data.business_impact_missing[]` (deja implementat în BusinessImpactSection).
+- Generator-ul AI marchează lipsa `bookings`, `occupancy_rate`, `revenue` în `client_dashboard_contexts.missing_data` → randat în secțiunea "Ce necesită atenție" din ClientDashboard.
+- Niciun mock data; fără invenții.
+
+## RLS / multi-tenant
+
+Toate scrierile (business_impact_entries, client_checkins, client_feedback) folosesc `agency_id` + `client_id` din context, identice cu fluxul existent. Niciun policy nou necesar.
 
 ## Out of scope
 
-- Modificări de schema DB (nu e nevoie — folosim `real_results_data` jsonb și `business_impact_entries` existent)
-- Edge function changes (AI deja primește `real_results_data` + `missing_data`)
+- Tabelă specializată `niche_hospitality_*` (similar cu `niche_real_estate_properties`) — nu necesar pentru cerințele actuale; toate datele structurate trec prin `business_impact_entries` + `client_checkins.real_results_data.hospitality`.
+- UI separat pentru room/package management — viitor.
