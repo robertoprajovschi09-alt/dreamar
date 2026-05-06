@@ -89,43 +89,48 @@ export default function ClientProfile() {
       <Tabs defaultValue="overview">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="health">Health</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="strategies">Strategies</TabsTrigger>
-          <TabsTrigger value="competitors">Competitors</TabsTrigger>
-          <TabsTrigger value="brand">Brand</TabsTrigger>
-          <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
-          <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
-          <TabsTrigger value="brief">Brief</TabsTrigger>
-          <TabsTrigger value="invites">Invites ({invites.length})</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback ({feedback.length})</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="strategy">Strategy</TabsTrigger>
+          <TabsTrigger value="approvals">Approvals</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="competitors">Competitors</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
-        <TabsContent value="health"><HealthScoreCard clientId={client.id} /></TabsContent>
-        <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
+        <TabsContent value="overview">
+          <div className="space-y-4">
+            <HealthScoreCard clientId={client.id} />
+            <OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} />
+          </div>
+        </TabsContent>
+        <TabsContent value="content"><ClientContentTab client={client} /></TabsContent>
+        <TabsContent value="calendar"><ClientCalendarLink client={client} /></TabsContent>
         <TabsContent value="analytics"><ClientAnalyticsTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
-        <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
-        <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
-        <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
-        <TabsContent value="reports"><ClientReportsTab client={client} /></TabsContent>
-        <TabsContent value="strategies"><ClientStrategiesTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
-        <TabsContent value="competitors"><CompetitorsTab agencyId={client.agency_id} clientId={client.id} /></TabsContent>
-        <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
-        <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
-        <TabsContent value="users"><UsersTab users={users} reload={loadAll} /></TabsContent>
-        <TabsContent value="brief"><BriefViewTab clientId={client.id} /></TabsContent>
-        <TabsContent value="invites"><InvitesTab invites={invites} reload={loadAll} /></TabsContent>
-        <TabsContent value="feedback"><FeedbackTab feedback={feedback} /></TabsContent>
-        <TabsContent value="settings"><SettingsTab client={client} reload={loadAll} /></TabsContent>
+        <TabsContent value="reports"><ClientReportsTab client={client} /></TabsContent>
+        <TabsContent value="strategy"><ClientStrategiesTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
+        <TabsContent value="approvals"><ClientApprovalsList clientId={client.id} /></TabsContent>
+        <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
+        <TabsContent value="competitors"><CompetitorsTab agencyId={client.agency_id} clientId={client.id} /></TabsContent>
+        <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
+        <TabsContent value="settings">
+          <div className="space-y-4">
+            <SettingsTab client={client} reload={loadAll} />
+            <BrandTab client={client} reload={loadAll} />
+            <PlatformsTab client={client} platforms={platforms} reload={loadAll} />
+            <UsersTab users={users} reload={loadAll} />
+            <InvitesTab invites={invites} reload={loadAll} />
+            <BriefViewTab clientId={client.id} />
+            <FeedbackTab feedback={feedback} />
+            <ClientCampaignsTab client={client} />
+            <PerformanceTab client={client} />
+          </div>
+        </TabsContent>
       </Tabs>
 
       <InviteClientDialog
