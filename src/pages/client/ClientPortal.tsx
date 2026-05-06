@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientMarketInsightsTab } from "@/components/competitors/ClientMarketInsightsTab";
 import { ClientApprovalsTab } from "@/components/approvals/ClientApprovalsTab";
+import { ClientStrategyTab } from "@/components/strategies/ClientStrategyTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -124,6 +125,7 @@ export default function ClientPortal() {
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="strategy">Strategy</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="market">Market Insights</TabsTrigger>
           </TabsList>

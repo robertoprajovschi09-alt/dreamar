@@ -26,6 +26,9 @@ import Assistant from "./pages/agency/Assistant";
 import Risk from "./pages/agency/Risk";
 import SwipeLibrary from "./pages/agency/SwipeLibrary";
 import Approvals from "./pages/agency/Approvals";
+import Strategies from "./pages/agency/Strategies";
+import StrategyDetail from "./pages/agency/StrategyDetail";
+import StrategyPrint from "./pages/agency/StrategyPrint";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -68,6 +71,9 @@ const App = () => (
                   <Route path="risk" element={<Risk />} />
                   <Route path="swipe" element={<SwipeLibrary />} />
                   <Route path="approvals" element={<Approvals />} />
+                  <Route path="strategies" element={<Strategies />} />
+                  <Route path="strategies/:id" element={<StrategyDetail />} />
+                  <Route path="strategies/:id/print" element={<StrategyPrint />} />
                 </Route>
 
                 <Route
