@@ -1595,10 +1595,13 @@ export type Database = {
           agency_id: string
           client_id: string
           created_at: string
+          display_name: string | null
           email: string
           expires_at: string
           id: string
           invited_by: string | null
+          permissions: Json
+          portal_role: string
           status: string
           token: string
         }
@@ -1606,10 +1609,13 @@ export type Database = {
           agency_id: string
           client_id: string
           created_at?: string
+          display_name?: string | null
           email: string
           expires_at?: string
           id?: string
           invited_by?: string | null
+          permissions?: Json
+          portal_role?: string
           status?: string
           token?: string
         }
@@ -1617,14 +1623,71 @@ export type Database = {
           agency_id?: string
           client_id?: string
           created_at?: string
+          display_name?: string | null
           email?: string
           expires_at?: string
           id?: string
           invited_by?: string | null
+          permissions?: Json
+          portal_role?: string
           status?: string
           token?: string
         }
         Relationships: []
+      }
+      client_kpi_schemas: {
+        Row: {
+          agency_id: string
+          business_impact_fields: Json
+          client_id: string
+          created_at: string
+          custom_niche_label: string | null
+          id: string
+          kpi_fields: Json
+          monthly_questions: Json
+          niche_key: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          business_impact_fields?: Json
+          client_id: string
+          created_at?: string
+          custom_niche_label?: string | null
+          id?: string
+          kpi_fields?: Json
+          monthly_questions?: Json
+          niche_key: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          business_impact_fields?: Json
+          client_id?: string
+          created_at?: string
+          custom_niche_label?: string | null
+          id?: string
+          kpi_fields?: Json
+          monthly_questions?: Json
+          niche_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_kpi_schemas_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_kpi_schemas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_platforms: {
         Row: {
@@ -1634,7 +1697,9 @@ export type Database = {
           created_at: string
           handle: string | null
           id: string
+          objective: string | null
           platform: string
+          starting_followers: number | null
           updated_at: string
           url: string | null
         }
@@ -1645,7 +1710,9 @@ export type Database = {
           created_at?: string
           handle?: string | null
           id?: string
+          objective?: string | null
           platform: string
+          starting_followers?: number | null
           updated_at?: string
           url?: string | null
         }
@@ -1656,7 +1723,9 @@ export type Database = {
           created_at?: string
           handle?: string | null
           id?: string
+          objective?: string | null
           platform?: string
+          starting_followers?: number | null
           updated_at?: string
           url?: string | null
         }
@@ -1721,8 +1790,10 @@ export type Database = {
           agency_id: string
           client_id: string
           created_at: string
+          display_name: string | null
           email: string
           id: string
+          permissions: Json
           role: Database["public"]["Enums"]["app_role"]
           status: string
           user_id: string
@@ -1731,8 +1802,10 @@ export type Database = {
           agency_id: string
           client_id: string
           created_at?: string
+          display_name?: string | null
           email: string
           id?: string
+          permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
           user_id: string
@@ -1741,8 +1814,10 @@ export type Database = {
           agency_id?: string
           client_id?: string
           created_at?: string
+          display_name?: string | null
           email?: string
           id?: string
+          permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
           user_id?: string
@@ -1752,6 +1827,7 @@ export type Database = {
       clients: {
         Row: {
           agency_id: string
+          ai_strategy_base: Json | null
           brand_color: string | null
           brand_voice: string | null
           budget_estimate: number | null
@@ -1782,6 +1858,7 @@ export type Database = {
         }
         Insert: {
           agency_id: string
+          ai_strategy_base?: Json | null
           brand_color?: string | null
           brand_voice?: string | null
           budget_estimate?: number | null
@@ -1812,6 +1889,7 @@ export type Database = {
         }
         Update: {
           agency_id?: string
+          ai_strategy_base?: Json | null
           brand_color?: string | null
           brand_voice?: string | null
           budget_estimate?: number | null
@@ -3563,6 +3641,10 @@ export type Database = {
         | "hotel"
         | "custom"
         | "ecommerce"
+        | "medical"
+        | "education"
+        | "legal"
+        | "finance"
       plan_tier: "starter" | "growth" | "unlimited" | "white_label"
       post_status:
         | "idea"
@@ -3780,6 +3862,10 @@ export const Constants = {
         "hotel",
         "custom",
         "ecommerce",
+        "medical",
+        "education",
+        "legal",
+        "finance",
       ],
       plan_tier: ["starter", "growth", "unlimited", "white_label"],
       post_status: [
