@@ -84,25 +84,29 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("client_feedback")
-        .select("id")
-        .eq("client_id", clientId)
-        .eq("month", monthDate)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setAlreadyDone(true);
+      const [feedback, schema] = await Promise.all([
+        supabase.from("client_feedback").select("id").eq("client_id", clientId).eq("month", monthDate)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        niche === "custom"
+          ? supabase.from("client_kpi_schemas").select("business_impact_fields").eq("client_id", clientId).maybeSingle()
+          : Promise.resolve({ data: null } as any),
+      ]);
+      if (feedback.data) setAlreadyDone(true);
+      if (schema?.data?.business_impact_fields) {
+        const fields = (schema.data.business_impact_fields as any[])
+          .map((f) => ({ key: f.key || f.id, label: f.label || f.name, kind: f.type || f.kind || "number" }))
+          .filter((f) => f.key && f.label);
+        if (fields.length) setCustomImpactFields(fields);
+      }
       setLoading(false);
     })();
-  }, [clientId, monthDate]);
+  }, [clientId, monthDate, niche]);
 
   const submit = async () => {
     const payload = {
       priority,
       priority_other: priority === "other" ? priorityOther.trim().slice(0, 200) : null,
       promote_focus: promoteFocus.trim(),
-      results_observed: resultsObserved,
       customer_feedback: customerFeedback.trim() ? customerFeedback.trim().slice(0, 500) : null,
       important_note: importantNote.trim() ? importantNote.trim().slice(0, 500) : null,
       satisfaction,
@@ -116,25 +120,51 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
       return;
     }
 
-    const cleanedMetrics = resultsObserved === "yes" ? cleanMetrics(resultsMetrics, otherResults) : {};
+    // ----- Build Business Impact structured data -----
+    const impactStructured: Record<string, any> = {};
+    const impactMissing: string[] = [];
+    const impactNotApplicable: string[] = [];
+    const dbAggregates: Record<string, number> = {};
+    let hasApprox = false;
+    let hasAnyValue = false;
 
-    // Pack niche-specific extras
-    if (niche === "real_estate") {
-      const re: Record<string, any> = {
-        buyer_leads: numOrNull(reBuyerLeads),
-        seller_leads: numOrNull(reSellerLeads),
-        property_inquiries_observed: reHasInquiries,
-        viewings: numOrNull(reViewings),
-        promote_properties: rePromoteProperties.trim().slice(0, 300) || null,
-        has_new_properties: reHasNewProperties === "yes",
-        lead_quality: reLeadQuality,
-      };
-      Object.keys(re).forEach((k) => re[k] == null && delete re[k]);
-      (cleanedMetrics as any).real_estate = re;
-    }
+    impactConfig.fields.forEach((f) => {
+      const entry = impactValues[f.key];
+      if (!entry || entry.mode === "exact" || entry.mode === "approx") {
+        const mode = entry?.mode || "exact";
+        const raw = entry?.value ?? "";
+        if (raw === "" || raw == null) return;
+        if (f.kind === "number" || f.kind === "currency") {
+          const n = Number(raw);
+          if (!Number.isFinite(n)) return;
+          impactStructured[f.key] = { mode, value: n };
+          hasAnyValue = true;
+          if (mode === "approx") hasApprox = true;
+          if (f.db_field) dbAggregates[f.db_field] = (dbAggregates[f.db_field] || 0) + n;
+        } else if (f.kind === "text") {
+          const t = String(raw).trim().slice(0, 500);
+          if (t) { impactStructured[f.key] = { mode, value: t }; hasAnyValue = true; }
+        } else if (f.kind === "choice") {
+          impactStructured[f.key] = { mode, value: raw };
+          hasAnyValue = true;
+        }
+      } else if (entry.mode === "unknown") {
+        impactStructured[f.key] = { mode: "unknown" };
+        impactMissing.push(f.key);
+      } else if (entry.mode === "not_applicable") {
+        impactStructured[f.key] = { mode: "not_applicable" };
+        impactNotApplicable.push(f.key);
+      }
+    });
 
-    // Pack generic per-niche extras (config-driven niches)
-    if (nicheCfg && niche && niche !== "real_estate") {
+    const realResults: Record<string, any> = {
+      business_impact: impactStructured,
+      business_impact_missing: impactMissing,
+      business_impact_not_applicable: impactNotApplicable,
+    };
+
+    // Pack generic per-niche extras (qualitative questions only)
+    if (nicheCfg) {
       const packed: Record<string, any> = {};
       nicheCfg.checkin_extras.forEach((f) => {
         const v = nicheExtras[f.key];
@@ -148,16 +178,26 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
           packed[f.key] = v;
         }
       });
-      if (Object.keys(packed).length) (cleanedMetrics as any)[niche] = packed;
+      if (Object.keys(packed).length && niche) realResults[niche] = packed;
     }
+
+    const observedReal = hasAnyValue ? "yes" : (impactMissing.length > 0 || impactNotApplicable.length > 0 ? "unknown" : "unknown");
 
     setSaving(true);
     try {
-      const m = cleanedMetrics as Record<string, any>;
-      const num = (v: any) => {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : 0;
-      };
+      // Mirror numeric impact into business_impact_entries (single aggregated row for the day)
+      if (Object.keys(dbAggregates).length > 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const insertImpact: any = {
+          agency_id: agencyId,
+          client_id: clientId,
+          created_by: userId,
+          entry_date: today,
+          ...dbAggregates,
+        };
+        if (hasApprox) insertImpact.qualitative_feedback = "Valori aproximative din quick check-in";
+        await supabase.from("business_impact_entries").insert(insertImpact);
+      }
 
       const insertRow: any = {
         agency_id: agencyId,
@@ -167,17 +207,16 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
         feedback_text: payload.customer_feedback,
         real_life_impact: payload.important_note,
         promote_next_month: payload.promote_focus,
-        calls_received: num(m.calls),
-        messages_received: num(m.messages),
-        bookings: num(m.bookings ?? m.appointments),
-        sales_estimate: m.sales != null ? Number(m.sales) : null,
-        objections: JSON.stringify({ kind: "quick_check_in", v: 1, ...payload, results_metrics: cleanedMetrics }),
+        calls_received: dbAggregates.calls || 0,
+        messages_received: dbAggregates.dms || 0,
+        bookings: dbAggregates.bookings || dbAggregates.appointments || 0,
+        sales_estimate: dbAggregates.sales != null ? dbAggregates.sales : null,
+        objections: JSON.stringify({ kind: "quick_check_in", v: 2, ...payload, results_metrics: realResults }),
       };
 
       const { error } = await supabase.from("client_feedback").insert(insertRow);
       if (error) throw error;
 
-      // Also persist the structured monthly check-in
       const d = new Date();
       const checkinRow = {
         agency_id: agencyId,
@@ -188,24 +227,19 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
         main_priority: payload.priority,
         priority_custom: payload.priority_other,
         promoted_focus: payload.promote_focus,
-        observed_real_results: payload.results_observed,
-        real_results_data: cleanedMetrics,
+        observed_real_results: observedReal,
+        real_results_data: realResults,
         customer_feedback: payload.customer_feedback,
         important_notes: payload.important_note,
         satisfaction_score: payload.satisfaction,
         requested_direction_change: payload.direction_change,
         direction_change_custom: payload.direction_change_other,
       };
-      // Upsert so a re-submit (rare) still works
       await supabase.from("client_checkins").upsert(checkinRow, { onConflict: "client_id,year,month" });
 
       toast.success("Mulțumim! Răspunsurile au fost trimise agenției.");
-
-      // Fire-and-forget AI context generation; do not block the UI on it.
-      supabase.functions.invoke("client-dashboard-context-generate", {
-        body: { client_id: clientId },
-      }).catch(() => { /* silent */ });
-
+      supabase.functions.invoke("client-dashboard-context-generate", { body: { client_id: clientId } })
+        .catch(() => { /* silent */ });
       onDone();
     } catch (e: any) {
       toast.error(e.message);
