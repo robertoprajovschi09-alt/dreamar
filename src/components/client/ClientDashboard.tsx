@@ -40,9 +40,10 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
   const load = async () => {
     setLoading(true);
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const monthDateStr = monthStart.toISOString().slice(0, 10);
     const since30 = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
 
-    const [client, schema, imp, an, a, b, c, g, rep] = await Promise.all([
+    const [client, schema, imp, an, a, b, c, g, rep, ci] = await Promise.all([
       supabase.from("clients").select("ai_strategy_base").eq("id", clientId).maybeSingle(),
       supabase.from("client_kpi_schemas").select("*").eq("client_id", clientId).maybeSingle(),
       supabase.from("business_impact_entries").select("*").eq("client_id", clientId).gte("entry_date", since30),
@@ -52,6 +53,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
       supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "published").gte("scheduled_for", monthStart.toISOString()),
       supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false }).limit(5),
       supabase.from("reports").select("id,title,summary,period_start,period_end,created_at").eq("client_id", clientId).eq("client_visible", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("client_feedback").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("month", monthDateStr),
     ]);
 
     setKpiSchema(schema.data);
@@ -60,6 +62,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
     setCounts({ scheduled: a.count || 0, awaiting: b.count || 0, published: c.count || 0 });
     setGoals(g.data || []);
     setLatestReport(rep.data);
+    setCheckInDone((ci.count || 0) > 0);
 
     const p = ((client.data as any)?.ai_strategy_base || {})?.dashboard_personalization as Personalization | undefined;
     setPersonalization(p || null);
