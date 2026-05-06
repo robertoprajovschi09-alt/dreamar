@@ -115,22 +115,68 @@ function mapKpiTypeToLegacy(t?: string): "number" | "currency" | "percent" | "te
 export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const draftKey = `addClient.draft.${agencyId}`;
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<Form>(empty);
   const [busy, setBusy] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
+  const clearDraft = () => {
+    try { localStorage.removeItem(draftKey); } catch {}
+    setHasDraft(false);
+  };
+
   const reset = () => {
-    setStep(1); setForm(empty); setInviteLink(null);
+    setStep(1); setForm(empty); setInviteLink(null); setDraftLoaded(false);
   };
   const close = (v: boolean) => {
     if (!v && busy) return;
     onOpenChange(v);
     if (!v) setTimeout(reset, 200);
+  };
+
+  // Detect existing draft when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      setHasDraft(!!raw);
+    } catch { setHasDraft(false); }
+  }, [open, draftKey]);
+
+  // Autosave draft on every change while dialog is open
+  useEffect(() => {
+    if (!open) return;
+    // Don't overwrite an existing draft until the user explicitly continues or discards it
+    if (hasDraft && !draftLoaded) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({ step, form, savedAt: Date.now() }));
+    } catch {}
+  }, [open, form, step, draftKey, hasDraft, draftLoaded]);
+
+  const continueDraft = () => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.form) setForm({ ...empty, ...parsed.form });
+        if (typeof parsed?.step === "number") setStep(parsed.step);
+      }
+    } catch {}
+    setDraftLoaded(true);
+    setHasDraft(false);
+  };
+  const discardDraft = () => {
+    clearDraft();
+    setDraftLoaded(true);
+    setForm(empty);
+    setStep(1);
   };
 
   // ----- Niche library -----
