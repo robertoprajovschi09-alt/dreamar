@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, UserPlus, Trash2, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { InviteClientDialog } from "./InviteClientDialog";
+import { PortalSettingsCard } from "@/components/client/PortalSettingsCard";
 import { NICHES, STATUSES, PLATFORMS, GOAL_STATUSES, nicheLabel } from "@/lib/niches";
 import { PerformanceStats } from "@/components/performance/PerformanceStats";
 import { VideosTable } from "@/components/performance/VideosTable";
