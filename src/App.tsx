@@ -36,6 +36,8 @@ import AiActions from "./pages/agency/AiActions";
 import AiMemory from "./pages/agency/AiMemory";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
+import { AdminRoute } from "@/components/AdminRoute";
 import AiPrompts from "./pages/admin/AiPrompts";
 import AiLogs from "./pages/admin/AiLogs";
 import AiSafety from "./pages/admin/AiSafety";
@@ -107,7 +109,8 @@ const App = () => (
                   }
                 />
 
-                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
