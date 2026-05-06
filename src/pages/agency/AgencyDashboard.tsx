@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, Plus, Loader2, MessageSquare, FileCheck, AlertTriangle,
-  TrendingUp, TrendingDown, FileText, ListTodo, Sparkles,
+  TrendingUp, TrendingDown, FileText, ListTodo, Sparkles, Heart,
 } from "lucide-react";
+import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
+import { HealthScoreMini } from "@/components/health/HealthScoreMini";
 
 type Stats = {
   clients: number;
