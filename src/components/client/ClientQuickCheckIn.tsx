@@ -10,6 +10,8 @@ import { Loader2, Sparkles, Check, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getNicheConfig } from "@/lib/nicheDashboardConfigs";
+import { getImpactConfig, type ImpactEntry } from "@/lib/businessImpactByNiche";
+import { BusinessImpactSection } from "./BusinessImpactSection";
 
 type Props = {
   agencyId: string;
@@ -39,59 +41,10 @@ const DIRECTIONS = [
   { key: "other", label: "Altceva" },
 ] as const;
 
-const RESULT_METRICS_BY_NICHE: Record<string, { key: string; label: string }[]> = {
-  real_estate: [
-    { key: "leads", label: "Lead-uri" },
-    { key: "viewings", label: "Vizionări" },
-    { key: "messages", label: "Mesaje" },
-    { key: "calls", label: "Apeluri" },
-    { key: "price_inquiries", label: "Cereri de preț" },
-  ],
-  restaurant: [
-    { key: "bookings", label: "Rezervări" },
-    { key: "foot_traffic", label: "Trafic în locație" },
-    { key: "messages", label: "Mesaje" },
-    { key: "calls", label: "Apeluri" },
-    { key: "new_clients", label: "Clienți noi" },
-  ],
-  dental: [
-    { key: "appointments", label: "Programări" },
-    { key: "calls", label: "Apeluri" },
-    { key: "messages", label: "Mesaje" },
-    { key: "new_clients", label: "Pacienți noi" },
-    { key: "price_inquiries", label: "Cereri de preț" },
-  ],
-  fitness: [
-    { key: "new_clients", label: "Membri noi" },
-    { key: "bookings", label: "Trial booking" },
-    { key: "messages", label: "Mesaje" },
-    { key: "calls", label: "Apeluri" },
-  ],
-  ecommerce: [
-    { key: "sales", label: "Vânzări" },
-    { key: "leads", label: "Lead-uri" },
-    { key: "messages", label: "Mesaje" },
-    { key: "price_inquiries", label: "Cereri de preț" },
-  ],
-};
-
-const GENERIC_METRICS = [
-  { key: "leads", label: "Lead-uri" },
-  { key: "sales", label: "Vânzări" },
-  { key: "bookings", label: "Rezervări" },
-  { key: "appointments", label: "Programări" },
-  { key: "calls", label: "Apeluri" },
-  { key: "messages", label: "Mesaje" },
-  { key: "new_clients", label: "Clienți noi" },
-  { key: "foot_traffic", label: "Trafic în locație" },
-  { key: "price_inquiries", label: "Cereri de preț" },
-];
-
 const Schema = z.object({
   priority: z.string().min(1),
   priority_other: z.string().max(200).nullable(),
   promote_focus: z.string().trim().min(1, "Spune-ne ce vrei să promovăm").max(300),
-  results_observed: z.enum(["yes", "no", "unknown"]),
   customer_feedback: z.string().max(500).nullable(),
   important_note: z.string().max(500).nullable(),
   satisfaction: z.number().int().min(1).max(5),
@@ -104,7 +57,6 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
     const d = new Date(); d.setDate(1);
     return d.toISOString().slice(0, 10);
   }, []);
-  const metrics = RESULT_METRICS_BY_NICHE[niche] || GENERIC_METRICS;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -113,50 +65,48 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
   const [priority, setPriority] = useState("more_leads");
   const [priorityOther, setPriorityOther] = useState("");
   const [promoteFocus, setPromoteFocus] = useState("");
-  const [resultsObserved, setResultsObserved] = useState<"yes" | "no" | "unknown">("unknown");
-  const [resultsMetrics, setResultsMetrics] = useState<Record<string, string>>({});
-  const [otherResults, setOtherResults] = useState("");
   const [customerFeedback, setCustomerFeedback] = useState("");
   const [importantNote, setImportantNote] = useState("");
   const [satisfaction, setSatisfaction] = useState<number>(4);
   const [directionChange, setDirectionChange] = useState("keep");
   const [directionChangeOther, setDirectionChangeOther] = useState("");
 
-  // Real Estate specific
-  const [reBuyerLeads, setReBuyerLeads] = useState("");
-  const [reSellerLeads, setReSellerLeads] = useState("");
-  const [reHasInquiries, setReHasInquiries] = useState<"yes" | "no" | "unknown">("unknown");
-  const [reViewings, setReViewings] = useState("");
-  const [rePromoteProperties, setRePromoteProperties] = useState("");
-  const [reHasNewProperties, setReHasNewProperties] = useState<"yes" | "no">("no");
-  const [reLeadQuality, setReLeadQuality] = useState<"good" | "mixed" | "weak" | "none">("mixed");
+  // Business Impact (dynamic per niche)
+  const [customImpactFields, setCustomImpactFields] = useState<{ key: string; label: string; kind?: string }[] | null>(null);
+  const impactConfig = useMemo(() => getImpactConfig(niche, customImpactFields), [niche, customImpactFields]);
+  const [impactValues, setImpactValues] = useState<Record<string, ImpactEntry>>({});
+  const setImpact = (k: string, e: ImpactEntry) => setImpactValues((s) => ({ ...s, [k]: e }));
 
-  // Generic per-niche extras driven by NICHE_CONFIGS
+  // Generic per-niche extras driven by NICHE_CONFIGS (extra qualitative questions)
   const nicheCfg = getNicheConfig(niche);
   const [nicheExtras, setNicheExtras] = useState<Record<string, any>>({});
   const setExtra = (k: string, v: any) => setNicheExtras((s) => ({ ...s, [k]: v }));
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("client_feedback")
-        .select("id")
-        .eq("client_id", clientId)
-        .eq("month", monthDate)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setAlreadyDone(true);
+      const [feedback, schema] = await Promise.all([
+        supabase.from("client_feedback").select("id").eq("client_id", clientId).eq("month", monthDate)
+          .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        niche === "custom"
+          ? supabase.from("client_kpi_schemas").select("business_impact_fields").eq("client_id", clientId).maybeSingle()
+          : Promise.resolve({ data: null } as any),
+      ]);
+      if (feedback.data) setAlreadyDone(true);
+      if (schema?.data?.business_impact_fields) {
+        const fields = (schema.data.business_impact_fields as any[])
+          .map((f) => ({ key: f.key || f.id, label: f.label || f.name, kind: f.type || f.kind || "number" }))
+          .filter((f) => f.key && f.label);
+        if (fields.length) setCustomImpactFields(fields);
+      }
       setLoading(false);
     })();
-  }, [clientId, monthDate]);
+  }, [clientId, monthDate, niche]);
 
   const submit = async () => {
     const payload = {
       priority,
       priority_other: priority === "other" ? priorityOther.trim().slice(0, 200) : null,
       promote_focus: promoteFocus.trim(),
-      results_observed: resultsObserved,
       customer_feedback: customerFeedback.trim() ? customerFeedback.trim().slice(0, 500) : null,
       important_note: importantNote.trim() ? importantNote.trim().slice(0, 500) : null,
       satisfaction,
@@ -170,25 +120,51 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
       return;
     }
 
-    const cleanedMetrics = resultsObserved === "yes" ? cleanMetrics(resultsMetrics, otherResults) : {};
+    // ----- Build Business Impact structured data -----
+    const impactStructured: Record<string, any> = {};
+    const impactMissing: string[] = [];
+    const impactNotApplicable: string[] = [];
+    const dbAggregates: Record<string, number> = {};
+    let hasApprox = false;
+    let hasAnyValue = false;
 
-    // Pack niche-specific extras
-    if (niche === "real_estate") {
-      const re: Record<string, any> = {
-        buyer_leads: numOrNull(reBuyerLeads),
-        seller_leads: numOrNull(reSellerLeads),
-        property_inquiries_observed: reHasInquiries,
-        viewings: numOrNull(reViewings),
-        promote_properties: rePromoteProperties.trim().slice(0, 300) || null,
-        has_new_properties: reHasNewProperties === "yes",
-        lead_quality: reLeadQuality,
-      };
-      Object.keys(re).forEach((k) => re[k] == null && delete re[k]);
-      (cleanedMetrics as any).real_estate = re;
-    }
+    impactConfig.fields.forEach((f) => {
+      const entry = impactValues[f.key];
+      if (!entry || entry.mode === "exact" || entry.mode === "approx") {
+        const mode = entry?.mode || "exact";
+        const raw = entry?.value ?? "";
+        if (raw === "" || raw == null) return;
+        if (f.kind === "number" || f.kind === "currency") {
+          const n = Number(raw);
+          if (!Number.isFinite(n)) return;
+          impactStructured[f.key] = { mode, value: n };
+          hasAnyValue = true;
+          if (mode === "approx") hasApprox = true;
+          if (f.db_field) dbAggregates[f.db_field] = (dbAggregates[f.db_field] || 0) + n;
+        } else if (f.kind === "text") {
+          const t = String(raw).trim().slice(0, 500);
+          if (t) { impactStructured[f.key] = { mode, value: t }; hasAnyValue = true; }
+        } else if (f.kind === "choice") {
+          impactStructured[f.key] = { mode, value: raw };
+          hasAnyValue = true;
+        }
+      } else if (entry.mode === "unknown") {
+        impactStructured[f.key] = { mode: "unknown" };
+        impactMissing.push(f.key);
+      } else if (entry.mode === "not_applicable") {
+        impactStructured[f.key] = { mode: "not_applicable" };
+        impactNotApplicable.push(f.key);
+      }
+    });
 
-    // Pack generic per-niche extras (config-driven niches)
-    if (nicheCfg && niche && niche !== "real_estate") {
+    const realResults: Record<string, any> = {
+      business_impact: impactStructured,
+      business_impact_missing: impactMissing,
+      business_impact_not_applicable: impactNotApplicable,
+    };
+
+    // Pack generic per-niche extras (qualitative questions only)
+    if (nicheCfg) {
       const packed: Record<string, any> = {};
       nicheCfg.checkin_extras.forEach((f) => {
         const v = nicheExtras[f.key];
@@ -202,16 +178,26 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
           packed[f.key] = v;
         }
       });
-      if (Object.keys(packed).length) (cleanedMetrics as any)[niche] = packed;
+      if (Object.keys(packed).length && niche) realResults[niche] = packed;
     }
+
+    const observedReal = hasAnyValue ? "yes" : (impactMissing.length > 0 || impactNotApplicable.length > 0 ? "unknown" : "unknown");
 
     setSaving(true);
     try {
-      const m = cleanedMetrics as Record<string, any>;
-      const num = (v: any) => {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : 0;
-      };
+      // Mirror numeric impact into business_impact_entries (single aggregated row for the day)
+      if (Object.keys(dbAggregates).length > 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const insertImpact: any = {
+          agency_id: agencyId,
+          client_id: clientId,
+          created_by: userId,
+          entry_date: today,
+          ...dbAggregates,
+        };
+        if (hasApprox) insertImpact.qualitative_feedback = "Valori aproximative din quick check-in";
+        await supabase.from("business_impact_entries").insert(insertImpact);
+      }
 
       const insertRow: any = {
         agency_id: agencyId,
@@ -221,17 +207,16 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
         feedback_text: payload.customer_feedback,
         real_life_impact: payload.important_note,
         promote_next_month: payload.promote_focus,
-        calls_received: num(m.calls),
-        messages_received: num(m.messages),
-        bookings: num(m.bookings ?? m.appointments),
-        sales_estimate: m.sales != null ? Number(m.sales) : null,
-        objections: JSON.stringify({ kind: "quick_check_in", v: 1, ...payload, results_metrics: cleanedMetrics }),
+        calls_received: dbAggregates.calls || 0,
+        messages_received: dbAggregates.dms || 0,
+        bookings: dbAggregates.bookings || dbAggregates.appointments || 0,
+        sales_estimate: dbAggregates.sales != null ? dbAggregates.sales : null,
+        objections: JSON.stringify({ kind: "quick_check_in", v: 2, ...payload, results_metrics: realResults }),
       };
 
       const { error } = await supabase.from("client_feedback").insert(insertRow);
       if (error) throw error;
 
-      // Also persist the structured monthly check-in
       const d = new Date();
       const checkinRow = {
         agency_id: agencyId,
@@ -242,24 +227,19 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
         main_priority: payload.priority,
         priority_custom: payload.priority_other,
         promoted_focus: payload.promote_focus,
-        observed_real_results: payload.results_observed,
-        real_results_data: cleanedMetrics,
+        observed_real_results: observedReal,
+        real_results_data: realResults,
         customer_feedback: payload.customer_feedback,
         important_notes: payload.important_note,
         satisfaction_score: payload.satisfaction,
         requested_direction_change: payload.direction_change,
         direction_change_custom: payload.direction_change_other,
       };
-      // Upsert so a re-submit (rare) still works
       await supabase.from("client_checkins").upsert(checkinRow, { onConflict: "client_id,year,month" });
 
       toast.success("Mulțumim! Răspunsurile au fost trimise agenției.");
-
-      // Fire-and-forget AI context generation; do not block the UI on it.
-      supabase.functions.invoke("client-dashboard-context-generate", {
-        body: { client_id: clientId },
-      }).catch(() => { /* silent */ });
-
+      supabase.functions.invoke("client-dashboard-context-generate", { body: { client_id: clientId } })
+        .catch(() => { /* silent */ });
       onDone();
     } catch (e: any) {
       toast.error(e.message);
@@ -318,94 +298,15 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
             />
           </Section>
 
-          <Section n={3} title="Ai observat rezultate reale din content luna trecută?">
-            <ChipGroup
-              options={[
-                { key: "yes", label: "Da" },
-                { key: "no", label: "Nu" },
-                { key: "unknown", label: "Nu știu" },
-              ]}
-              value={resultsObserved} onChange={(v) => setResultsObserved(v as any)}
+          <Section n={3} title="Impact business">
+            <BusinessImpactSection
+              config={impactConfig}
+              values={impactValues}
+              onChange={setImpact}
             />
-            {resultsObserved === "yes" && (
-              <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
-                {metrics.map((m) => (
-                  <div key={m.key} className="space-y-1">
-                    <Label className="text-[11px] text-muted-foreground">{m.label}</Label>
-                    <Input
-                      type="number" min={0}
-                      value={resultsMetrics[m.key] ?? ""}
-                      onChange={(e) => setResultsMetrics({ ...resultsMetrics, [m.key]: e.target.value })}
-                      placeholder="—"
-                    />
-                  </div>
-                ))}
-                <div className="space-y-1 col-span-2 md:col-span-3">
-                  <Label className="text-[11px] text-muted-foreground">Alte rezultate</Label>
-                  <Input value={otherResults} onChange={(e) => setOtherResults(e.target.value)} maxLength={200} />
-                </div>
-              </div>
-            )}
           </Section>
 
-          {niche === "real_estate" && (
-            <div className="space-y-5 p-4 rounded-md border border-accent/30 bg-accent/5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-accent">Întrebări specifice — Imobiliare</div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Lead-uri cumpărători</Label>
-                  <Input type="number" min={0} value={reBuyerLeads} onChange={(e) => setReBuyerLeads(e.target.value)} placeholder="—" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Lead-uri vânzători</Label>
-                  <Input type="number" min={0} value={reSellerLeads} onChange={(e) => setReSellerLeads(e.target.value)} placeholder="—" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Ai primit cereri pentru proprietăți?</Label>
-                <ChipGroup
-                  options={[{ key: "yes", label: "Da" }, { key: "no", label: "Nu" }, { key: "unknown", label: "Nu știu" }]}
-                  value={reHasInquiries} onChange={(v) => setReHasInquiries(v as any)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs">Câte vizionări s-au programat?</Label>
-                <Input type="number" min={0} value={reViewings} onChange={(e) => setReViewings(e.target.value)} placeholder="—" />
-              </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs">Ce proprietăți vrei să promovăm luna aceasta?</Label>
-                <Textarea rows={2} value={rePromoteProperties} onChange={(e) => setRePromoteProperties(e.target.value)}
-                  placeholder="ex: vila din Pipera, apartament 2 cam. Floreasca, teren Snagov…" maxLength={300} />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Ai proprietăți noi de promovat?</Label>
-                <ChipGroup
-                  options={[{ key: "yes", label: "Da" }, { key: "no", label: "Nu" }]}
-                  value={reHasNewProperties} onChange={(v) => setReHasNewProperties(v as any)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Ai primit lead-uri bune sau slabe?</Label>
-                <ChipGroup
-                  options={[
-                    { key: "good", label: "Bune" },
-                    { key: "mixed", label: "Mixte" },
-                    { key: "weak", label: "Slabe" },
-                    { key: "none", label: "Niciunul" },
-                  ]}
-                  value={reLeadQuality} onChange={(v) => setReLeadQuality(v as any)}
-                />
-              </div>
-            </div>
-          )}
-
-          {nicheCfg && niche !== "real_estate" && (
+          {nicheCfg && (
             <div className="space-y-4 p-4 rounded-md border border-accent/30 bg-accent/5">
               <div className="text-xs font-semibold uppercase tracking-wide text-accent">{nicheCfg.checkin_section_title}</div>
               {nicheCfg.checkin_extras.map((f) => (
@@ -509,19 +410,3 @@ function ChipGroup({ options, value, onChange }: { options: { key: string; label
   );
 }
 
-function cleanMetrics(metrics: Record<string, string>, other: string): Record<string, any> {
-  const out: Record<string, any> = {};
-  Object.entries(metrics).forEach(([k, v]) => {
-    if (v === "" || v === null || v === undefined) return;
-    const n = Number(v);
-    if (Number.isFinite(n)) out[k] = n;
-  });
-  if (other.trim()) out.other = other.trim().slice(0, 200);
-  return out;
-}
-
-function numOrNull(v: string): number | null {
-  if (v === "" || v == null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
