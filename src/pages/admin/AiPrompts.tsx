@@ -55,7 +55,8 @@ export default function AiPrompts() {
 
   async function setActive(p: P) {
     // Deactivate other versions for same key+agency, then activate this one
-    await supabase.from("ai_prompts").update({ is_active: false }).eq("key", p.key).is("agency_id", p.agency_id);
+    const deact = supabase.from("ai_prompts").update({ is_active: false }).eq("key", p.key);
+    await (p.agency_id ? deact.eq("agency_id", p.agency_id) : deact.is("agency_id", null));
     const { error } = await supabase.from("ai_prompts").update({ is_active: true }).eq("id", p.id);
     if (error) return toast.error(error.message);
     toast.success(`v${p.version} activated for ${p.key}`);
