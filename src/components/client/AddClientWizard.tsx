@@ -105,6 +105,13 @@ const STEPS = [
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
+function mapKpiTypeToLegacy(t?: string): "number" | "currency" | "percent" | "text" {
+  if (t === "currency") return "currency";
+  if (t === "percentage") return "percent";
+  if (t === "text" || t === "boolean") return "text";
+  return "number";
+}
+
 export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
