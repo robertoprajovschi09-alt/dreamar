@@ -121,26 +121,22 @@ export default function ClientPortal() {
         <Tabs defaultValue="overview">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="strategy">Strategy</TabsTrigger>
+            <TabsTrigger value="results">Results</TabsTrigger>
+            <TabsTrigger value="objectives">Objectives</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
-            <TabsTrigger value="market">Market Insights</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab clientId={client.id} niche={client.niche} /></TabsContent>
-          <TabsContent value="health"><HealthScoreCard clientId={client.id} readOnly /></TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
-          <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
-          <TabsContent value="analytics"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
-          <TabsContent value="strategy"><ClientStrategyTab clientId={client.id} /></TabsContent>
+          <TabsContent value="results"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
+          <TabsContent value="objectives"><ObjectivesTab clientId={client.id} /></TabsContent>
+          <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
-          <TabsContent value="market"><ClientMarketInsightsTab clientId={client.id} /></TabsContent>
         </Tabs>
       </main>
     </div>
