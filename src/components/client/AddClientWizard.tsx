@@ -272,7 +272,11 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       if (!form.name.trim()) return "Client name is required.";
     }
     if (step === 2) {
-      if (form.niche === "custom" && !form.custom_niche.trim()) return "Enter a custom niche name.";
+      if (!form.niche_id && !form.creating_custom_niche) return "Pick a niche or create a custom one.";
+      if (form.creating_custom_niche) {
+        if (!form.custom_niche.trim()) return "Enter a custom niche name.";
+        if (!form.kpi_fields.some((k) => k.label.trim())) return "Add at least one KPI for the custom niche.";
+      }
     }
     if (step === 6 && form.invite_enabled) {
       if (!form.invite_email.trim()) return "Enter an invite email.";
