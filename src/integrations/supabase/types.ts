@@ -623,6 +623,102 @@ export type Database = {
           },
         ]
       }
+      ai_outputs: {
+        Row: {
+          agency_id: string | null
+          client_id: string | null
+          confidence_score: number | null
+          context_type: string | null
+          cost_usd: number | null
+          created_at: string
+          error_text: string | null
+          feature: string
+          id: string
+          input_payload: Json
+          latency_ms: number | null
+          missing_data: Json
+          model: string | null
+          output_json: Json | null
+          output_text: string | null
+          prompt_key: string | null
+          prompt_version: number | null
+          prompt_version_id: string | null
+          safety_flags: Json
+          status: string
+          tokens_in: number | null
+          tokens_out: number | null
+          user_id: string
+          warnings: Json
+        }
+        Insert: {
+          agency_id?: string | null
+          client_id?: string | null
+          confidence_score?: number | null
+          context_type?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error_text?: string | null
+          feature: string
+          id?: string
+          input_payload?: Json
+          latency_ms?: number | null
+          missing_data?: Json
+          model?: string | null
+          output_json?: Json | null
+          output_text?: string | null
+          prompt_key?: string | null
+          prompt_version?: number | null
+          prompt_version_id?: string | null
+          safety_flags?: Json
+          status?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id: string
+          warnings?: Json
+        }
+        Update: {
+          agency_id?: string | null
+          client_id?: string | null
+          confidence_score?: number | null
+          context_type?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error_text?: string | null
+          feature?: string
+          id?: string
+          input_payload?: Json
+          latency_ms?: number | null
+          missing_data?: Json
+          model?: string | null
+          output_json?: Json | null
+          output_text?: string | null
+          prompt_key?: string | null
+          prompt_version?: number | null
+          prompt_version_id?: string | null
+          safety_flags?: Json
+          status?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id?: string
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_outputs_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_scoreboard"
+            referencedColumns: ["prompt_id"]
+          },
+          {
+            foreignKeyName: "ai_outputs_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_prompt_runs: {
         Row: {
           agency_id: string | null
