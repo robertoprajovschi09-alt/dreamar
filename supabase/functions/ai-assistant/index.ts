@@ -19,6 +19,7 @@ const NICHE_LABEL: Record<string, string> = {
   restaurant: "restaurant / hospitality",
   dental: "dental clinic",
   fitness: "fitness / gym",
+  hospitality: "hotel / hospitality / tourism (hotels, B&Bs, boutique hotels, resorts, villas, Airbnb, glamping, retreats, event venues with accommodation). Focus on bookings, reservation requests, occupancy, direct booking vs OTA, room/package interest, seasonal campaigns, guest reviews as content, and CTAs that lift direct reservations.",
   custom: "custom niche",
 };
 

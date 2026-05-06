@@ -14,9 +14,10 @@ const NICHE_TABLE: Record<string, { table: string; cols: string }> = {
   custom:      { table: "niche_custom_metrics", cols: "label,value,unit,recorded_at,notes" },
 };
 const NICHE_LABEL: Record<string, string> = {
-  real_estate: "real estate", restaurant: "restaurant", dental: "dental clinic", fitness: "fitness / gym", custom: "custom",
+  real_estate: "real estate", restaurant: "restaurant", dental: "dental clinic", fitness: "fitness / gym",
+  hospitality: "hotel / hospitality / tourism — bookings, reservation requests, occupancy, direct vs OTA, room/package interest, seasonal campaigns, guest reviews",
+  custom: "custom",
 };
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
