@@ -29,15 +29,15 @@ export async function requestAiAction(args: {
   requested_by_ai_output_id?: string | null;
 }) {
   const { data, error } = await supabase.from("ai_action_requests").insert({
-    agency_id: args.agency_id,
-    client_id: args.client_id ?? null,
+    agency_id: args.agency_id ?? undefined,
+    client_id: args.client_id ?? undefined,
     action_type: args.action_type,
     title: args.title,
-    description: args.description ?? null,
-    payload: args.payload ?? {},
-    reasoning: args.reasoning ?? null,
+    description: args.description ?? undefined,
+    payload: (args.payload ?? {}) as any,
+    reasoning: args.reasoning ?? undefined,
     risk_level: args.risk_level ?? defaultRiskFor(args.action_type),
-    requested_by_ai_output_id: args.requested_by_ai_output_id ?? null,
+    requested_by_ai_output_id: args.requested_by_ai_output_id ?? undefined,
   }).select("id").single();
   if (error) throw error;
   return data.id as string;
