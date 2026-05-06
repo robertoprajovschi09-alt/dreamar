@@ -533,23 +533,48 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           {/* STEP 2 */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Niche *</Label>
-                  <Select value={form.niche} onValueChange={applyNiche}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {NICHE_PRESET_OPTIONS.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {form.niche === "custom" && (
-                  <div className="space-y-1.5">
-                    <Label>Custom niche name *</Label>
-                    <Input autoFocus placeholder="e.g. Dentist Clinic" value={form.custom_niche} onChange={(e) => set("custom_niche", e.target.value)} />
-                  </div>
-                )}
+              <div className="space-y-1.5">
+                <Label>Niche *</Label>
+                <Select
+                  value={form.creating_custom_niche ? "__new__" : (form.niche_id || "")}
+                  onValueChange={(v) => {
+                    if (v === "__new__") return startCreatingCustomNiche();
+                    const n = nicheLib.find((x) => x.id === v);
+                    if (n) applyNicheFromLibrary(n);
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select a niche…" /></SelectTrigger>
+                  <SelectContent>
+                    {nicheLib.some((n) => n.is_custom) && (
+                      <div className="px-2 pt-1.5 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">My agency niches</div>
+                    )}
+                    {nicheLib.filter((n) => n.is_custom).map((n) => (
+                      <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
+                    ))}
+                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Global presets</div>
+                    {nicheLib.filter((n) => !n.is_custom).map((n) => (
+                      <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
+                    ))}
+                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Other</div>
+                    <SelectItem value="__new__">+ Create custom niche</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {form.creating_custom_niche && (
+                <div className="space-y-1.5 rounded-md border border-dashed p-3 bg-muted/30">
+                  <Label>Custom Niche Name *</Label>
+                  <Input
+                    autoFocus
+                    placeholder="Ex: Dental Clinic, Luxury Hotel, Car Dealership, Local Bakery"
+                    value={form.custom_niche}
+                    onChange={(e) => set("custom_niche", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This niche will be saved to your agency library and reusable for future clients.
+                  </p>
+                </div>
+              )}
 
               <FieldEditor
                 title="KPI fields"
