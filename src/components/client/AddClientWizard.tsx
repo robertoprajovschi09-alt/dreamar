@@ -517,6 +517,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       }
 
       toast.success("Client workspace created");
+      clearDraft();
       onCreated?.(clientId);
       if (!form.invite_enabled) {
         close(false);
