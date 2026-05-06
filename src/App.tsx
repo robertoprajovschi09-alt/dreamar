@@ -32,8 +32,14 @@ import Competitors from "./pages/agency/Competitors";
 import Team from "./pages/agency/Team";
 import Billing from "./pages/agency/Billing";
 import Settings from "./pages/agency/Settings";
+import AiActions from "./pages/agency/AiActions";
+import AiMemory from "./pages/agency/AiMemory";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AiPrompts from "./pages/admin/AiPrompts";
+import AiLogs from "./pages/admin/AiLogs";
+import AiSafety from "./pages/admin/AiSafety";
+import AiMaintainer from "./pages/admin/AiMaintainer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +86,12 @@ const App = () => (
                   <Route path="team" element={<Team />} />
                   <Route path="billing" element={<Billing />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="ai-actions" element={<AiActions />} />
+                  <Route path="ai-memory" element={<AiMemory />} />
+                  <Route path="admin/ai-prompts" element={<AiPrompts />} />
+                  <Route path="admin/ai-logs" element={<AiLogs />} />
+                  <Route path="admin/ai-safety" element={<AiSafety />} />
+                  <Route path="admin/ai-maintainer" element={<AiMaintainer />} />
                 </Route>
 
                 <Route

@@ -85,6 +85,93 @@ export type Database = {
           },
         ]
       }
+      ai_actions: {
+        Row: {
+          action_type: string
+          agency_id: string
+          client_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          executed_at: string | null
+          id: string
+          payload: Json
+          reasoning: string | null
+          requested_by_user_id: string | null
+          result: Json | null
+          run_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          agency_id: string
+          client_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          executed_at?: string | null
+          id?: string
+          payload?: Json
+          reasoning?: string | null
+          requested_by_user_id?: string | null
+          result?: Json | null
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          agency_id?: string
+          client_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          executed_at?: string | null
+          id?: string
+          payload?: Json
+          reasoning?: string | null
+          requested_by_user_id?: string | null
+          result?: Json | null
+          run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_audit_events: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          event: string
+          id: string
+          level: string
+          payload: Json
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          level?: string
+          payload?: Json
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          level?: string
+          payload?: Json
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           agency_id: string
@@ -130,6 +217,125 @@ export type Database = {
           },
         ]
       }
+      ai_evaluations: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          dataset_name: string
+          id: string
+          metrics: Json
+          prompt_key: string
+          prompt_version: number
+          score: number
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          dataset_name: string
+          id?: string
+          metrics?: Json
+          prompt_key: string
+          prompt_version: number
+          score: number
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          dataset_name?: string
+          id?: string
+          metrics?: Json
+          prompt_key?: string
+          prompt_version?: number
+          score?: number
+        }
+        Relationships: []
+      }
+      ai_feedback: {
+        Row: {
+          agency_id: string
+          category: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          run_id: string
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          category?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          run_id: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          category?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          run_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_feedback_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_memory: {
+        Row: {
+          agency_id: string
+          client_id: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          embedding: string | null
+          id: string
+          kind: string
+          scope: string
+          source: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id: string
+          client_id?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          embedding?: string | null
+          id?: string
+          kind?: string
+          scope?: string
+          source?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          embedding?: string | null
+          id?: string
+          kind?: string
+          scope?: string
+          source?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_messages: {
         Row: {
           content: string
@@ -161,6 +367,150 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_prompt_runs: {
+        Row: {
+          agency_id: string | null
+          client_id: string | null
+          cost_usd: number | null
+          created_at: string
+          error_text: string | null
+          id: string
+          input_messages: Json
+          latency_ms: number | null
+          model: string | null
+          output_text: string | null
+          prompt_key: string | null
+          prompt_version: number | null
+          safety_flags: Json
+          status: string
+          tokens_in: number | null
+          tokens_out: number | null
+          tool_calls: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          client_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error_text?: string | null
+          id?: string
+          input_messages?: Json
+          latency_ms?: number | null
+          model?: string | null
+          output_text?: string | null
+          prompt_key?: string | null
+          prompt_version?: number | null
+          safety_flags?: Json
+          status?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          tool_calls?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          client_id?: string | null
+          cost_usd?: number | null
+          created_at?: string
+          error_text?: string | null
+          id?: string
+          input_messages?: Json
+          latency_ms?: number | null
+          model?: string | null
+          output_text?: string | null
+          prompt_key?: string | null
+          prompt_version?: number | null
+          safety_flags?: Json
+          status?: string
+          tokens_in?: number | null
+          tokens_out?: number | null
+          tool_calls?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_prompts: {
+        Row: {
+          agency_id: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          key: string
+          model: string | null
+          notes: string | null
+          temperature: number | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          agency_id?: string | null
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          model?: string | null
+          notes?: string | null
+          temperature?: number | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          agency_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          model?: string | null
+          notes?: string | null
+          temperature?: number | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      ai_safety_rules: {
+        Row: {
+          action: string
+          agency_id: string | null
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          pattern: string
+          rule_key: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          agency_id?: string | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          pattern: string
+          rule_key: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          agency_id?: string | null
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          pattern?: string
+          rule_key?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       analytics_entries: {
         Row: {

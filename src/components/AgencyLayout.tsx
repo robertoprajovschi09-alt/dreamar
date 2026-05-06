@@ -26,6 +26,8 @@ const nav = [
   { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
   { to: "/agency/competitors", icon: Target, label: "Competitors" },
   { to: "/agency/assistant", icon: Sparkles, label: "AI Assistant" },
+  { to: "/agency/ai-actions", icon: ClipboardCheck, label: "AI Actions" },
+  { to: "/agency/ai-memory", icon: Lightbulb, label: "AI Memory" },
   { to: "/agency/team", icon: UserCog, label: "Team" },
   { to: "/agency/billing", icon: CreditCard, label: "Billing" },
   { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
@@ -63,20 +65,32 @@ export default function AgencyLayout() {
             </NavLink>
           ))}
           {profile?.is_saas_admin && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors mt-2 border-t border-border pt-3",
-                  isActive
-                    ? "bg-accent/10 text-foreground border-l-2 border-accent"
-                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-                )
-              }
-            >
-              <ShieldCheck className="h-4 w-4" />
-              SaaS admin
-            </NavLink>
+            <>
+              <div className="mt-3 pt-3 border-t border-border" />
+              {[
+                { to: "/admin", label: "SaaS admin" },
+                { to: "/agency/admin/ai-prompts", label: "AI Prompts" },
+                { to: "/agency/admin/ai-logs", label: "AI Logs" },
+                { to: "/agency/admin/ai-safety", label: "AI Safety" },
+                { to: "/agency/admin/ai-maintainer", label: "AI Maintainer" },
+              ].map((a) => (
+                <NavLink
+                  key={a.to}
+                  to={a.to}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-accent/10 text-foreground border-l-2 border-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+                    )
+                  }
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  {a.label}
+                </NavLink>
+              ))}
+            </>
           )}
         </nav>
       </aside>
