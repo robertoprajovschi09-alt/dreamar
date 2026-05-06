@@ -10,9 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ClientMarketInsightsTab } from "@/components/competitors/ClientMarketInsightsTab";
 import { ClientApprovalsTab } from "@/components/approvals/ClientApprovalsTab";
-import { ClientStrategyTab } from "@/components/strategies/ClientStrategyTab";
 import { ClientPortalAnalyticsTab } from "@/components/analytics/ClientPortalAnalyticsTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -28,7 +26,7 @@ import { ClientReportsView } from "@/components/reports/ClientReportsView";
 import { BriefWizard } from "@/components/client/BriefWizard";
 import { getClientBrief } from "@/lib/brief";
 import { NicheSummaryCard } from "@/components/client/NicheSummaryCard";
-import { HealthScoreCard } from "@/components/health/HealthScoreCard";
+
 
 const monthInputDefault = () => {
   const d = new Date();
@@ -121,26 +119,22 @@ export default function ClientPortal() {
         <Tabs defaultValue="overview">
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="strategy">Strategy</TabsTrigger>
+            <TabsTrigger value="results">Results</TabsTrigger>
+            <TabsTrigger value="objectives">Objectives</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
-            <TabsTrigger value="market">Market Insights</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><OverviewTab clientId={client.id} niche={client.niche} /></TabsContent>
-          <TabsContent value="health"><HealthScoreCard clientId={client.id} readOnly /></TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
-          <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
-          <TabsContent value="analytics"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
-          <TabsContent value="strategy"><ClientStrategyTab clientId={client.id} /></TabsContent>
+          <TabsContent value="results"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
+          <TabsContent value="objectives"><ObjectivesTab clientId={client.id} /></TabsContent>
+          <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
-          <TabsContent value="market"><ClientMarketInsightsTab clientId={client.id} /></TabsContent>
         </Tabs>
       </main>
     </div>
@@ -232,6 +226,35 @@ function OverviewTab({ clientId, niche }: { clientId: string; niche: string }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ObjectivesTab({ clientId }: { clientId: string }) {
+  const [goals, setGoals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false });
+      setGoals(data || []); setLoading(false);
+    })();
+  }, [clientId]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No objectives set yet.</CardContent></Card>;
+  return (
+    <Card><CardContent className="pt-4">
+      <ul className="divide-y divide-border">
+        {goals.map((g) => (
+          <li key={g.id} className="py-3 flex items-center justify-between gap-2">
+            <div>
+              <div className="font-medium text-sm">{g.objective}</div>
+              <div className="text-xs text-muted-foreground">{g.metric || "—"} {g.target ? `· target ${g.target}` : ""} · {new Date(g.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
+            </div>
+            <Badge variant="secondary" className="text-[10px] uppercase">{g.status.replace("_", " ")}</Badge>
+          </li>
+        ))}
+      </ul>
+    </CardContent></Card>
   );
 }
 function Mini({ label, value }: { label: string; value: number | string }) {

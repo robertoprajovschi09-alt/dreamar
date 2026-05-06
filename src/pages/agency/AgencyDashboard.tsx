@@ -6,100 +6,91 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Users, Plus, Loader2, MessageSquare, FileCheck, AlertTriangle,
-  TrendingUp, TrendingDown, FileText, ListTodo, Sparkles, Heart,
+  Users, Plus, Loader2, FileCheck, AlertTriangle, TrendingUp, FileText,
+  CalendarClock, Sparkles, Heart, BarChart3, ClipboardList,
 } from "lucide-react";
 import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
 import { HealthScoreMini } from "@/components/health/HealthScoreMini";
 import { fetchAgencyAlerts, detectForAgency, type RiskAlert } from "@/lib/risk";
 import { RiskAlertCard } from "@/components/risk/RiskAlertCard";
 
-type Stats = {
-  clients: number;
-  publishedThisMonth: number;
-  pendingApprovals: number;
-  urgentTasks: number;
-};
-
 export default function AgencyDashboard() {
   const { agency } = useUser();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<Stats>({ clients: 0, publishedThisMonth: 0, pendingApprovals: 0, urgentTasks: 0 });
-  const [recent, setRecent] = useState<any[]>([]);
-  const [topPerformers, setTopPerformers] = useState<any[]>([]);
-  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
-  const [urgentTasks, setUrgentTasks] = useState<any[]>([]);
-  const [missingBriefs, setMissingBriefs] = useState<any[]>([]);
-  const [healthScores, setHealthScores] = useState<HealthScore[]>([]);
+  const [clientCount, setClientCount] = useState(0);
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
+  const [healthScores, setHealthScores] = useState<HealthScore[]>([]);
   const [riskAlerts, setRiskAlerts] = useState<RiskAlert[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [missingAnalytics, setMissingAnalytics] = useState<any[]>([]);
+  const [reportsToGenerate, setReportsToGenerate] = useState<any[]>([]);
+  const [topContent, setTopContent] = useState<any[]>([]);
+  const [upcomingContent, setUpcomingContent] = useState<any[]>([]);
+  const [aiRecs, setAiRecs] = useState<{ client_id: string; text: string }[]>([]);
 
   useEffect(() => {
     if (!agency) return;
     (async () => {
       setLoading(true);
-      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-      const in7 = new Date(); in7.setDate(in7.getDate() + 7);
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
       const [
         { count: clientsCount },
-        { count: publishedCount },
-        { count: pendingCount, data: pendingList },
-        { count: tasksCount, data: tasksList },
         { data: clientsList },
-        { data: videosList },
-        { data: briefsList },
+        { data: pendingList },
+        { data: analyticsThisMonth },
+        { data: prevReports },
+        { data: contentMetrics },
+        { data: upcomingPosts },
+        { data: latestStrategies },
       ] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agency.id),
-        supabase.from("content_posts").select("id", { count: "exact", head: true })
-          .eq("agency_id", agency.id).eq("status", "published")
-          .gte("scheduled_for", monthStart.toISOString()),
-        supabase.from("content_posts").select("id,title,client_id,scheduled_for,clients:client_id(name)", { count: "exact" })
-          .eq("agency_id", agency.id).eq("status", "sent_for_approval")
-          .order("scheduled_for", { ascending: true, nullsFirst: false }).limit(5),
-        supabase.from("tasks").select("id,title,deadline,status,client_id", { count: "exact" })
-          .eq("agency_id", agency.id).neq("status", "done")
-          .not("deadline", "is", null).lte("deadline", in7.toISOString())
-          .order("deadline").limit(5),
-        supabase.from("clients").select("id,name,niche,city,status,created_at").eq("agency_id", agency.id).order("created_at", { ascending: false }).limit(5),
-        supabase.from("videos").select("client_id,views,clients:client_id(name)").eq("agency_id", agency.id).gte("publish_date", monthStart.toISOString().slice(0,10)),
-        (supabase as any).from("client_briefs").select("client_id,completed").eq("agency_id", agency.id),
+        supabase.from("clients").select("id,name").eq("agency_id", agency.id),
+        supabase.from("content_approvals").select("id,status,due_date,created_at,content_post_id,client_id,content_posts:content_post_id(title),clients:client_id(name)").eq("agency_id", agency.id).eq("status", "pending_approval").order("created_at", { ascending: true }).limit(6),
+        supabase.from("analytics_entries").select("client_id").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()),
+        supabase.from("reports").select("client_id").eq("agency_id", agency.id).gte("period_start", prevMonth.toISOString().slice(0, 10)).lte("period_end", prevMonthEnd.toISOString().slice(0, 10)),
+        supabase.from("content_metrics").select("content_item_id,client_id,views,platform,content_posts:content_item_id(title)").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()).order("views", { ascending: false }).limit(5),
+        supabase.from("content_posts").select("id,title,client_id,scheduled_for,platform,clients:client_id(name)").eq("agency_id", agency.id).gte("scheduled_for", now.toISOString()).order("scheduled_for", { ascending: true }).limit(5),
+        supabase.from("monthly_strategies").select("client_id,key_insights,action_items,status,created_at").eq("agency_id", agency.id).order("created_at", { ascending: false }).limit(20),
       ]);
 
-      // Aggregate views per client
-      const byClient = new Map<string, { id: string; name: string; views: number }>();
-      (videosList || []).forEach((v: any) => {
-        const cur = byClient.get(v.client_id) || { id: v.client_id, name: v.clients?.name || "—", views: 0 };
-        cur.views += Number(v.views || 0);
-        byClient.set(v.client_id, cur);
-      });
-      const top = [...byClient.values()].sort((a, b) => b.views - a.views).slice(0, 3);
-
-      // Missing briefs = clients without a completed brief
-      const completedSet = new Set((briefsList || []).filter((b: any) => b.completed).map((b: any) => b.client_id));
-      const missing = (clientsList || []).filter((c: any) => !completedSet.has(c.id)).slice(0, 5);
-
-      setStats({
-        clients: clientsCount ?? 0,
-        publishedThisMonth: publishedCount ?? 0,
-        pendingApprovals: pendingCount ?? 0,
-        urgentTasks: tasksCount ?? 0,
-      });
-      setRecent(clientsList || []);
-      setTopPerformers(top);
-      setPendingApprovals(pendingList || []);
-      setUrgentTasks(tasksList || []);
-      setMissingBriefs(missing);
-
-      // Health scores (latest per client, sorted ascending so risk first)
-      const hs = await fetchAgencyLatest(agency.id);
-      hs.sort((a, b) => Number(a.total_score) - Number(b.total_score));
-      setHealthScores(hs.slice(0, 6));
       const names: Record<string, string> = {};
       (clientsList || []).forEach((c: any) => { names[c.id] = c.name; });
       setClientNames(names);
+      setClientCount(clientsCount || 0);
+      setPendingApprovals(pendingList || []);
 
-      // Auto-detect risk if last run > 24h ago
+      const haveAnalytics = new Set((analyticsThisMonth || []).map((a: any) => a.client_id));
+      setMissingAnalytics((clientsList || []).filter((c: any) => !haveAnalytics.has(c.id)).slice(0, 6));
+
+      const haveReports = new Set((prevReports || []).map((r: any) => r.client_id));
+      setReportsToGenerate((clientsList || []).filter((c: any) => !haveReports.has(c.id)).slice(0, 6));
+
+      setTopContent(contentMetrics || []);
+      setUpcomingContent(upcomingPosts || []);
+
+      // AI recs from latest strategy per client
+      const seen = new Set<string>();
+      const recs: { client_id: string; text: string }[] = [];
+      for (const s of latestStrategies || []) {
+        if (seen.has(s.client_id)) continue;
+        seen.add(s.client_id);
+        const items = (Array.isArray(s.action_items) ? s.action_items : []) as any[];
+        const first = items[0];
+        const text = first?.title || (Array.isArray(s.key_insights) && s.key_insights[0]) || null;
+        if (text) recs.push({ client_id: s.client_id, text: typeof text === "string" ? text : (text.title || JSON.stringify(text)) });
+      }
+      setAiRecs(recs.slice(0, 5));
+
+      // Health scores
+      const hs = await fetchAgencyLatest(agency.id);
+      hs.sort((a, b) => Number(a.total_score) - Number(b.total_score));
+      setHealthScores(hs);
+
+      // Auto-detect risk if last run > 24h
       const lastKey = `risk_last_run_${agency.id}`;
       const lastRun = Number(localStorage.getItem(lastKey) || 0);
       if (Date.now() - lastRun > 86400000) {
@@ -114,8 +105,12 @@ export default function AgencyDashboard() {
 
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 
+  const avgHealth = healthScores.length ? Math.round(healthScores.reduce((s, h) => s + Number(h.total_score), 0) / healthScores.length) : 0;
+  const healthy = healthScores.filter((h) => h.score_status === "healthy").length;
+  const atRisk = healthScores.filter((h) => h.score_status === "at_risk").length;
+
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-6xl">
+    <div className="p-6 md:p-8 space-y-6 max-w-7xl">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -127,120 +122,24 @@ export default function AgencyDashboard() {
         </div>
       </div>
 
+      {/* KPI strip */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi icon={<Users className="h-4 w-4" />} label="Active clients" value={stats.clients} to="/agency/clients" />
-        <Kpi icon={<MessageSquare className="h-4 w-4" />} label="Published this month" value={stats.publishedThisMonth} to="/agency/content" />
-        <Kpi icon={<FileCheck className="h-4 w-4" />} label="Pending approvals" value={stats.pendingApprovals} to="/agency/content" accent={stats.pendingApprovals > 0} />
-        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="Urgent tasks (<7d)" value={stats.urgentTasks} to="/agency/tasks" accent={stats.urgentTasks > 0} />
+        <Kpi icon={<Users className="h-4 w-4" />} label="Active clients" value={clientCount} to="/agency/clients" />
+        <Kpi icon={<Heart className="h-4 w-4" />} label="Avg health score" value={avgHealth} accent={avgHealth >= 70} />
+        <Kpi icon={<FileCheck className="h-4 w-4" />} label="Pending approvals" value={pendingApprovals.length} to="/agency/approvals" accent={pendingApprovals.length > 0} />
+        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="Clients at risk" value={atRisk} to="/agency/clients" accent={atRisk > 0} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4 text-accent" /> Top performers (this month)</CardTitle></CardHeader>
-          <CardContent>
-            {topPerformers.length === 0 ? <Empty text="No video data this month yet." />
-              : <ul className="divide-y divide-border">
-                {topPerformers.map((p, i) => (
-                  <li key={p.id} className="py-2.5 flex items-center justify-between">
-                    <Link to={`/agency/clients/${p.id}`} className="flex items-center gap-2 hover:underline">
-                      <span className="text-xs font-mono text-muted-foreground w-5">#{i+1}</span>
-                      <span className="font-medium text-sm">{p.name}</span>
-                    </Link>
-                    <span className="text-sm font-mono">{p.views.toLocaleString()} views</span>
-                  </li>
-                ))}
-              </ul>}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><FileCheck className="h-4 w-4 text-accent" /> Awaiting client approval</CardTitle></CardHeader>
-          <CardContent>
-            {pendingApprovals.length === 0 ? <Empty text="No content waiting for approval." />
-              : <ul className="divide-y divide-border">
-                {pendingApprovals.map((p: any) => (
-                  <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm truncate">{p.title}</div>
-                      <div className="text-[11px] text-muted-foreground">{p.clients?.name || "—"} · {p.scheduled_for ? new Date(p.scheduled_for).toLocaleDateString() : "no date"}</div>
-                    </div>
-                    <Link to={`/agency/content`}><Button size="sm" variant="ghost">Review</Button></Link>
-                  </li>
-                ))}
-              </ul>}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><ListTodo className="h-4 w-4 text-accent" /> Urgent tasks</CardTitle></CardHeader>
-          <CardContent>
-            {urgentTasks.length === 0 ? <Empty text="Nothing urgent. Nice." />
-              : <ul className="divide-y divide-border">
-                {urgentTasks.map((t: any) => (
-                  <li key={t.id} className="py-2.5 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm truncate">{t.title}</div>
-                      <div className="text-[11px] text-muted-foreground">Due {new Date(t.deadline).toLocaleDateString()}</div>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] uppercase">{t.status.replace("_"," ")}</Badge>
-                  </li>
-                ))}
-              </ul>}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> Briefs to chase</CardTitle></CardHeader>
-          <CardContent>
-            {missingBriefs.length === 0 ? <Empty text="All briefs submitted." />
-              : <ul className="divide-y divide-border">
-                {missingBriefs.map((c: any) => (
-                  <li key={c.id} className="py-2.5 flex items-center justify-between">
-                    <Link to={`/agency/clients/${c.id}`} className="font-medium text-sm hover:underline">{c.name}</Link>
-                    <span className="text-[11px] text-muted-foreground">No brief yet</span>
-                  </li>
-                ))}
-              </ul>}
-          </CardContent>
-        </Card>
-      </div>
-
-      {riskAlerts.length > 0 && (
-        <Card className="border-amber-500/30">
-          <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500" /> Clients at Risk
-              <span className="text-xs font-normal text-muted-foreground">— {riskAlerts.length} active</span>
-            </CardTitle>
-            <Link to="/agency/risk"><Button variant="ghost" size="sm" className="text-xs">View all →</Button></Link>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {riskAlerts.map((a) => (
-                <RiskAlertCard
-                  key={a.id}
-                  alert={a}
-                  clientName={clientNames[a.client_id] || "Client"}
-                  healthScore={healthScores.find((h) => h.client_id === a.client_id)?.total_score}
-                  onChange={() => { /* no-op; user can refresh */ }}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Health overview */}
       {healthScores.length > 0 && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Heart className="h-4 w-4 text-accent" /> Client Health
-              <span className="text-xs font-normal text-muted-foreground">— sorted by risk</span>
-            </CardTitle>
+          <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base flex items-center gap-2"><Heart className="h-4 w-4 text-accent" /> Client Health</CardTitle>
+            <span className="text-xs text-muted-foreground">{healthy} healthy · {atRisk} at risk · {healthScores.length - healthy - atRisk} caution</span>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {healthScores.map((s) => (
+              {healthScores.slice(0, 6).map((s) => (
                 <HealthScoreMini key={s.id} score={s} clientName={clientNames[s.client_id] || "Client"} />
               ))}
             </div>
@@ -248,46 +147,141 @@ export default function AgencyDashboard() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Recent clients</CardTitle></CardHeader>
-        <CardContent>
-          {recent.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              No clients yet. <Link to="/agency/clients" className="text-accent underline">Add your first one</Link>.
-            </div>
-          ) : (
-            <ul className="divide-y divide-border">
-              {recent.map((c) => (
-                <li key={c.id} className="py-3 flex items-center justify-between">
-                  <Link to={`/agency/clients/${c.id}`} className="hover:underline">
-                    <div className="font-medium">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.niche} {c.city ? `· ${c.city}` : ""}</div>
-                  </Link>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">{c.status}</span>
-                </li>
+      {/* Risk */}
+      {riskAlerts.length > 0 && (
+        <Card className="border-amber-500/30">
+          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Clients at Risk</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {riskAlerts.map((a) => (
+                <RiskAlertCard key={a.id} alert={a} clientName={clientNames[a.client_id] || "Client"} healthScore={healthScores.find((h) => h.client_id === a.client_id)?.total_score} onChange={() => {}} />
               ))}
-            </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Two-column lists */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <ListCard
+          title="Pending approvals"
+          icon={<FileCheck className="h-4 w-4 text-accent" />}
+          empty="No content waiting for approval."
+          items={pendingApprovals}
+          render={(p: any) => {
+            const overdue = p.due_date && new Date(p.due_date) < new Date();
+            return (
+              <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{p.content_posts?.title || "—"}</div>
+                  <div className="text-[11px] text-muted-foreground">{p.clients?.name || "—"}</div>
+                </div>
+                {overdue ? <Badge variant="destructive" className="text-[10px]">Overdue</Badge> : <Link to="/agency/approvals"><Button size="sm" variant="ghost">Review</Button></Link>}
+              </li>
+            );
+          }}
+        />
+
+        <ListCard
+          title="Missing analytics data"
+          icon={<BarChart3 className="h-4 w-4 text-accent" />}
+          empty="All clients have analytics for this month."
+          items={missingAnalytics}
+          render={(c: any) => (
+            <li key={c.id} className="py-2.5 flex items-center justify-between">
+              <Link to={`/agency/clients/${c.id}`} className="font-medium text-sm hover:underline">{c.name}</Link>
+              <Link to={`/agency/clients/${c.id}`}><Button size="sm" variant="ghost">Add data</Button></Link>
+            </li>
           )}
-        </CardContent>
-      </Card>
+        />
+
+        <ListCard
+          title="Reports to generate"
+          icon={<ClipboardList className="h-4 w-4 text-accent" />}
+          empty="All previous-month reports are done."
+          items={reportsToGenerate}
+          render={(c: any) => (
+            <li key={c.id} className="py-2.5 flex items-center justify-between">
+              <Link to={`/agency/clients/${c.id}`} className="font-medium text-sm hover:underline">{c.name}</Link>
+              <Link to="/agency/reports"><Button size="sm" variant="ghost">Generate</Button></Link>
+            </li>
+          )}
+        />
+
+        <ListCard
+          title="Top performing content"
+          icon={<TrendingUp className="h-4 w-4 text-accent" />}
+          empty="No content metrics yet this month."
+          items={topContent}
+          render={(m: any, i: number) => (
+            <li key={m.content_item_id} className="py-2.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-mono text-muted-foreground w-5">#{i + 1}</span>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{m.content_posts?.title || "—"}</div>
+                  <div className="text-[11px] text-muted-foreground">{clientNames[m.client_id] || "—"} · {m.platform || "—"}</div>
+                </div>
+              </div>
+              <span className="text-sm font-mono">{Number(m.views || 0).toLocaleString()}</span>
+            </li>
+          )}
+        />
+
+        <ListCard
+          title="Upcoming content"
+          icon={<CalendarClock className="h-4 w-4 text-accent" />}
+          empty="Nothing scheduled."
+          items={upcomingContent}
+          render={(p: any) => (
+            <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium text-sm truncate">{p.title}</div>
+                <div className="text-[11px] text-muted-foreground">{p.clients?.name || "—"} · {p.platform || "—"}</div>
+              </div>
+              <span className="text-[11px] text-muted-foreground">{new Date(p.scheduled_for).toLocaleDateString()}</span>
+            </li>
+          )}
+        />
+
+        <ListCard
+          title="AI recommendations"
+          icon={<Sparkles className="h-4 w-4 text-accent" />}
+          empty="Generate a strategy to see AI recommendations."
+          items={aiRecs}
+          render={(r: any, i: number) => (
+            <li key={i} className="py-2.5">
+              <Link to={`/agency/clients/${r.client_id}`} className="text-[11px] text-muted-foreground hover:underline">{clientNames[r.client_id] || "Client"}</Link>
+              <div className="text-sm mt-0.5">{r.text}</div>
+            </li>
+          )}
+        />
+      </div>
     </div>
   );
 }
 
-function Kpi({ icon, label, value, to, accent }: { icon: React.ReactNode; label: string; value: number; to: string; accent?: boolean }) {
-  return (
-    <Link to={to}>
-      <Card className="hover:border-accent transition">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">{icon} {label}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={`text-3xl font-bold font-mono ${accent ? "text-accent" : ""}`}>{value}</div>
-        </CardContent>
-      </Card>
-    </Link>
+function Kpi({ icon, label, value, to, accent }: { icon: React.ReactNode; label: string; value: number; to?: string; accent?: boolean }) {
+  const card = (
+    <Card className="hover:border-accent transition">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">{icon} {label}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className={`text-3xl font-bold font-mono ${accent ? "text-accent" : ""}`}>{value}</div>
+      </CardContent>
+    </Card>
   );
+  return to ? <Link to={to}>{card}</Link> : card;
 }
-function Empty({ text }: { text: string }) {
-  return <div className="py-6 text-center text-sm text-muted-foreground">{text}</div>;
+
+function ListCard({ title, icon, items, empty, render }: { title: string; icon: React.ReactNode; items: any[]; empty: string; render: (item: any, i: number) => React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2">{icon} {title}</CardTitle></CardHeader>
+      <CardContent>
+        {items.length === 0 ? <div className="py-6 text-center text-sm text-muted-foreground">{empty}</div>
+          : <ul className="divide-y divide-border">{items.map((it, i) => render(it, i))}</ul>}
+      </CardContent>
+    </Card>
+  );
 }

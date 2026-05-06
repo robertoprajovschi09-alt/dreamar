@@ -89,43 +89,48 @@ export default function ClientProfile() {
       <Tabs defaultValue="overview">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="health">Health</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="strategies">Strategies</TabsTrigger>
-          <TabsTrigger value="competitors">Competitors</TabsTrigger>
-          <TabsTrigger value="brand">Brand</TabsTrigger>
-          <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
           <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
-          <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
-          <TabsTrigger value="brief">Brief</TabsTrigger>
-          <TabsTrigger value="invites">Invites ({invites.length})</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback ({feedback.length})</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="strategy">Strategy</TabsTrigger>
+          <TabsTrigger value="approvals">Approvals</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="competitors">Competitors</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview"><OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} /></TabsContent>
-        <TabsContent value="health"><HealthScoreCard clientId={client.id} /></TabsContent>
-        <TabsContent value="performance"><PerformanceTab client={client} /></TabsContent>
+        <TabsContent value="overview">
+          <div className="space-y-4">
+            <HealthScoreCard clientId={client.id} />
+            <OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} />
+          </div>
+        </TabsContent>
+        <TabsContent value="content"><ClientContentTab client={client} /></TabsContent>
+        <TabsContent value="calendar"><ClientCalendarLink client={client} /></TabsContent>
         <TabsContent value="analytics"><ClientAnalyticsTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
-        <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
-        <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
-        <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
-        <TabsContent value="reports"><ClientReportsTab client={client} /></TabsContent>
-        <TabsContent value="strategies"><ClientStrategiesTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
-        <TabsContent value="competitors"><CompetitorsTab agencyId={client.agency_id} clientId={client.id} /></TabsContent>
-        <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
-        <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>
         <TabsContent value="goals"><GoalsTab client={client} goals={goals} reload={loadAll} /></TabsContent>
-        <TabsContent value="users"><UsersTab users={users} reload={loadAll} /></TabsContent>
-        <TabsContent value="brief"><BriefViewTab clientId={client.id} /></TabsContent>
-        <TabsContent value="invites"><InvitesTab invites={invites} reload={loadAll} /></TabsContent>
-        <TabsContent value="feedback"><FeedbackTab feedback={feedback} /></TabsContent>
-        <TabsContent value="settings"><SettingsTab client={client} reload={loadAll} /></TabsContent>
+        <TabsContent value="reports"><ClientReportsTab client={client} /></TabsContent>
+        <TabsContent value="strategy"><ClientStrategiesTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
+        <TabsContent value="approvals"><ClientApprovalsList clientId={client.id} /></TabsContent>
+        <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
+        <TabsContent value="competitors"><CompetitorsTab agencyId={client.agency_id} clientId={client.id} /></TabsContent>
+        <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
+        <TabsContent value="settings">
+          <div className="space-y-4">
+            <SettingsTab client={client} reload={loadAll} />
+            <BrandTab client={client} reload={loadAll} />
+            <PlatformsTab client={client} platforms={platforms} reload={loadAll} />
+            <UsersTab users={users} reload={loadAll} />
+            <InvitesTab invites={invites} reload={loadAll} />
+            <BriefViewTab clientId={client.id} />
+            <FeedbackTab feedback={feedback} />
+            <ClientCampaignsTab client={client} />
+            <PerformanceTab client={client} />
+          </div>
+        </TabsContent>
       </Tabs>
 
       <InviteClientDialog
@@ -703,4 +708,58 @@ function Stat({ label, value }: { label: string; value: any }) {
 }
 function Block({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="text-sm whitespace-pre-wrap">{value}</div></div>;
+}
+
+function ClientContentTab({ client }: any) {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("content_posts").select("id,title,platform,status,scheduled_for").eq("client_id", client.id).order("scheduled_for", { ascending: false, nullsFirst: false });
+      setPosts(data || []); setLoading(false);
+    })();
+  }, [client.id]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  return (
+    <Card><CardContent className="pt-4">
+      <div className="flex justify-between mb-3"><div className="text-sm text-muted-foreground">{posts.length} posts</div><Link to={`/agency/content?client=${client.id}`}><Button size="sm" variant="outline">Open content board</Button></Link></div>
+      {posts.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">No content yet.</div>
+        : <ul className="divide-y divide-border">{posts.slice(0, 30).map((p) => (
+            <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
+              <div className="min-w-0"><div className="font-medium text-sm truncate">{p.title}</div><div className="text-[11px] text-muted-foreground">{p.platform || "—"} · {p.scheduled_for ? new Date(p.scheduled_for).toLocaleDateString() : "no date"}</div></div>
+              <Badge variant="outline" className="text-[10px] uppercase">{p.status?.replace("_", " ")}</Badge>
+            </li>))}</ul>}
+    </CardContent></Card>
+  );
+}
+
+function ClientCalendarLink({ client }: any) {
+  return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground space-y-3">
+    <div>The full calendar lives in the global content calendar, filtered to this client.</div>
+    <Link to={`/agency/calendar?client=${client.id}`}><Button variant="outline">Open calendar</Button></Link>
+  </CardContent></Card>;
+}
+
+function ClientApprovalsList({ clientId }: { clientId: string }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("content_approvals").select("id,decision,status,comment,created_at,content_post_id,content_posts:content_post_id(title)").eq("client_id", clientId).order("created_at", { ascending: false });
+      setItems(data || []); setLoading(false);
+    })();
+  }, [clientId]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (items.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No approval requests yet.</CardContent></Card>;
+  return <Card><CardContent className="pt-4"><ul className="divide-y divide-border">{items.map((a: any) => (
+    <li key={a.id} className="py-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-medium text-sm">{a.content_posts?.title || "—"}</div>
+        <Badge variant="outline" className="text-[10px] uppercase">{(a.decision || a.status || "pending").replace("_", " ")}</Badge>
+      </div>
+      <div className="text-[11px] text-muted-foreground mt-0.5">{new Date(a.created_at).toLocaleString()}</div>
+      {a.comment && <div className="text-sm mt-1 italic">"{a.comment}"</div>}
+    </li>))}</ul></CardContent></Card>;
 }

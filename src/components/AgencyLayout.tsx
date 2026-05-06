@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, AlertTriangle, BookmarkPlus, ClipboardCheck, Lightbulb } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, BookmarkPlus, ClipboardCheck, Lightbulb, Target, UserCog, CreditCard, Settings as SettingsIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -17,16 +17,18 @@ const nav = [
   { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
   { to: "/agency/content", icon: FileVideo, label: "Content" },
   { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
-  { to: "/agency/performance", icon: BarChart3, label: "Performance" },
   { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
-  { to: "/agency/tasks", icon: ListTodo, label: "Tasks" },
   { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
-  { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
   { to: "/agency/reports", icon: FileText, label: "Reports" },
   { to: "/agency/strategies", icon: Lightbulb, label: "Strategies" },
-  { to: "/agency/risk", icon: AlertTriangle, label: "Risk" },
+  { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
+  { to: "/agency/tasks", icon: ListTodo, label: "Tasks" },
   { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
-  { to: "/agency/assistant", icon: Sparkles, label: "Assistant" },
+  { to: "/agency/competitors", icon: Target, label: "Competitors" },
+  { to: "/agency/assistant", icon: Sparkles, label: "AI Assistant" },
+  { to: "/agency/team", icon: UserCog, label: "Team" },
+  { to: "/agency/billing", icon: CreditCard, label: "Billing" },
+  { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
 ];
 
 export default function AgencyLayout() {
