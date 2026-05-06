@@ -165,6 +165,22 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
         </CardContent>
       </Card>
 
+      {/* Monthly check-in CTA */}
+      {!checkInDone && onStartCheckIn && (
+        <Card className="border-accent/40 bg-accent/5">
+          <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+            <ClipboardList className="h-5 w-5 text-accent shrink-0" />
+            <div className="flex-1 min-w-[200px]">
+              <div className="text-sm font-semibold">Quick check-in pentru luna aceasta</div>
+              <div className="text-xs text-muted-foreground">7 întrebări scurte. Sub 2 minute. Ajută agenția să prioritizeze conținutul.</div>
+            </div>
+            <Button onClick={onStartCheckIn} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              Start check-in
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Priority KPIs */}
       {priorityKpis.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
