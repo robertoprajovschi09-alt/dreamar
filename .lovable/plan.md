@@ -1,106 +1,81 @@
 ## Goal
 
-Replace the heavy 4-step `BriefWizard` with a **single-screen, 3-question Quick Onboarding**, then ship a **niche-aware, AI-personalized Client Dashboard** that pulls everything else from data the agency already provided in `Add Client` (`clients.*`, `client_kpi_schemas`, `client_platforms`, `monthly_goals`, `ai_strategy_base`).
-
-The client never re-types information the agency already filled in — they only confirm priorities and what they want to track. AI assembles the rest. Missing data is rendered as an explicit "Missing data" state, never invented.
+Add a **Client Quick Check-In** flow — one single page (not 4), under 2 minutes — accessible from the Client Portal once per month. The 7 standard questions are stored as structured data the agency can read on the client's profile.
 
 ## What changes
 
-### 1. Onboarding — `QuickClientOnboarding.tsx` (replaces `BriefWizard` for new clients)
+### 1. New component — `src/components/client/ClientQuickCheckIn.tsx`
 
-One screen. Pre-filled from `clients` row + `client_kpi_schemas`. Three lightweight questions:
+Single-page form with 7 sections, validated with `zod`:
 
-1. **Confirm your top priority for the next 90 days** — single-select from goals already created in Add Client + a freeform "Other". Default = first existing `monthly_goals` row.
-2. **What does success look like in plain words?** — one short textarea (becomes `client_briefs.main_objective`).
-3. **What should we NEVER post or say?** — short textarea (becomes `client_briefs.content_donts`).
+1. **Prioritate** — chip selector (`more_leads`, `more_sales`, `more_bookings`, `more_awareness`, `more_engagement`, `promote_specific`, `other`). If `other`, show free-text input.
+2. **Ce promovăm** — single short text input.
+3. **Rezultate observate** — chips: Da / Nu / Nu știu. If "Da", show **niche-aware** numeric inputs:
+   - `real_estate`: leads, viewings, messages, calls, price_inquiries
+   - `restaurant`: bookings, foot_traffic, messages, calls, new_clients
+   - `dental`: appointments, calls, messages, new_clients, price_inquiries
+   - `fitness`: new_clients, bookings, messages, calls
+   - `ecommerce`: sales, leads, messages, price_inquiries
+   - default: leads, sales, bookings, appointments, calls, messages, new_clients, foot_traffic, price_inquiries
+   
+   Plus a free "Alte rezultate" text field.
+4. **Customer feedback** — short textarea (max 500).
+5. **Important note** — short textarea (max 500).
+6. **Satisfaction** — 1–5 button scale.
+7. **Direction change** — radio list (`keep`, `more_education`, `more_sales`, `more_premium`, `more_personal`, `other`). If `other`, show input.
 
-Optional collapsible "Anything else we should know?" → `extra_notes`.
+Validation: zod schema with length caps + required fields. Submit button disabled while saving. Shows "Sub 2 minute" badge.
 
-On submit:
-- Upsert `client_briefs` row with: `main_objective`, `content_donts`, `extra_notes`, `completed = true`, plus `business_description = clients.brand_voice`, `target_audience = clients.target_audience`, `brand_tone = clients.tone_of_voice`, `preferred_platforms = clients.platforms`, `unique_selling_points = clients.notes` (only fields not already set). This satisfies the existing `briefStatus === "done"` gate without making the client retype them.
-- If priority differs from existing top goal, insert a new `monthly_goals` row for the current month so the dashboard reflects the choice.
-- Trigger AI personalization (step 3 below).
+### 2. Persistence — reuse `client_feedback` (no migration needed)
 
-Fallback: if `clients` is empty (rare), the screen still works — the three fields alone are enough to mark the brief complete.
+The existing `client_feedback` table already has the right RLS for client portal users (`client_feedback_write` policy: `submitted_by = auth.uid() AND is_client_viewer_of(...)`). We map fields:
 
-### 2. AI personalization — edge function `client-dashboard-personalize`
+- `month` → first day of current month
+- `feedback_text` ← customer feedback
+- `real_life_impact` ← important note
+- `promote_next_month` ← Q2 answer
+- `calls_received` ← `metrics.calls`
+- `messages_received` ← `metrics.messages`
+- `bookings` ← `metrics.bookings ?? metrics.appointments`
+- `sales_estimate` ← `metrics.sales`
+- `objections` ← JSON-stringified full check-in payload (`{ kind: "quick_check_in", v: 1, priority, priority_other, promote_focus, results_observed, results_metrics, customer_feedback, important_note, satisfaction, direction_change, direction_change_other }`)
 
-New edge function (Lovable AI Gateway, model `google/gemini-2.5-flash`).
+This keeps the dedicated columns useful for existing reports/queries while the JSON in `objections` carries the full structured answer for the agency UI.
 
-Input: `{ client_id }`. Reads (service role): `clients`, `client_kpi_schemas`, `client_platforms`, `monthly_goals`, `client_briefs`, `business_impact_entries` (last 30 days), `analytics_entries` (last 90 days). Auth check: caller must be `is_member_of` agency OR `is_client_viewer_of` client.
+**One check-in per month** is enforced UI-side: on mount, query `client_feedback` for current month + this client; if a row exists, show a "deja completat" state with a link back to the dashboard. (Hard DB uniqueness would need a migration; we keep it soft for now.)
 
-Output JSON (saved to `clients.ai_strategy_base.dashboard_personalization`):
-```
-{
-  greeting: "Short personalized welcome line",
-  niche_focus: "1 sentence describing what this dashboard prioritizes for this niche",
-  priority_metrics: ["kpi_key_1", "kpi_key_2", "kpi_key_3"],   // chosen from client_kpi_schemas.kpi_fields
-  insight_cards: [
-    { title, body, severity: "info|good|warning", missing_data?: string[] }
-  ],
-  next_actions: [{ label, why }],
-  generated_at: ISO
-}
-```
+### 3. Wiring into the portal
 
-The function MUST NOT invent metrics. If a KPI value is absent, it goes into `missing_data` and the card body says exactly which field is missing.
+Edit `src/pages/client/ClientPortal.tsx`:
+- Add a new tab **"Check-in"** (between Overview and Calendar) rendering `<ClientQuickCheckIn />`.
+- Surface a **"Start monthly check-in"** call-to-action card on the Overview/`ClientDashboard` when no check-in exists for the current month — clicking it switches to the Check-in tab. Once submitted, the user lands directly on the dashboard (`onDone` switches the tab back to `overview`).
 
-Triggered: (a) at the end of QuickOnboarding, (b) once per 24h on dashboard mount via lightweight check.
+`ClientDashboard` already runs an "is there a check-in this month?" query; we add a tiny Card at the top with a CTA when missing.
 
-### 3. New dashboard — `ClientDashboard.tsx` (replaces current `OverviewTab`)
+### 4. Agency-side visibility (light touch)
 
-Layout, in order:
+`src/pages/agency/ClientProfile.tsx` already has feedback read access via `client_feedback_read` policy. Add a small **"Latest monthly check-in"** card (new file `src/components/client/LatestCheckInCard.tsx`) that fetches the most recent `client_feedback` row, attempts `JSON.parse(objections)`, and if it's `kind === "quick_check_in"` renders a clean structured view (priority chip, promote focus, satisfaction stars, direction, metrics table, notes). Fallback: render the raw fields as today.
 
-```text
-┌─ Hero (greeting + niche_focus + priority chips) ───┐
-├─ Priority KPIs row (3 cards from priority_metrics) │
-│   each: label · value · target · sparkline · status│
-├─ AI Insights (insight_cards, color-coded)          │
-├─ Goals progress (this month from monthly_goals)    │
-├─ Business Impact mini-form (driven by              │
-│   client_kpi_schemas.business_impact_fields)       │
-├─ Content snapshot (scheduled / awaiting / published│
-│   counts already in OverviewTab)                   │
-├─ Latest report card                                │
-└─ Next actions (from AI)                            │
-```
-
-Niche-awareness comes entirely from `client_kpi_schemas` (set during Add Client wizard) — no hard-coded niche tables. KPI cards render with the right unit (number / % / currency / boolean / text) using `kpi_type` already stored. Missing KPI values render a muted "Missing data — your agency hasn't logged this yet" pill.
-
-`NicheSummaryCard` is kept but only shown for the legacy hard-coded niches (`real_estate`, `restaurant`, `dental`, `fitness`) where the dedicated detail tables exist; for everything else the per-client KPI snapshot is the source of truth.
-
-### 4. Business Impact mini-form
-
-Replaces the heavyweight Feedback tab as the primary client-facing data-entry surface. Renders directly from `client_kpi_schemas.business_impact_fields` (already configured per niche). Single inline form, autosaves to `business_impact_entries` for `entry_date = today`. Required-by-RLS `created_by = auth.uid()`, `client_id`, `agency_id` all pre-set.
-
-Existing Feedback tab stays for monthly retrospectives but is deprioritized.
-
-### 5. Files
+## Files
 
 **New**
-- `src/components/client/QuickClientOnboarding.tsx`
-- `src/components/client/ClientDashboard.tsx`
-- `src/components/client/PriorityKpiCard.tsx`
-- `src/components/client/BusinessImpactQuickForm.tsx`
-- `supabase/functions/client-dashboard-personalize/index.ts`
+- `src/components/client/ClientQuickCheckIn.tsx`
+- `src/components/client/LatestCheckInCard.tsx`
 
 **Edit**
-- `src/pages/client/ClientPortal.tsx` — swap `BriefWizard` → `QuickClientOnboarding`; replace the `OverviewTab` body with `<ClientDashboard />`.
-- `supabase/config.toml` — register the new edge function (verify_jwt true, default).
-
-**Keep / unchanged**
-- `client_briefs` table (just used differently) — no schema migration.
-- `BriefWizard.tsx` left in place but no longer rendered in the portal flow; agency can still trigger it manually for clients that want the long form.
+- `src/pages/client/ClientPortal.tsx` (new tab + CTA wiring)
+- `src/components/client/ClientDashboard.tsx` (CTA card when monthly check-in missing)
+- `src/pages/agency/ClientProfile.tsx` (mount `LatestCheckInCard`)
 
 ## Multi-tenant & security
 
-- All inserts use the client's own `agency_id` and `client_id` from `useUser()`; never trust query params.
-- Edge function uses service role for reads but checks the caller's JWT against `client_users` and rejects if the requested `client_id` doesn't match.
-- RLS on `client_briefs`, `monthly_goals`, `business_impact_entries`, `clients`, `ai_strategy_base` already enforces tenant isolation — no policy changes needed.
-- AI personalization output is stored on `clients.ai_strategy_base.dashboard_personalization` (existing JSONB column), so we don't add a new table.
+- All inserts set `agency_id`, `client_id`, `submitted_by = auth.uid()` from `useUser()` context — never from URL params.
+- Inputs validated with zod (length caps, required fields, numeric coercion). No `dangerouslySetInnerHTML`.
+- Existing `client_feedback` RLS already restricts inserts to active client_users of that client; no policy changes needed.
+- The structured JSON stored in `objections` is sanitized (only known keys, numbers coerced via `Number()`, strings length-capped).
 
 ## Out of scope
 
-- Removing the existing `BriefWizard` file (kept for agencies that want the long brief later).
-- Schema migrations — none needed; everything plugs into existing tables.
-- Reordering the portal tabs (Overview / Calendar / Approvals etc. stay; only Overview's contents change).
+- New `client_check_ins` table + dedicated RPCs (would require a migration; reusing `client_feedback` is sufficient and matches existing agency reporting).
+- Email notifications to the agency on submit.
+- Historical comparison / trend chart of check-ins (can come later from the same data).
