@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Loader2, Search } from "lucide-react";
 import { ContentEditor } from "@/components/content/ContentEditor";
 import { POST_STATUSES, PLATFORM_OPTIONS, statusMeta } from "@/lib/content";
+import { SaveToSwipeButton } from "@/components/swipe/SaveToSwipeButton";
 import { cn } from "@/lib/utils";
 
 export default function Content() {
@@ -27,7 +28,7 @@ export default function Content() {
     setLoading(true);
     const [{ data: posts }, { data: cls }] = await Promise.all([
       supabase.from("content_posts")
-        .select("id,title,platform,status,scheduled_for,content_type,client_id,clients(name)")
+        .select("id,title,platform,status,scheduled_for,content_type,client_id,hook,script,caption,clients(name)")
         .eq("agency_id", agency.id)
         .order("scheduled_for", { ascending: false, nullsFirst: false }),
       supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
@@ -100,6 +101,7 @@ export default function Content() {
                   <th className="text-left px-4 py-3 font-medium">Type</th>
                   <th className="text-left px-4 py-3 font-medium">Scheduled</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-right px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -113,6 +115,19 @@ export default function Content() {
                       <td className="px-4 py-3 text-muted-foreground">{r.content_type || "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{r.scheduled_for ? new Date(r.scheduled_for).toLocaleString() : "—"}</td>
                       <td className="px-4 py-3"><span className={cn("inline-block px-2 py-0.5 rounded text-[11px] font-medium", m.color)}>{m.label}</span></td>
+                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <SaveToSwipeButton defaults={{
+                          title: r.title,
+                          type: "video_idea",
+                          platform: r.platform || undefined,
+                          client_id: r.client_id || null,
+                          hook: r.hook || null,
+                          script: r.script || null,
+                          caption: r.caption || null,
+                          content_format: r.content_type || null,
+                          source_post_id: r.id,
+                        }} />
+                      </td>
                     </tr>
                   );
                 })}

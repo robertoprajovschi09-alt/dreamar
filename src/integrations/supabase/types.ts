@@ -1431,6 +1431,7 @@ export type Database = {
           price_eur: number
           risk_detector: boolean
           stripe_price_id: string | null
+          swipe_file: boolean
           tier: Database["public"]["Enums"]["plan_tier"]
           white_label: boolean
         }
@@ -1451,6 +1452,7 @@ export type Database = {
           price_eur: number
           risk_detector?: boolean
           stripe_price_id?: string | null
+          swipe_file?: boolean
           tier: Database["public"]["Enums"]["plan_tier"]
           white_label?: boolean
         }
@@ -1471,6 +1473,7 @@ export type Database = {
           price_eur?: number
           risk_detector?: boolean
           stripe_price_id?: string | null
+          swipe_file?: boolean
           tier?: Database["public"]["Enums"]["plan_tier"]
           white_label?: boolean
         }
@@ -1630,6 +1633,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      swipe_files: {
+        Row: {
+          agency_id: string
+          caption: string | null
+          client_id: string | null
+          content_angle: string | null
+          content_format: string | null
+          created_at: string
+          created_by: string | null
+          file_url: string | null
+          hook: string | null
+          id: string
+          niche: string | null
+          performance_notes: string | null
+          performance_score: number | null
+          platform: string | null
+          script: string | null
+          source_post_id: string | null
+          source_url: string | null
+          tags: string[]
+          title: string
+          type: string
+          updated_at: string
+          usage_count: number
+          visibility: string
+          why_it_worked: string | null
+        }
+        Insert: {
+          agency_id: string
+          caption?: string | null
+          client_id?: string | null
+          content_angle?: string | null
+          content_format?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          hook?: string | null
+          id?: string
+          niche?: string | null
+          performance_notes?: string | null
+          performance_score?: number | null
+          platform?: string | null
+          script?: string | null
+          source_post_id?: string | null
+          source_url?: string | null
+          tags?: string[]
+          title: string
+          type: string
+          updated_at?: string
+          usage_count?: number
+          visibility?: string
+          why_it_worked?: string | null
+        }
+        Update: {
+          agency_id?: string
+          caption?: string | null
+          client_id?: string | null
+          content_angle?: string | null
+          content_format?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_url?: string | null
+          hook?: string | null
+          id?: string
+          niche?: string | null
+          performance_notes?: string | null
+          performance_score?: number | null
+          platform?: string | null
+          script?: string | null
+          source_post_id?: string | null
+          source_url?: string | null
+          tags?: string[]
+          title?: string
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          visibility?: string
+          why_it_worked?: string | null
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
