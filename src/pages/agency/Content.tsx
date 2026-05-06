@@ -28,7 +28,7 @@ export default function Content() {
     setLoading(true);
     const [{ data: posts }, { data: cls }] = await Promise.all([
       supabase.from("content_posts")
-        .select("id,title,platform,status,scheduled_for,content_type,client_id,clients(name)")
+        .select("id,title,platform,status,scheduled_for,content_type,client_id,hook,script,caption,clients(name)")
         .eq("agency_id", agency.id)
         .order("scheduled_for", { ascending: false, nullsFirst: false }),
       supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
