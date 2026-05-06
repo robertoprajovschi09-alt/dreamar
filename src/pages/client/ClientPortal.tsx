@@ -135,6 +135,7 @@ export default function ClientPortal() {
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
+          <TabsContent value="strategy"><ClientStrategyTab clientId={client.id} /></TabsContent>
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
           <TabsContent value="market"><ClientMarketInsightsTab clientId={client.id} /></TabsContent>
         </Tabs>
