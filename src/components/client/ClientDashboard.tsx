@@ -232,14 +232,25 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
         </div>
       )}
 
-      {/* 3. Priority KPIs — niche-specific */}
-      {priorityKpis.length > 0 && (
-        <div>
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 font-semibold">{copy.kpi_section_title}</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {priorityKpis.map((k) => <PriorityKpiCard key={k.key} kpi={k} />)}
+      {/* 3. Niche-specialized section (Real Estate) replaces generic KPIs */}
+      {niche === "real_estate" ? (
+        <RealEstateDashboardSection
+          agencyId={agencyId}
+          clientId={clientId}
+          awaitingApproval={counts.awaiting}
+          insights={personalization?.insight_cards}
+          nextActions={personalization?.next_actions}
+          missingData={(personalization?.insight_cards || []).flatMap((i) => i.missing_data || [])}
+        />
+      ) : (
+        priorityKpis.length > 0 && (
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 font-semibold">{copy.kpi_section_title}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {priorityKpis.map((k) => <PriorityKpiCard key={k.key} kpi={k} />)}
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {/* 4. What works / Needs improvement */}
