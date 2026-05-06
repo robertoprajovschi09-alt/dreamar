@@ -1,72 +1,73 @@
-# Refactor: Add Client → Premium Onboarding Wizard
+# Add Client Wizard — 7-step premium onboarding
 
-Replace the simple "Add Client" dialog with a multi-step wizard that captures everything an agency needs to start working — and optionally invites the client user in the same flow. Everything saves real data into Supabase respecting RLS, multi-tenant isolation, and existing roles.
+Replace the current 4-step wizard with a richer 7-step onboarding flow that captures everything needed to operate a client end-to-end: brand basics, niche-specific KPIs (with full custom support), platform handles & objectives, goals, business context, AI-generated strategy base, portal invite with granular permissions, and a final review that provisions the workspace.
 
-## Schema change (single migration)
+Multi-tenant integrity preserved: every insert carries `agency_id` from `useUser()`; client-scoped rows carry `client_id`. All writes go through Supabase JS so existing RLS policies apply.
 
-Add one nullable column to `public.clients`:
-- `custom_niche text` — free-text niche label, used only when `niche = 'custom'`. The existing `niche` enum stays as-is (no enum changes needed; existing values still work).
+## Schema changes (one migration)
 
-No RLS changes required (column inherits existing client policies).
+1. **`client_kpi_schemas`** (new) — one row per client, holds the live KPI/impact/questions definition. Lets each client (especially Custom niches) have its own metric set without changing core tables.
+   - `id`, `agency_id`, `client_id` (unique), `niche_key text`, `custom_niche_label text NULL`,
+     `kpi_fields jsonb` (array of `{key,label,unit,type}`),
+     `business_impact_fields jsonb`,
+     `monthly_questions jsonb`,
+     `created_at/updated_at`.
+   - RLS: agency members read/write own; client viewers read only.
 
-## New wizard component
+2. **`client_invites`** — add `display_name text`, `portal_role text default 'client_viewer'` (`client_owner`|`client_viewer`), `permissions jsonb default '{}'`.
 
-Create `src/components/client/AddClientWizard.tsx` — a `Dialog` containing 4 steps with a progress indicator, Back/Next navigation, validation per step, and a final "Create client" action.
+3. **`client_users`** — add `permissions jsonb default '{}'` so accepted invites keep their granted permissions.
 
-```text
-[1 Basics] → [2 Brand & Audience] → [3 Services & Goals] → [4 Invite client]
+4. **`accept_client_invite` function** — extend to copy `display_name`/`permissions`/`portal_role` from invite to `client_users`.
+
+5. **`agency-files` bucket policies** — add storage RLS so agency members can upload/read at `clients/<client_id>/...` (verify via `is_member_of`). Bucket stays private.
+
+## Niche presets
+
+New `src/lib/nichePresets.ts` exports default `kpi_fields`, `business_impact_fields`, and `monthly_questions` per niche key (real_estate, restaurant, beauty, ecommerce, fitness, dental, education, automotive, legal, finance) plus an empty preset for `custom`. Selecting a niche pre-fills these editable arrays in step 2.
+
+## Wizard component
+
+Rewrite `src/components/client/AddClientWizard.tsx` with 7 steps and a sticky stepper:
+
+```
+[1 Basics] → [2 Niche & KPIs] → [3 Platforms] → [4 Goals] → [5 Context] → [6 Invite] → [7 Review]
 ```
 
-### Step 1 — Basics (required)
-- `name *` (text)
-- `niche *` (Select from `NICHES`). When `custom` is selected, show an inline `custom_niche` input (required).
-- `city`, `website`, `status` (active/paused/prospect)
-- `contact_person`, `contact_email`, `contact_phone`
+- **Step 1 — Basics**: name, website, logo upload (to `agency-files`), brand color, contact name/email/phone, status (`active|onboarding|paused` — extend `client_status` enum to add `onboarding` if missing; otherwise map to existing values).
+- **Step 2 — Niche & KPIs**: niche dropdown (10 presets + Custom). On Custom → required `custom_niche_label` input. Below: editable KPI list, business-impact list, monthly-questions list (chip/row editors). Selecting a preset replaces lists; changes persist into `client_kpi_schemas`.
+- **Step 3 — Platforms**: pick from IG/TikTok/FB/YT/LinkedIn/Google Ads/Meta Ads/Website/Other. Each selected platform reveals: profile URL, username, starting followers, main objective. Stored in `client_platforms` (extend with `starting_followers int`, `objective text` columns via the same migration).
+- **Step 4 — Goals**: 9 quick templates + Custom. Each goal row: name, target metric, target value, deadline, priority (low/med/high), notes. Stored in `monthly_goals` (current month). Map: name→`objective`, metric→`metric`, value→`target`, deadline→`deadline`, priority/notes→`notes` (priority prefix) until a richer column is needed.
+- **Step 5 — Context**: textareas for sells / services / audience / USP / tone / competitors / objections / offers / notes. Saved to `clients.brand_voice`, `tone_of_voice`, `target_audience`, `competitors`, `services` (jsonb), `notes`, plus a single `business_context` summary entry written to `ai_memory_items` (visibility=`internal_agency`, source_type=`client_brief`, source_id=client_id).
+- **AI button "Generate Client Strategy Base"** in Step 5 → new edge function `client-strategy-base` (Lovable AI Gateway, `google/gemini-3-flash-preview`, structured output via tool calling) returns `{summary, content_pillars[], suggested_kpis[], recommended_platforms[], initial_content_ideas[], monthly_reporting_focus}`. Result rendered inline; on accept it writes one `ai_memory_items` row (type `business_context`) with the summary and stores the full JSON in `clients.notes` appendix or a new `ai_strategy_base` jsonb column on clients (added in same migration).
+- **Step 6 — Portal invite**: toggle on/off; if on → display_name, email, role (Client Owner / Client Viewer), 5 permission switches (approve content, view reports, upload documents, fill business impact, comment). Three actions: Send invite now / Skip / Copy invite link (after creation).
+- **Step 7 — Review**: summary cards (basics, niche + KPI count, platforms, goals, invite status). Final button **Create Client Workspace** runs the provisioning flow (or finalizes if creation already happened on step 6).
 
-### Step 2 — Brand & Audience
-- `brand_voice` (textarea)
-- `tone_of_voice` (short)
-- `target_audience` (textarea)
-- `brand_color` (color picker + hex input)
-- `social_links` (instagram / tiktok / facebook / youtube / linkedin handles → stored as jsonb)
+## Provisioning on final create
 
-### Step 3 — Services & Goals
-- `platforms` (multi-select from `PLATFORMS` → text[])
-- `services` (chip input → jsonb array of strings, e.g. "Content", "Ads", "Strategy")
-- `monthly_retainer` (number), `start_date` (date), `budget_estimate` (number)
-- `objectives` (textarea), `competitors` (textarea), `notes`
+In a single `Promise.all`-style sequence after `clients` insert:
+1. Insert `client_kpi_schemas` row.
+2. Insert per-platform rows in `client_platforms`.
+3. Insert per-goal rows in `monthly_goals` for current month.
+4. Insert `ai_memory_items` business-context row (and AI strategy if generated).
+5. Insert default onboarding `tasks` (fixed list: "Confirm brand assets", "Schedule kickoff call", "Connect analytics access", "Approve first content batch", "Set up monthly reporting"). All with `client_id`, status `todo`.
+6. If invite enabled: insert `client_invites` with permissions/portal_role.
+7. Toast + navigate to `/agency/clients/:id`.
 
-### Step 4 — Invite client (optional)
-- Toggle: "Invite a client user to the portal now"
-- If on: `email *` field. After client insert succeeds, also insert into `client_invites` (same logic as `InviteClientDialog`) and show the generated `/accept-invite?token=…` link with copy button.
-- User can also Skip → wizard closes; invite can always be sent later from the client profile.
-
-## Save logic
-
-Single transactional flow on final submit:
-1. `supabase.from("clients").insert({ agency_id: agency.id, ...allFields })` — `agency_id` enforced from `useUser().agency`.
-2. If invite toggle on: `supabase.from("client_invites").insert({ agency_id, client_id, email, invited_by: user.id })` and surface the link.
-3. On success: toast, refresh list, close wizard, optionally navigate to `/agency/clients/:id`.
-
-Errors at any step roll back UI to that step with a clear message (no partial silent failures).
-
-## UI polish
-- Stepper header with current step highlighted, completed steps with check.
-- Each step in its own panel; smooth transitions.
-- Sticky footer: `Back` (disabled on step 1) · `Skip` (only step 4) · `Next` / `Create client`.
-- Keyboard: Enter advances, Esc closes with confirm if dirty.
-- Reuses existing shadcn `Dialog`, `Input`, `Select`, `Textarea`, `Switch`, `Progress`, `Button`, `Label`.
+No table is needed for "default folders" or "default calendar" — `documents` and `content_posts` are queried by `client_id` and render empty states until populated. Reporting template is unchanged (uses existing `monthly_reports` flow).
 
 ## Touched files
+- `supabase/migrations/<new>.sql` — new table, columns, function update, storage policies.
+- `src/lib/nichePresets.ts` — new presets module.
+- `src/lib/niches.ts` — extend `NICHES` to the 10 presets + custom.
+- `src/components/client/AddClientWizard.tsx` — full rewrite (7 steps).
+- `src/pages/agency/Clients.tsx` — no change (already uses the wizard).
+- `supabase/functions/client-strategy-base/index.ts` — new edge function (Lovable AI, structured tool calling, JWT verified, 429/402 surfaced).
+- `src/integrations/supabase/types.ts` — auto-regenerated.
 
-- `supabase/migrations/<new>.sql` — add `clients.custom_niche`.
-- `src/lib/niches.ts` — export helper `displayNiche(niche, custom_niche)` returning the custom string when applicable.
-- `src/components/client/AddClientWizard.tsx` — new wizard component.
-- `src/pages/agency/Clients.tsx` — replace inline create dialog with `<AddClientWizard>`; keep the existing edit dialog (or also route edit through the wizard — out of scope for this pass, edit stays as a quick form). Update list to render `displayNiche(c.niche, c.custom_niche)`.
-- `src/pages/agency/ClientProfile.tsx` — show `custom_niche` when present (small label tweak only if it currently shows niche).
-
-## Multi-tenant & security guarantees
-- `agency_id` is taken from authenticated user context, never from the form.
-- `client_invites.invited_by` set from `auth.uid()` via `useAuth()`.
-- All inserts go through Supabase JS, so existing RLS policies on `clients` and `client_invites` apply unchanged.
-- No mock data; every field maps to a real column.
+## Security & multi-tenancy
+- `agency_id` always sourced from `useUser().agency.id`; never from form input.
+- `client_invites.invited_by = auth.uid()` and `permissions` validated against an allow-list before insert.
+- KPI/goal/platform inserts all carry `agency_id` + `client_id`; RLS policies on existing tables already restrict by `is_member_of`.
+- Logo upload path: `clients/<client_id>/logo-<timestamp>.<ext>` inside `agency-files` (private). Public URL only generated via signed URL when displayed.
+- AI edge function validates JWT, resolves agency from `profiles`, returns structured JSON only — no raw HTML, no client-controlled prompts.
