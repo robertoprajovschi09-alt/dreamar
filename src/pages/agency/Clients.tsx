@@ -177,7 +177,7 @@ export default function Clients() {
                     <td className="px-4 py-3 font-medium">
                       <Link to={`/agency/clients/${c.id}`} className="hover:underline">{c.name}</Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{nicheLabel(c.niche)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{displayNiche(c.niche, c.custom_niche)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
                     <td className="px-4 py-3"><span className="text-xs uppercase tracking-wide">{c.status}</span></td>
                     <td className="px-4 py-3 text-right">
