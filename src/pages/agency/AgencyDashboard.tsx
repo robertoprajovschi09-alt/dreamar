@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
 import { HealthScoreMini } from "@/components/health/HealthScoreMini";
+import { fetchAgencyAlerts, detectForAgency, type RiskAlert } from "@/lib/risk";
+import { RiskAlertCard } from "@/components/risk/RiskAlertCard";
 
 type Stats = {
   clients: number;
