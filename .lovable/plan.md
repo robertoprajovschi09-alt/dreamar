@@ -1,124 +1,124 @@
-# AI Website/App Maintainer — Plan
+# AI Learning & Improvement Loop — Plan
 
-Extends the existing minimal `ai-maintainer-scan` (which only triages error logs into an `ai_action`) into a full module: structured audits, prioritized improvement suggestions with Lovable-ready prompts, and a maintenance task queue. Approval-gated; no destructive AI actions.
+The Core Engine already has `ai_feedback`, `ai_prompts` (versioned), `ai_evaluations`, and `ai_prompt_runs` (= `ai_outputs`). This task extends them rather than creating duplicate tables, and adds the missing piece: `ai_learning_events` plus the full admin loop UI and scoring.
 
 ## 1. Database (one migration)
 
-Three new tables, all RLS-enabled. `agency_id` nullable so SaaS Admin can run global audits.
+### Extend existing tables (no duplicates)
 
-**`ai_website_audits`**
-- `id uuid pk`, `agency_id uuid null → agencies`, `audit_type text` (ux | copy | dashboard | onboarding | pricing | client_portal | agency_dashboard | conversion | full)
-- `page_url text`, `page_name text`
-- `findings jsonb` (array of `{problem, evidence, severity, area}`)
-- `severity text` (low | medium | high | critical)
-- `ai_summary text`, `recommended_actions jsonb`
-- `status text` default `'completed'` (running | completed | failed)
-- `created_by uuid`, `created_at`, `updated_at` (trigger)
+**`ai_feedback`** — add columns:
+- `ai_feature text` (denormalized from run.prompt_key for fast filtering)
+- `feedback_type text` enum: `inaccurate | too_generic | missing_context | great_output | bad_tone | wrong_strategy | hallucinated_data | useful | not_useful`
+- `was_useful boolean`
+- `correction text` (the user's edited/correct version)
+- `client_id uuid null` (already existed on runs; add here)
 
-**`ai_improvement_suggestions`**
-- `id`, `agency_id null`, `source_type text` (audit | feedback | error_log | manual | scan), `source_id uuid null`
-- `title text`, `description text`, `category text` (ux | copy | conversion | onboarding | dashboard | design | bug | performance | feature_cleanup)
-- `priority text` (low | medium | high | critical)
-- `impact_score int 1-10`, `effort_score int 1-10`
-- `ai_reasoning text` — includes "why it matters", "risk if unresolved", "data used"
-- `suggested_prompt_for_lovable text` — copy-paste-ready prompt
-- `status text` default `'new'` (new | reviewed | approved | rejected | in_progress | implemented)
-- `approved_by uuid null`, `approved_at`, `implemented_at`, `created_at`, `updated_at`
+**`ai_prompt_runs`** (acts as `ai_outputs`) — add columns:
+- `feature text` (alias for prompt_key, indexed for analytics)
+- `output_json jsonb`
+- `prompt_version_id uuid` (FK → `ai_prompts.id`, replaces loose `prompt_version` int)
 
-**`ai_maintenance_tasks`**
-- `id`, `agency_id null`, `suggestion_id uuid → ai_improvement_suggestions`
-- `title`, `description`, `task_type text` (fix | improvement | audit | cleanup | content)
-- `priority text`, `status text` default `'todo'` (todo | in_progress | done | blocked)
-- `assigned_to uuid null`, `due_date timestamptz null`, timestamps
+**`ai_prompts`** (acts as `ai_prompt_versions`) — add columns:
+- `version_name text`
+- `developer_prompt text`
+- `user_prompt_template text`
+- `output_schema jsonb`
+- `performance_score numeric` (cached, recomputed by SQL view)
+- `feature text` (alias of `key` for the spec's naming)
 
-**RLS**
-- SaaS Admin (`is_saas_admin`): full access to all rows including `agency_id IS NULL`.
-- Agency Owner/Admin: SELECT/UPDATE/INSERT rows where `agency_id = their agency` (via `is_owner_of`).
-- INSERT only allowed via service role (edge functions) or owner. Approval columns (`approved_by`, `approved_at`, `status='approved'`) settable only by owner/admin.
-- No DELETE policy → AI cannot delete.
+**`ai_evaluations`** — add columns:
+- `feature text` (alias of `prompt_key`)
+- `test_name text`
+- `input_sample jsonb`
+- `expected_behavior text`
+- `actual_output text`
+- `evaluator_notes text`
+- `passed boolean`
+- `prompt_version_id uuid` (FK → `ai_prompts.id`)
 
-`updated_at` trigger using existing `tg_set_updated_at()`.
+### New table
 
-## 2. Edge functions (two new + extend one)
+**`ai_learning_events`**
+- `id`, `agency_id null`, `client_id null`
+- `event_type text` (negative_feedback_pattern | hallucination_spike | low_acceptance | prompt_improvement_proposal | version_promoted | version_rolled_back)
+- `source text` (feedback | evaluation | run_metrics | manual)
+- `summary text`
+- `recommended_change text`
+- `proposed_prompt_version_id uuid null` → `ai_prompts.id`
+- `status text` default `'new'` (new | reviewed | approved | rejected | applied)
+- `reviewed_by uuid`, `reviewed_at`, `created_at`, `updated_at`
+- RLS: SaaS Admin full; agency owners read/update their own.
 
-**`ai-run-audit`** (new)
-- Input: `{ agency_id?, audit_type, page_name?, page_url?, context? }`
-- Auth: SaaS Admin (any agency_id incl. null) or Agency Owner (their agency only).
-- Loads relevant context: recent `ai_audit_events`, recent `ai_feedback` (👎), `content_posts` counts, recent errors. For agency-scoped audits, pulls per-agency data.
-- Calls OpenAI via existing `_shared/openai.ts` with system prompt per `audit_type`. Forces JSON output: `{summary, severity, findings:[{problem,evidence,severity,area}], recommended_actions:[…], suggestions:[{title,description,category,priority,impact_score,effort_score,ai_reasoning,suggested_prompt_for_lovable}]}`.
-- Runs `runSafety` on output. Logs run via `logRun`.
-- Inserts `ai_website_audits` row + N rows in `ai_improvement_suggestions` (status `new`, source_type `audit`, source_id = audit id).
-- Returns `{audit_id, suggestions_count}`.
+### Scoring view
 
-**`ai-generate-fix-prompt`** (new)
-- Input: `{ suggestion_id }`
-- Auth: SaaS Admin or owner of the suggestion's agency.
-- Reads suggestion, asks OpenAI to produce a refined Lovable-ready prompt (with file hints, acceptance criteria), updates `suggested_prompt_for_lovable`.
+`ai_prompt_scoreboard` (SQL view) — per `prompt_id`:
+- `runs_count`, `feedback_count`, `avg_rating`, `useful_count`, `hallucinated_count`, `accepted_count` (via implemented suggestions / approved actions where applicable), `acceptance_rate`, `last_used_at`.
 
-**`ai-maintainer-scan`** (extend existing)
-- Currently writes to `ai_actions`. Update so output is also persisted as an `ai_improvement_suggestions` row with `source_type='scan'`. Keep approval flow via existing `ai_actions`.
+## 2. Edge functions (two new)
 
-All functions: `verify_jwt = false` in code (default), validate user via `requireUser`, log via `logRun`, run `runSafety`. No DB writes outside the three tables + logging.
+**`ai-feedback-submit`** (extend existing) — accept new fields (`feedback_type`, `was_useful`, `correction`, `ai_feature`); after insert, run a debounced detector: if last 10 feedbacks for the same `ai_feature` + agency have ≥ 5 negative (`rating ≤ 2` or `feedback_type` in negative set), insert an `ai_learning_events` row with `event_type='negative_feedback_pattern'`.
 
-## 3. Frontend — `/admin/ai-maintainer` rebuilt
+**`ai-propose-prompt-improvement`** (new)
+- Input: `{ feature, agency_id? }`
+- Loads recent negative feedback + worst runs for the feature.
+- Asks OpenAI to draft an improved system prompt with rationale. Output JSON: `{ proposed_system_prompt, rationale, expected_improvement }`.
+- Inserts a new draft `ai_prompts` row (`is_active=false`, version = max+1, `version_name='AI proposal'`, `created_by=user`).
+- Inserts `ai_learning_events` row `event_type='prompt_improvement_proposal'`, `proposed_prompt_version_id` linking to the draft, `status='new'`.
+- Does NOT activate. Admin must approve via UI → calls SQL update to flip `is_active`.
 
-Replaces current minimal page. Tabs:
+**`ai-run-evaluation`** (new)
+- Input: `{ prompt_version_id, dataset?: [{ test_name, input_sample, expected_behavior }] }`
+- Runs each sample against OpenAI using that prompt version. Scores via a rubric (LLM-as-judge): 0-1 per test. Inserts rows in `ai_evaluations` with `passed`, `score`, `actual_output`, `evaluator_notes`. Updates the prompt's cached `performance_score` to the avg.
 
-**Overview**
-- Cards: Last audit (date, type, severity), Critical issues count, New suggestions, Approved suggestions, Tasks open, Estimated impact (sum of `impact_score` of approved-not-implemented).
-- Buttons: **Run AI Audit** (opens dialog → choose `audit_type` + optional page + optional agency for SaaS Admin), **View Suggestions**, **View Tasks**.
+## 3. Admin Panel (new tabs in `/admin/ai-prompts`)
 
-**Audits tab**
-- Table: type, page, severity, summary, date. Row click → drawer with `findings`, `recommended_actions`, list of generated suggestions.
+The current `AiPrompts.tsx` lists prompts. Rebuild into a full panel with tabs:
 
-**Suggestions tab**
-- Filter: status, category, priority. Card per suggestion shows: title, description, impact/effort badges, AI reasoning, **risk if unresolved**, **data used**, code-block with `suggested_prompt_for_lovable` + Copy button.
-- Actions per suggestion: **Approve**, **Reject**, **Generate Lovable Fix Prompt** (calls `ai-generate-fix-prompt`), **Create Task** (creates `ai_maintenance_tasks` row, status=todo), **Mark as Implemented**.
-- Approval button only visible to Agency Owner / SaaS Admin (UI gate + RLS enforcement).
+**Versions tab** (per feature): list versions, performance score, runs, avg rating, hallucination count. Buttons: **Create New Prompt Version**, **Run Evaluation**, **Set as Active** (with confirm), **View Diff**.
 
-**Tasks tab**
-- Table grouped by status (todo / in_progress / done / blocked). Inline status change, assignee select (agency members), due date.
+**Performance tab**: per-feature dashboard from `ai_prompt_scoreboard` — accepted / edited / rejected, avg rating, useful%, hallucinated%, best/worst prompts.
 
-## 4. Navigation
+**Feedback tab**: filterable list of `ai_feedback`, with type, rating, correction text, link to the originating run + prompt version.
 
-`AgencyLayout.tsx` — add **AI Maintainer** under Admin section (already present, just expand). For non-SaaS-admin agency owners, also surface a scoped link `/agency/ai-maintainer` (reuses same page, agency-scoped).
+**Failed outputs tab**: runs where `status='error'` or where feedback marked `hallucinated_data` / rating 1.
 
-`App.tsx` — register the route (already exists for admin; add agency-scoped route).
+**Learning events tab**: list of `ai_learning_events` with **Approve & Apply** (promotes the proposed prompt version to active and marks event `applied`), **Reject**.
 
-## 5. Components
+Add a feature-level **"Propose improvement"** button that calls `ai-propose-prompt-improvement`.
 
-- `src/components/admin/maintainer/RunAuditDialog.tsx`
-- `src/components/admin/maintainer/SuggestionCard.tsx` (with Copy-prompt, Approve, Reject, Create Task, Generate Fix Prompt, Mark Implemented)
-- `src/components/admin/maintainer/AuditDetailDrawer.tsx`
-- `src/components/admin/maintainer/TaskRow.tsx`
+## 4. Frontend wiring
 
-## 6. Safety guarantees (enforced)
+- `src/components/ai/FeedbackButtons.tsx` — extend with feedback-type dropdown + correction textarea on negative ratings; pass `ai_feature` and optional `correction`.
+- `src/lib/aiLearning.ts` — small helper to fetch scoreboard data via Supabase view.
 
-- No DELETE policies on any of the three tables.
-- Edge functions only INSERT/UPDATE the three maintainer tables + `ai_prompt_runs` + `ai_audit_events`. Never touch `subscriptions`, `plans`, `agency_members`, `profiles.role`, `profiles.is_saas_admin`, `content_posts.status`, or auth tables.
-- Status `approved` / `implemented` requires authenticated owner/admin (RLS update policy checks `is_owner_of` or `is_saas_admin`).
-- All AI output passes existing `runSafety` guardrails before persistence.
-- "Generate Lovable Fix Prompt" produces text only — never invokes Lovable APIs or modifies code.
+## 5. Reality-grounding
 
-## 7. Out of scope
+Add a global instruction to all AI Core prompts (in seed prompt content + edge functions): *"If required data is missing, output `Missing data: <field>` and stop. Never fabricate numbers."* Already partly enforced; ensure it's present in the seeded `ai_prompts` rows for each feature key.
 
-- Auto-execution of suggestions (always review-only).
-- Cron scheduling (manual "Run AI Audit" only; cron can be added later).
-- Public-facing audit reports to clients.
+## 6. Safety / rules enforced
+
+- AI cannot flip `is_active` on its own. Edge function only inserts draft prompts (`is_active=false`).
+- All versions retained (no DELETE used in flow; `ai_prompts` already has owner-only delete policy).
+- Every run already logs `prompt_key` + `prompt_version`; this migration adds FK `prompt_version_id` for joins.
+- Negative-feedback detector creates a `learning_event`, never auto-applies.
 
 ## Files
 
 **Created**
-- `supabase/migrations/<ts>_ai_website_maintainer.sql`
-- `supabase/functions/ai-run-audit/index.ts`
-- `supabase/functions/ai-generate-fix-prompt/index.ts`
-- `src/components/admin/maintainer/RunAuditDialog.tsx`
-- `src/components/admin/maintainer/SuggestionCard.tsx`
-- `src/components/admin/maintainer/AuditDetailDrawer.tsx`
-- `src/components/admin/maintainer/TaskRow.tsx`
+- `supabase/migrations/<ts>_ai_learning_loop.sql`
+- `supabase/functions/ai-propose-prompt-improvement/index.ts`
+- `supabase/functions/ai-run-evaluation/index.ts`
+- `src/lib/aiLearning.ts`
+- `src/components/admin/learning/ScoreboardCard.tsx`
+- `src/components/admin/learning/LearningEventCard.tsx`
 
 **Edited**
-- `src/pages/admin/AiMaintainer.tsx` (full rebuild with tabs)
-- `supabase/functions/ai-maintainer-scan/index.ts` (also write suggestion row)
-- `src/components/AgencyLayout.tsx` (nav link)
-- `src/App.tsx` (route)
+- `supabase/functions/ai-feedback-submit/index.ts` (new fields + pattern detector)
+- `src/pages/admin/AiPrompts.tsx` (rebuild with tabs)
+- `src/components/ai/FeedbackButtons.tsx` (feedback_type + correction)
+
+## Out of scope
+
+- Auto-promotion of prompt versions (always admin-approved).
+- Fine-tuning OpenAI models (only system-prompt iteration).
+- Cron-scheduled evaluations (manual trigger; cron can be added later).
