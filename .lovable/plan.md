@@ -1,122 +1,53 @@
+# AI Knowledge Base & Memory
 
-# AI Action Approval System
+Builds a controlled, source-cited memory layer the AI uses (never invents) on top of the existing `ai_memory` table (which we keep for backward compatibility with the current `AiMemory.tsx` page).
 
-Sistem dedicat de propunere → aprobare → execuție pentru orice acțiune pe care AI-ul vrea să o facă, cu nivele de risc și reguli stricte de cine poate aproba ce. Coexistă cu vechiul `ai_actions` (rămâne intact pentru compat); tot codul nou folosește `ai_action_requests`.
+## 1. Database (migration)
 
-## 1. Bază de date — migrație nouă
+### Enums
+- `ai_memory_type`: `agency_preference`, `client_brand_voice`, `client_goal`, `niche_insight`, `content_pattern`, `winning_hook`, `failed_hook`, `reporting_preference`, `business_context`, `audience_insight`, `competitor_insight`
+- `ai_memory_visibility`: `internal_agency`, `client_visible`, `super_admin_only`
+- `ai_knowledge_source_status`: `pending`, `processing`, `processed`, `failed`, `archived`
 
-```sql
-CREATE TYPE ai_action_risk AS ENUM ('low','medium','high','critical');
-CREATE TYPE ai_action_request_status AS ENUM (
-  'pending','approved','rejected','executed','failed','auto_executed','cancelled'
-);
+### Table `ai_memory_items`
+Columns: `id`, `agency_id` (not null), `client_id` (nullable), `memory_type` (enum), `title`, `content`, `source_type` (text, **not null**), `source_id` (text, **not null**), `confidence_score` (numeric, default 0.5), `is_active` (bool default true), `visibility` (enum default `internal_agency`), `created_by` (uuid), `created_at`, `updated_at`. Trigger `tg_set_updated_at`. CHECK ensuring `source_type` and `source_id` are non-empty (rule: AI can never save memory without a source).
 
-CREATE TABLE public.ai_action_requests (
-  id uuid PK default gen_random_uuid(),
-  agency_id uuid,                      -- nullable (admin-level critical)
-  client_id uuid,
-  requested_by_ai_output_id uuid REFERENCES ai_outputs(id) ON DELETE SET NULL,
-  requested_by_user_id uuid,           -- if user-triggered
-  action_type text NOT NULL,
-  title text NOT NULL,
-  description text,
-  payload jsonb NOT NULL DEFAULT '{}',
-  edited_payload jsonb,                -- for "edit before approve"
-  reasoning text,                      -- AI explanation
-  risk_level ai_action_risk NOT NULL DEFAULT 'medium',
-  status ai_action_request_status NOT NULL DEFAULT 'pending',
-  requested_at timestamptz NOT NULL DEFAULT now(),
-  approved_by uuid, approved_at timestamptz,
-  rejected_by uuid, rejected_at timestamptz, rejection_reason text,
-  executed_at timestamptz, execution_result jsonb, execution_error text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX ON ai_action_requests (agency_id, status, created_at DESC);
-CREATE INDEX ON ai_action_requests (status, risk_level);
-```
+### Table `ai_knowledge_sources`
+Columns: `id`, `agency_id`, `client_id` nullable, `source_type` (e.g. `document`, `report`, `brief`, `feedback`, `analytics`, `competitor`), `source_id`, `title`, `content_summary` (text), `extracted_facts` (jsonb), `status` (enum), `last_processed_at`, `created_at`, `updated_at`. Unique `(agency_id, source_type, source_id)`.
 
-RLS:
-- `select`: saas_admin OR membru al agency_id (sau record cu agency_id NULL → doar saas_admin).
-- `insert`: saas_admin OR membru al agency. Edge function folosește service role pentru AI-generated.
-- `update`: saas_admin OR membru al agency (validările pentru cine poate aproba ce risk se fac în edge function — RLS lasă doar ownership-ul).
-- fără `delete`.
+### RLS
+- **Read** `ai_memory_items`:
+  - `is_saas_admin(auth.uid())` → all
+  - `is_member_of(auth.uid(), agency_id)` AND `visibility <> 'super_admin_only'` → agency members see internal + client_visible
+  - `is_client_viewer_of(auth.uid(), client_id)` AND `visibility = 'client_visible'` → client users only see `client_visible`
+- **Insert/Update/Delete**: agency members or saas_admin. Client viewers cannot write.
+- `ai_knowledge_sources`: read/write for agency members + saas_admin; client viewer no access.
 
-Trigger `tg_set_updated_at` pe `updated_at`.
+## 2. Edge functions
 
-Setting nou pe agency pentru auto-execute low-risk: adăugăm coloana `agencies.ai_auto_execute_low boolean default false`.
+- **`ai-memory-upsert`**: validates auth + agency membership, requires `source_type` + `source_id`, inserts/updates an `ai_memory_items` row. Used by other AI functions (e.g. report generation that wants to remember a winning hook from a specific post).
+- **`ai-knowledge-ingest`**: takes a source (document/report/feedback/brief), summarizes content with Lovable AI (gemini-2.5-flash), extracts structured `facts[]` JSON, stores in `ai_knowledge_sources`, and (optionally) proposes one or more `ai_memory_items` via the existing `ai_action_requests` queue (so a human approves before the memory goes live for high-impact types like `client_brand_voice`).
+- Update **`openai-ai-core`** context loader: when `client_id` is present, loads relevant active `ai_memory_items` (filtered by visibility for the calling user’s role) and injects them into the system prompt under `KNOWN_FACTS:` with citations `[source_type:source_id]`. Also adds the rule: *"If no memory item is relevant, only use current data; never invent."*
 
-## 2. Edge function: `supabase/functions/ai-action-decide/index.ts`
+## 3. Frontend
 
-Un singur endpoint pentru `approve | reject | execute | auto`.
+- **Rewrite `src/pages/agency/AiMemory.tsx`** to use `ai_memory_items`:
+  - Tabs: *Memories* (list, filter by `memory_type`, `client`, `visibility`, `is_active`) and *Knowledge Sources* (list of ingested docs/reports/feedback with status + extracted facts preview).
+  - Row actions: edit, toggle active, change visibility, delete. Each row shows source citation badge `source_type · source_id`.
+  - "Add memory" dialog: requires title, content, type, visibility, client (optional), and **mandatory** source_type + source_id (or "manual" + free-text reference).
+- **`src/lib/aiMemory.ts`** helper: `listMemories`, `upsertMemory`, `setMemoryActive`, `deleteMemory`, `listKnowledgeSources`, `ingestKnowledgeSource`.
+- Existing `AiMemory.tsx`'s old `ai_memory` table queries are removed; old table is kept in DB but no longer surfaced in UI.
 
-**Body**:
-```ts
-{ action_id: string, decision: 'approve'|'reject'|'execute', edited_payload?: any, rejection_reason?: string }
-```
-
-**Flow**:
-1. Auth + load profile (role, is_saas_admin) + load action_request via service role.
-2. Validare matrice risk → role (în cod):
-   - `low`: orice membru agency. Dacă `agencies.ai_auto_execute_low=true` și request creat de AI, `auto` permis.
-   - `medium`: membru agency.
-   - `high`: doar `agency_owner` sau `saas_admin`.
-   - `critical`: doar `saas_admin`.
-3. Pe `approve`: setează `status='approved'`, `approved_by`, `approved_at`. Dacă `edited_payload` trimis, salvează-l.
-4. Pe `reject`: `status='rejected'`, `rejected_*`, `rejection_reason`.
-5. Pe `execute` (după aprobare):
-   - Re-validează rolul; verifică `status='approved'`.
-   - Dispatch pe `action_type` (lista sub) folosind clientul user-scoped (RLS).
-   - `suggest_*` și `lovable_fix_prompt_generator` → no-op care marchează `executed_at` (review-only).
-   - `update_prompt_version` și orice `*_security_change`/`*_database_change`/`*_pricing_change` → execuție blocată dacă risk≠critical sau approver nu e saas_admin → 403.
-   - `send_report_to_client`, `update_prompt_version` setează `executed_at` și salvează `execution_result`.
-6. Pe failure: `status='failed'`, `execution_error`.
-7. Log în `ai_audit_events`.
-
-**Action types acceptate**: `create_task`, `update_task`, `create_content_idea`, `create_calendar_item`, `generate_report`, `send_report_to_client`, `create_strategy`, `update_prompt_version`, `create_lovable_prompt`, `suggest_database_change`, `suggest_ui_change`, `suggest_pricing_change`, `suggest_security_change`. Orice action_type necunoscut → 400.
-
-**Default risk per type** (folosit la INSERT dacă apelantul nu specifică, helper SQL `default_risk_for(text)`):
-- low: `create_content_idea`, `suggest_ui_change`
-- medium: `create_task`, `update_task`, `create_calendar_item`, `create_strategy`, `create_lovable_prompt`, `generate_report`
-- high: `send_report_to_client`, `update_prompt_version`
-- critical: `suggest_database_change`, `suggest_pricing_change`, `suggest_security_change`
-
-## 3. Helper frontend
-
-`src/lib/aiActionRequests.ts`:
-- `requestAiAction({...})` → insert via service-role NU; folosim `supabase.from('ai_action_requests').insert(...)` (e ok, RLS permite membrilor).
-- `decideAiAction(id, decision, opts)` → invoke `ai-action-decide`.
-
-## 4. UI — Admin AI Actions
-
-Pagină nouă `src/pages/admin/AiActionsApprovalQueue.tsx`, rută `/admin/ai-actions`, cu link în AdminLayout. Conținut:
-
-- Filtre: `status` (pending default), `risk_level`, `agency_id` (saas_admin).
-- Card per request: `title`, `risk_level` (badge color-coded), `action_type`, `description`, `reasoning` (AI), payload preview JSON colapsabil, sursa (`ai_output` link), agency/client.
-- Acțiuni:
-  - **Approve** (disabled dacă rolul nu permite risk-ul respectiv);
-  - **Approve & Execute** (one-click);
-  - **Edit & Approve** (deschide dialog cu textarea JSON pentru `edited_payload`);
-  - **Reject** (dialog pentru `rejection_reason`);
-  - **Execute** (apare doar pe `approved`);
-- Tab „History” pentru `executed | rejected | failed`.
-
-Și pagina existentă `src/pages/agency/AiActions.tsx` o actualizăm să folosească noul tabel `ai_action_requests` în paralel cu vechiul (fallback grațios), fără regresie.
-
-## 5. Securitate
-
-- AI-ul (server-side) nu execută niciodată direct; toate rutele de execuție merg prin `ai-action-decide` care necesită JWT user.
-- Critical actions necesită `is_saas_admin=true` la approve ȘI la execute.
-- High actions necesită `agency_owner` (verificat prin `is_owner_of`).
-- Low/medium pot fi aprobate de orice agency member; auto-execute doar dacă agency a activat explicit.
-- Niciun action type nu permite ștergere de date nici acum (toate handlerele fac doar insert/update controlate; suggest_* sunt review-only).
-- `RLS` previne cross-agency leakage.
+## 4. Rules enforced
+- DB CHECK + edge function validation: no memory without `source_type`/`source_id`.
+- Visibility filter in RLS prevents Client User from seeing internal/super_admin memories.
+- AI core injects memory + citations; if none relevant, system prompt instructs "use only current data".
+- Auto-ingestion proposals route through `ai_action_requests` for human approval before becoming active.
 
 ## Files
-- create `supabase/migrations/<ts>_ai_action_requests.sql`
-- create `supabase/functions/ai-action-decide/index.ts`
-- create `src/lib/aiActionRequests.ts`
-- create `src/pages/admin/AiActionsApprovalQueue.tsx`
-- edit `src/App.tsx` (rută)
-- edit `src/components/AdminLayout.tsx` (link)
-- edit `src/pages/agency/AiActions.tsx` (citire din noul tabel + butoane decide)
+- `supabase/migrations/<ts>_ai_knowledge_base.sql`
+- `supabase/functions/ai-memory-upsert/index.ts`
+- `supabase/functions/ai-knowledge-ingest/index.ts`
+- edit `supabase/functions/openai-ai-core/index.ts` (memory injection)
+- `src/lib/aiMemory.ts`
+- rewrite `src/pages/agency/AiMemory.tsx`
