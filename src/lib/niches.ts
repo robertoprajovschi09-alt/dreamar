@@ -30,3 +30,8 @@ export const GOAL_STATUSES = [
 export function nicheLabel(v: string | null | undefined) {
   return NICHES.find((n) => n.value === v)?.label ?? v ?? "—";
 }
+
+export function displayNiche(niche: string | null | undefined, custom?: string | null) {
+  if (niche === "custom" && custom && custom.trim()) return custom.trim();
+  return nicheLabel(niche);
+}
