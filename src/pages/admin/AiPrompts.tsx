@@ -54,7 +54,7 @@ export default function AiPrompts() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="AI Prompts" subtitle="Versioned system prompts. Activate one version per key at a time." actions={
+      <PageHeader title="AI Prompts" subtitle="Versioned system prompts. Activate one version per key at a time." action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New version</Button></DialogTrigger>
           <DialogContent className="max-w-2xl">

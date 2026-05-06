@@ -53,7 +53,7 @@ export default function AiMemory() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="AI Memory" subtitle="Long-term facts, preferences and playbooks the AI assistant uses for grounding." actions={
+      <PageHeader title="AI Memory" subtitle="Long-term facts, preferences and playbooks the AI assistant uses for grounding." action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Add memory</Button></DialogTrigger>
           <DialogContent>

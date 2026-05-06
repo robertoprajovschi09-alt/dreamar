@@ -49,7 +49,7 @@ export default function AiSafety() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="AI Safety Guardrails" subtitle="Regex rules applied to every AI input and output." actions={
+      <PageHeader title="AI Safety Guardrails" subtitle="Regex rules applied to every AI input and output." action={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New rule</Button></DialogTrigger>
           <DialogContent>

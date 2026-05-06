@@ -36,7 +36,7 @@ export default function AiMaintainer() {
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="AI Website/App Maintainer" subtitle="Triages recent errors and proposes fixes (review-only suggestions)." actions={
+      <PageHeader title="AI Website/App Maintainer" subtitle="Triages recent errors and proposes fixes (review-only suggestions)." action={
         <Button size="sm" onClick={scan} disabled={busy}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />Run scan</>}</Button>
       } />
       {output && (
