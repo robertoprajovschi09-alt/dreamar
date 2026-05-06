@@ -220,7 +220,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
               </CardContent>
             </Card>
           )}
-          {counts.awaiting > 0 && niche !== "real_estate" && (
+          {counts.awaiting > 0 && !["real_estate", "restaurant", "beauty", "ecommerce", "fitness", "medical", "custom"].includes(niche || "") && (
             <Card className="border-amber-500/40 bg-amber-500/5">
               <CardContent className="p-4 flex items-center gap-3">
                 <FileEdit className="h-5 w-5 text-amber-600 shrink-0" />
