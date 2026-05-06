@@ -62,5 +62,3 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: e instanceof Error ? e.message : "Unknown" }, 500);
   }
 });
-
-function jsonResponseLocal() {}
