@@ -17,6 +17,9 @@ export default function AdminLogin() {
 
   useEffect(() => {
     (async () => {
+      // Ensure the Super Admin account exists with the known initial password.
+      try { await supabase.functions.invoke("ensure-super-admin-account"); } catch { /* non-blocking */ }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const { data: prof } = await supabase
