@@ -1,87 +1,113 @@
-## Module 4: Competitor Tracking
+# Module 5 — Client Approval Flow
 
-Internal per-client competitor tracker with observations, screenshots, AI insights, and integration with Swipe File.
+A premium, focused approval lifecycle integrated with Content Calendar, with a dedicated Approvals dashboard for the agency, an upgraded client experience, and AI-assisted clarification when feedback is vague.
 
-### 1. Database (new migration)
+## What exists today
+- `content_posts` with enum `post_status`: idea, script, filming, editing, sent_for_approval, approved, scheduled, published, analyzed.
+- `content_posts.approval_status` text column (pending / approved / changes_requested).
+- `content_approvals` table (id, agency_id, client_id, content_post_id, decision, comment, decided_by). RLS already supports both agency members and client viewers.
+- A minimal `ApprovalsTab` inside `ClientPortal.tsx` that lists `sent_for_approval` posts and writes a `content_approvals` row.
 
-**Table `competitors`** (RLS enabled):
-- `id uuid pk default gen_random_uuid()`
-- `agency_id uuid not null`, `client_id uuid not null`
-- `name text not null`, `website text`
-- `instagram_url`, `tiktok_url`, `facebook_url`, `youtube_url`, `linkedin_url` — all `text null`
-- `niche text null`, `notes text null`
-- `created_by uuid`, `created_at`, `updated_at` (with `tg_set_updated_at` trigger)
-- Index: `(agency_id, client_id, created_at desc)`
+We will keep the existing table and extend it to match the spec, expand the post lifecycle, and build the missing agency-side dashboard plus an upgraded client UI.
 
-**Table `competitor_observations`** (RLS enabled):
-- `id uuid pk`, `agency_id uuid`, `client_id uuid`, `competitor_id uuid not null`
-- `title text not null`
-- `platform text` (instagram/tiktok/youtube/facebook/linkedin/x/other)
-- `content_type text` (reel/story/post/carousel/video/short/ad/live)
-- `content_url text`, `screenshot_url text`
-- `observed_date date default current_date`
-- `hook text`, `caption text`, `offer text`, `content_angle text`
-- `estimated_performance text` (low/medium/high/viral) — free text
-- `notes text`, `ai_analysis jsonb default '{}'`
-- `tags text[] default '{}'`
-- `visible_to_client boolean not null default false`
-- `created_by uuid`, `created_at`, `updated_at` (trigger)
-- Indexes: `(agency_id, client_id, observed_date desc)`, `(competitor_id, observed_date desc)`, GIN on `tags`
+## Database changes (one migration)
 
-**RLS:**
-- `competitors_*`: agency members CRUD on own agency; saas_admin read.
-- `competitor_observations_read`: agency member OR (`visible_to_client=true AND is_client_viewer_of(auth.uid(), client_id)`) OR saas_admin.
-- Insert/update/delete: agency members.
+1. Extend `post_status` enum (preserve existing values, no breaking change):
+   - add `draft`, `internal_review`, `ready_for_client`, `pending_approval`, `changes_requested`, `posted`
+   - keep legacy values (`sent_for_approval` etc.) for back-compat; new code targets the new ones. `sent_for_approval` will be treated as alias of `pending_approval` in the UI helpers.
 
-**Storage**: reuse existing `agency-files` bucket; upload screenshots under `competitors/{client_id}/{competitor_id}/{uuid}.png`. No new bucket needed.
+2. Extend `content_approvals` to match spec:
+   - add `requested_by uuid`, `assigned_to_client_user uuid` nullable
+   - add `status text` enum-like check: `not_sent | pending_approval | approved | changes_requested | rejected | expired` (default `pending_approval`)
+   - add `feedback text` (mirror of comment for new code; keep `comment` for back-compat)
+   - add `requested_at timestamptz default now()`, `responded_at timestamptz`, `due_date timestamptz`
+   - add unique partial index `(content_post_id) where status = 'pending_approval'` to enforce one open request per post
+   - trigger `tg_set_updated_at` on update
 
-**Plan flag**: add `competitor_tracking boolean default false` to `plans`; enable for `growth`, `unlimited`, `white_label`.
+3. RLS additions on `content_approvals`:
+   - agency members: full CRUD (existing).
+   - client viewers: SELECT + UPDATE only of their own client's rows where `status = 'pending_approval'` (to set status/feedback/responded_at). They cannot insert new approval requests.
 
-### 2. Edge functions (Lovable AI Gateway, model `google/gemini-3-flash-preview`)
+4. Trigger: when an approval row transitions to `approved` / `changes_requested` / `rejected`, mirror the change on the related `content_posts` (`status` and `approval_status`) and stamp `responded_at = now()`. Expiry handled via a lightweight scheduled edge function (out of scope for v1 — we'll mark expired in the read query when `due_date < now()` and status is still pending).
 
-All validate JWT, handle 429/402, return JSON via tool-calling. AI rule: **never copy competitor content verbatim — produce original, differentiated ideas**; if data is missing, say so.
+5. `notifications` table already exists for the app (verified earlier in project). Add four notification types via inserts at the call sites:
+   - `approval_requested` (agency → client user)
+   - `client_approved` (client → agency owner + assignees)
+   - `client_changes_requested` (client → agency owner + assignees)
+   - `approval_overdue` (system → agency)
 
-- **`competitor-insights`** — input `{ client_id }`. Loads competitors + observations + the client's niche/brand voice. Returns:
-  ```
-  { patterns: string[], common_content_types: string[],
-    missed_opportunities: string[], differentiation_angles: string[],
-    original_ideas: { title, hook, angle, why_it_works }[] }
-  ```
-- **`competitor-compare`** — input `{ client_id, competitor_ids: string[] }`. Returns side-by-side strengths, weaknesses, content mix, and what the client should adopt vs avoid.
-- **`competitor-observation-analyze`** — input `{ observation_id }`. Writes structured `ai_analysis` (why it likely worked, hook/offer breakdown, originality score, ideas to test — none copied).
+   If the `notifications` table is not yet present, the migration also creates a minimal `notifications` table (id, user_id, agency_id, type, title, body, link, read_at, created_at) with RLS `user_id = auth.uid()`. We will check during implementation and only create if missing.
 
-### 3. Frontend
+## Edge function
 
-**New files:**
-- `src/lib/competitors.ts` — types (`Competitor`, `CompetitorObservation`), platform constants, helpers (`listCompetitors`, `listObservations`, CRUD, `uploadScreenshot`, AI invokers, `saveObservationAsSwipe`).
-- `src/components/competitors/CompetitorCard.tsx` — name, niche, social link icons, observation count, last-observed snippet, actions.
-- `src/components/competitors/CompetitorFormDialog.tsx` — create/edit (zod-validated; URL fields validated).
-- `src/components/competitors/ObservationFormDialog.tsx` — full form, screenshot upload to `agency-files`, tag chips, `visible_to_client` switch.
-- `src/components/competitors/ObservationCard.tsx` — preview with screenshot thumbnail, platform badge, hook snippet, actions: View, AI Analyze, Save to Swipe File, Edit, Delete.
-- `src/components/competitors/ObservationDetailDialog.tsx` — full view + AI analysis panel + "Save to Swipe File" (prefills hook/caption/angle/platform/source_url).
-- `src/components/competitors/CompetitorInsightsDialog.tsx` — runs `competitor-insights`, renders patterns / opportunities / differentiation / original ideas; "Save idea to Swipe File" per item.
-- `src/components/competitors/CompareDialog.tsx` — multi-select competitors, calls `competitor-compare`, renders comparison table.
+`approval-clarify` (Lovable AI Gateway, `google/gemini-3-flash-preview`):
+- Input: post (title, hook, caption, platform, content_type) + raw client feedback text.
+- Output: 3–5 short clarifying questions (Romanian by default, fallback English) to send back to the client, plus a one-line "interpretation" hint for the agency.
+- Used by the agency Approvals dashboard via a "Suggest clarifying questions" button when feedback is short / vague (< 25 chars or detected as non-actionable).
 
-**Wiring:**
-- `src/pages/agency/ClientProfile.tsx` — add new **Competitors** tab containing competitor list + filters (platform, tag, search), "Add Competitor", "Generate AI Insights", "Compare". Selecting a competitor opens a panel with that competitor's observations and "Add Observation".
-- `src/pages/client/ClientPortal.tsx` — add a read-only **"Market Insights"** section that lists only `visible_to_client=true` observations for that client (no AI internals, no notes). Hidden when none exist.
-- No top-level nav route — module is per-client only (matches spec: internal per client).
+## Frontend
 
-### 4. Swipe File integration
+### New lib
+`src/lib/approvals.ts`
+- Types: `ApprovalStatus`, `PostStatus`, helpers `postStatusMeta`, `approvalStatusMeta`, `isPendingForClient(post)`.
+- API helpers:
+  - `sendForApproval(post, { dueDate?, assignedToClientUser? })` — sets post.status to `pending_approval`, post.approval_status `pending`, inserts `content_approvals` row with `status=pending_approval, requested_by=auth.uid()`, fires notification.
+  - `respondToApproval(approvalId, decision, feedback)` — client side; updates approval row.
+  - `resendForApproval(post)` — after agency edits, creates a new approval row (closing prior changes_requested one).
+  - `aiSuggestClarifications(approvalId)` — invokes edge function.
 
-- "Save to Swipe File" on observations and on AI-generated original ideas → opens existing `SwipeFormDialog` prefilled (`type='video_idea'` or `'hook'`, `platform`, `hook`, `caption`, `content_angle`, `source_url`, `client_id`, `visibility='agency_internal'` by default).
+### Agency
+`src/pages/agency/Approvals.tsx` — new route `/agency/approvals` (added to `App.tsx` + `AgencyLayout.tsx` sidebar with `ClipboardCheck` icon).
+- KPI strip: Pending approvals · Overdue · Approved this week · Changes requested · Avg. approval time (hrs).
+- Tabs: `Pending`, `Changes requested`, `Approved`, `All`.
+- Table/grid with: thumbnail, title, client, platform, requested_at, due_date (with overdue badge), latest feedback excerpt.
+- Row click → `ApprovalDetailDialog` showing full post + feedback timeline + "Suggest clarifying questions" (AI) + "Edit post" (deep-links to existing Content editor) + "Resend for approval".
 
-### 5. Permissions summary
+`src/components/content/SendForApprovalDialog.tsx`
+- Triggered from Content Calendar / Content list when a post is `ready_for_client`.
+- Fields: due date (default +3 days), assigned client user (dropdown of `client_users` for that client), optional message.
+- Calls `sendForApproval`.
 
-- Agency members (`agency_owner`, `agency_team`, `saas_admin`): full CRUD on competitors and observations.
-- Client viewers: see only observations where `visible_to_client=true` for their client; cannot see AI analysis, notes, or competitor management UI.
-- Risk Detector / Health Score not modified.
+Edits to `src/pages/agency/Content.tsx` and `src/pages/agency/Calendar.tsx`:
+- New status pill colors via `postStatusMeta`.
+- Status quick-actions: `Mark as Ready for Client`, `Send for Approval` (opens dialog above), shown contextually.
+- Show approval state badge (Pending / Changes requested / Approved) on each card.
 
-### 6. Files created / edited
+### Client portal
+Replace the inline `ApprovalsTab` in `src/pages/client/ClientPortal.tsx` with a polished component `src/components/approvals/ClientApprovalsTab.tsx`:
+- Hero KPI: "X items waiting for you".
+- Large card per post: media preview (thumbnail / video iframe if `post_url`), platform + planned posting date, hook, caption, script (collapsible), history of prior decisions.
+- Primary actions: big `Approve` (accent), `Request Changes` (outline), `Looks good 👍` quick-action that approves with a default comment.
+- Comment box with placeholder "Tell the agency what to adjust…"; required when choosing "Request Changes".
+- After action: optimistic update + toast.
 
-- New migration: `competitors`, `competitor_observations`, RLS, `plans.competitor_tracking` flag.
-- 3 edge functions: `competitor-insights`, `competitor-compare`, `competitor-observation-analyze`.
-- New: `src/lib/competitors.ts`, `src/components/competitors/*` (7 components).
-- Edited: `src/pages/agency/ClientProfile.tsx` (new tab), `src/pages/client/ClientPortal.tsx` (Market Insights section).
+### Notifications
+- Use existing `notifications` table (or freshly created in migration). Hook calls in `sendForApproval`, `respondToApproval`. The bell already in `AgencyLayout` / `ClientPortal` will pick them up automatically.
 
-Approve to implement.
+## Permissions summary
+- Client User: only sees approvals for their own client (`is_client_viewer_of`); can SELECT and UPDATE pending rows; cannot insert.
+- Agency Team Member: sees approvals only for clients where they're an agency member (existing `is_member_of`).
+- Saas admin: all.
+
+## Files
+
+New:
+- `supabase/migrations/<ts>_approval_flow.sql`
+- `supabase/functions/approval-clarify/index.ts`
+- `src/lib/approvals.ts`
+- `src/pages/agency/Approvals.tsx`
+- `src/components/approvals/ApprovalDetailDialog.tsx`
+- `src/components/approvals/SendForApprovalDialog.tsx`
+- `src/components/approvals/ClientApprovalsTab.tsx`
+
+Edited:
+- `src/App.tsx` (route)
+- `src/components/AgencyLayout.tsx` (nav item)
+- `src/pages/agency/Content.tsx` (status actions, badges)
+- `src/pages/agency/Calendar.tsx` (status badges, send action)
+- `src/pages/client/ClientPortal.tsx` (use new `ClientApprovalsTab`)
+- `src/lib/content.ts` (statusMeta extended for new statuses)
+
+## Out of scope (v1)
+- Cron-based auto-expiry (we surface "overdue" via query; full expiry job can be added later).
+- Email notifications (in-app only).
