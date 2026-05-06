@@ -354,7 +354,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       ];
       await supabase.from("tasks").insert(defaultTasks.map((title) => ({
         agency_id: agencyId, client_id: clientId, title, task_type: "onboarding",
-        status: "todo", priority: "medium", created_by: user.id,
+        status: "todo" as const, priority: "medium" as const, created_by: user.id,
       })));
 
       // Invite
