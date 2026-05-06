@@ -57,7 +57,6 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
     const d = new Date(); d.setDate(1);
     return d.toISOString().slice(0, 10);
   }, []);
-  const metrics = RESULT_METRICS_BY_NICHE[niche] || GENERIC_METRICS;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,25 +65,19 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
   const [priority, setPriority] = useState("more_leads");
   const [priorityOther, setPriorityOther] = useState("");
   const [promoteFocus, setPromoteFocus] = useState("");
-  const [resultsObserved, setResultsObserved] = useState<"yes" | "no" | "unknown">("unknown");
-  const [resultsMetrics, setResultsMetrics] = useState<Record<string, string>>({});
-  const [otherResults, setOtherResults] = useState("");
   const [customerFeedback, setCustomerFeedback] = useState("");
   const [importantNote, setImportantNote] = useState("");
   const [satisfaction, setSatisfaction] = useState<number>(4);
   const [directionChange, setDirectionChange] = useState("keep");
   const [directionChangeOther, setDirectionChangeOther] = useState("");
 
-  // Real Estate specific
-  const [reBuyerLeads, setReBuyerLeads] = useState("");
-  const [reSellerLeads, setReSellerLeads] = useState("");
-  const [reHasInquiries, setReHasInquiries] = useState<"yes" | "no" | "unknown">("unknown");
-  const [reViewings, setReViewings] = useState("");
-  const [rePromoteProperties, setRePromoteProperties] = useState("");
-  const [reHasNewProperties, setReHasNewProperties] = useState<"yes" | "no">("no");
-  const [reLeadQuality, setReLeadQuality] = useState<"good" | "mixed" | "weak" | "none">("mixed");
+  // Business Impact (dynamic per niche)
+  const [customImpactFields, setCustomImpactFields] = useState<{ key: string; label: string; kind?: string }[] | null>(null);
+  const impactConfig = useMemo(() => getImpactConfig(niche, customImpactFields), [niche, customImpactFields]);
+  const [impactValues, setImpactValues] = useState<Record<string, ImpactEntry>>({});
+  const setImpact = (k: string, e: ImpactEntry) => setImpactValues((s) => ({ ...s, [k]: e }));
 
-  // Generic per-niche extras driven by NICHE_CONFIGS
+  // Generic per-niche extras driven by NICHE_CONFIGS (extra qualitative questions)
   const nicheCfg = getNicheConfig(niche);
   const [nicheExtras, setNicheExtras] = useState<Record<string, any>>({});
   const setExtra = (k: string, v: any) => setNicheExtras((s) => ({ ...s, [k]: v }));
