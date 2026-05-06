@@ -411,6 +411,78 @@ export type Database = {
         }
         Relationships: []
       }
+      client_health_scores: {
+        Row: {
+          agency_id: string
+          ai_generated_at: string | null
+          ai_recommendation: Json | null
+          breakdown: Json
+          business_impact_score: number | null
+          client_engagement_score: number | null
+          client_id: string
+          content_consistency_score: number | null
+          created_at: string
+          goal_progress_score: number | null
+          id: string
+          missing_data: Json
+          month: number
+          performance_score: number | null
+          period_end: string
+          period_start: string
+          score_status: string
+          summary: string | null
+          total_score: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          agency_id: string
+          ai_generated_at?: string | null
+          ai_recommendation?: Json | null
+          breakdown?: Json
+          business_impact_score?: number | null
+          client_engagement_score?: number | null
+          client_id: string
+          content_consistency_score?: number | null
+          created_at?: string
+          goal_progress_score?: number | null
+          id?: string
+          missing_data?: Json
+          month: number
+          performance_score?: number | null
+          period_end: string
+          period_start: string
+          score_status?: string
+          summary?: string | null
+          total_score?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          agency_id?: string
+          ai_generated_at?: string | null
+          ai_recommendation?: Json | null
+          breakdown?: Json
+          business_impact_score?: number | null
+          client_engagement_score?: number | null
+          client_id?: string
+          content_consistency_score?: number | null
+          created_at?: string
+          goal_progress_score?: number | null
+          id?: string
+          missing_data?: Json
+          month?: number
+          performance_score?: number | null
+          period_end?: string
+          period_start?: string
+          score_status?: string
+          summary?: string | null
+          total_score?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       client_invites: {
         Row: {
           agency_id: string
@@ -1296,6 +1368,7 @@ export type Database = {
           client_portal: boolean
           competitor_watch: boolean
           custom_branding: boolean
+          health_score: boolean
           max_clients: number | null
           max_seats: number | null
           name: string
@@ -1314,6 +1387,7 @@ export type Database = {
           client_portal?: boolean
           competitor_watch?: boolean
           custom_branding?: boolean
+          health_score?: boolean
           max_clients?: number | null
           max_seats?: number | null
           name: string
@@ -1332,6 +1406,7 @@ export type Database = {
           client_portal?: boolean
           competitor_watch?: boolean
           custom_branding?: boolean
+          health_score?: boolean
           max_clients?: number | null
           max_seats?: number | null
           name?: string
