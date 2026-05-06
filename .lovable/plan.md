@@ -1,85 +1,67 @@
 ## Obiectiv
 
-Adăugăm nișa **Hotels / Hospitality / Tourism** ca o nișă completă, premium, integrată în întreg pipeline-ul: Add Client Wizard, Client Dashboard, Quick Check-In, Business Impact, Analytics, Reports și AI generators. Cheia canonică: **`hospitality`** (acoperă hoteluri, pensiuni, boutique hotels, resorturi, vile turistice, Airbnb/short-stay, glamping, retreat-uri, event venues cu cazare).
+Flow simplu și sigur de admin login: link discret „Admin” în footer → `/admin-login` (doar email/parolă) → după autentificare, dacă userul are `profiles.is_saas_admin = true`, ajunge la `/admin`; altfel e delogat. Folosește Supabase Auth (fără hardcodări de parolă) și sistemul existent de roluri (`profiles.is_saas_admin`).
 
-## Modificări per fișier
+## Modificări
 
-### 1. `src/lib/niches.ts`
-- Adaug `{ value: "hospitality", label: "Hotels / Hospitality" }` în `NICHES` (înainte de `custom`).
+### 1. Bootstrap super-admin pentru `robert@cascodent.ro`
+Tabela `profiles` are deja coloana `is_saas_admin` (folosită de `RoleRoute`, `AdminDashboard`, etc.) și un trigger `lock_profile_role_columns` care interzice update-ul direct din client. De aceea promovarea trebuie făcută server-side.
 
-### 2. `src/lib/nichePresets.ts`
-- Adaug preset `hospitality` cu KPI fields complete:
-  - `bookings`, `reservation_requests`, `direct_inquiries`, `occupancy_rate`, `booked_nights`, `room_inquiries`, `package_inquiries`, `booking_engine_clicks`, `website_clicks`, `whatsapp_inquiries`, `calls`, `messages`, `guest_reviews`, `review_score`, `revenue` (manual), `cost_per_booking` (when ad spend), `roas` (when ad spend).
-- `business_impact_fields`: bookings, reservation_requests, calls, messages, revenue_estimate, contracts (pt event venues / nunți).
-- `monthly_questions`: cele 7 întrebări din brief.
-- Adaug în `NICHE_PRESET_OPTIONS`.
+**Migrație DB** (aplicată cu tool-ul de migrare):
+- `UPDATE profiles SET is_saas_admin = true WHERE lower(email) = 'robert@cascodent.ro'` (în caz că profile-ul există deja)
+- Trigger `BEFORE INSERT OR UPDATE OF email ON profiles` → setează `is_saas_admin = true` pentru emailul allowlist (idempotent, sigur la signup viitor).
 
-### 3. `src/lib/nicheDashboard.ts`
-- Înlocuiesc cheia veche `hotel` (parțial folosită) cu `hospitality` care include:
-  - `hero_eyebrow: "Luna aceasta în hospitality"`
-  - `impact_section_title: "Rezervări & oaspeți"`
-  - `primary_kpi_keys: ["bookings", "reservation_requests", "occupancy_rate"]`
-  - `show_latest_report: true`
+### 2. Edge function `bootstrap-super-admin` (fallback / robust)
+`supabase/functions/bootstrap-super-admin/index.ts`:
+- Citește JWT-ul user-ului curent (anon client cu Authorization header).
+- Dacă `user.email` e în allowlist (`["robert@cascodent.ro"]`), folosește service role pentru `upsert` în `profiles` cu `is_saas_admin = true`.
+- Altfel răspunde `{ ok: true, is_admin: false }` fără să facă modificări.
+- Apelată de pagina `/admin-login` după sign-in pentru a garanta promovarea chiar dacă trigger-ul nu a rulat (de ex. profile creat înainte de migrație).
+- `supabase/config.toml`: adaugă `[functions.bootstrap-super-admin] verify_jwt = false` (validăm manual JWT-ul prin `auth.getUser`).
 
-### 4. `src/lib/nicheDashboardConfigs.ts`
-- Adaug `hospitality` în `NICHE_CONFIGS` cu **7 carduri principale** (engine generic le va randa):
-  1. Bookings / Reservations (impact_sum: bookings + checkin viewing fallback)
-  2. Reservation Requests (checkin: reservation_requests)
-  3. Room / Package Interest (checkin_text: room_package_interest)
-  4. Guest Messages & Inquiries (impact_sum: dms + calls)
-  5. Best Performing Content (top_published_posts)
-  6. Reviews / Guest Feedback (checkin_text: guest_reviews)
-  7. Next Recommended Actions (AI next_actions)
-- `checkin_extras`: cele 7 întrebări (reservation_received Y/N/?, promote_focus chips multi, low_availability_periods text, target_guest_type chips, important_reviews text long, best_package text, important_note text long).
+### 3. Pagina `/admin-login` (nouă)
+`src/pages/AdminLogin.tsx`:
+- UI premium minim: logo, titlu „Admin Login”, badge „Super Admin only”.
+- Doar inputurile email + password și butonul „Login as Admin”. Fără Google, fără register, fără forgot password.
+- `onSubmit`:
+  1. `supabase.auth.signInWithPassword` → erori = toast „Invalid admin credentials.”
+  2. `supabase.functions.invoke("bootstrap-super-admin")` (non-blocking).
+  3. Citește `profiles.is_saas_admin` pentru user-ul curent.
+  4. Dacă `true` → `navigate("/admin")`. Dacă `false` → `supabase.auth.signOut()` + toast „Access denied. This area is only for Super Admin.”
+- `useEffect` la mount: dacă deja logat ca super admin, redirect direct la `/admin`.
 
-### 5. `src/lib/businessImpactByNiche.ts`
-- Adaug `hospitality` config cu câmpuri:
-  - `bookings` (number → db `bookings`)
-  - `reservation_requests` (number → db `dms`)
-  - `direct_inquiries` (number → db `dms`)
-  - `booked_nights` (number)
-  - `revenue` (currency → db `revenue_estimate`)
-  - `guest_reviews_count` (number)
-  - `review_score` (number — average 1–5)
-  - `occupancy_rate` (number — percent 0–100)
-- Toate cu cele 4 moduri: exact / approx / unknown / N/A.
+### 4. Protecție rută `/admin`
+`src/App.tsx`: înlocuiesc `<Route path="/admin" element={<AdminDashboard />} />` cu o rută wrapped într-un guard nou `<AdminRoute>` care:
+- Așteaptă `useUser().loading`.
+- Dacă nu e logat sau `!profile?.is_saas_admin` → `<Navigate to="/admin-login" replace />`.
+- Altfel randează `<AdminDashboard />`.
 
-### 6. `src/components/client/ClientDashboard.tsx`
-- Adaug `hospitality: "Hotels"` în `NICHE_BADGES`.
-- Engine-ul generic `NicheDashboardSection` îl randează automat odată ce `hospitality` e în `NICHE_CONFIGS`. Nu trebuie listă specială.
-- Verific check-list-ul `["real_estate", "restaurant", "beauty", "ecommerce", "fitness", "medical", "custom"]` din `ClientDashboard.tsx` — nu mai e folosit după refactor anterior, dar ascund duplicate approval cards dacă există.
+`AdminDashboard.tsx` deja face check intern `profile?.is_saas_admin` — păstrăm, dar schimbăm fallback-ul din `Navigate to="/agency"` în `Navigate to="/admin-login"` ca să nu mai trimitem useri neautorizați în zona agenției.
 
-### 7. `src/components/client/ClientQuickCheckIn.tsx`
-- Nicio modificare directă — `nicheCfg` din `getNicheConfig("hospitality")` randează automat noile întrebări, iar `getImpactConfig("hospitality")` randează automat câmpurile Business Impact.
+Adaug ruta nouă: `<Route path="/admin-login" element={<AdminLogin />} />`.
 
-### 8. `supabase/functions/ai-assistant/index.ts` & `supabase/functions/ai-report/index.ts`
-- Adaug în mapa `NICHE_LABELS`: `hospitality: "hotel / hospitality / tourism"` pentru ca AI-ul să folosească tonalitate și terminologie corectă (room rates, occupancy, ADR, RevPAR, seasonality, direct booking vs OTA).
-- AI-ul folosește deja `client_dashboard_contexts` + `client_checkins.real_results_data` ca input → primește automat datele noi prin generator-ul existent (`client-dashboard-context-generate`). Nu sunt necesare modificări la edge functions noi.
+### 5. Footer
+`src/pages/Index.tsx` (singurul footer din app, în landing page):
+- Adaug în partea dreaptă a footer-ului existent un link discret:  
+  `<Link to="/admin-login" className="text-muted-foreground/60 hover:text-foreground">Admin</Link>`
 
-### 9. AI Smart Dashboard Generator (`client-dashboard-context-generate`)
-- Generator-ul actual ia `niche` din `clients` și-l pasează modelului. Voi adăuga în prompt-ul system un fragment specific pentru `hospitality` (booking-driven insights, ce conținut aduce cereri, perioade de promovat, review-uri ca content, CTA-uri pentru direct booking) — un short string concatenat doar când `niche === "hospitality"`.
+## Securitate
 
-## AI Insights specifice (livrate prin generator)
+- Parola merge doar prin `supabase.auth.signInWithPassword` — nu apare niciodată în codul frontend, nu se stochează în localStorage.
+- Allowlist-ul de emailuri admin trăiește server-side (migrație DB + edge function), nu în frontend.
+- RLS rămâne activ; trigger-ul `lock_profile_role_columns` nu permite escaladare client-side a `is_saas_admin`.
+- Useri non-admin care reușesc să se autentifice pe `/admin-login` sunt automat delogați.
+- `/admin` și sub-rutele admin existente continuă să verifice `is_saas_admin`.
 
-Generator-ul va fi instruit să producă insight-uri și `ai_priorities` pentru hospitality care să acopere:
-- ce conținut aduce cereri de rezervare;
-- ce pachete / camere atrag interes;
-- ce perioade au low-occupancy de promovat;
-- ce review-uri pot deveni content (UGC / testimonial);
-- ce campanii sezoniere de testat;
-- ce CTA-uri cresc rezervările directe (vs OTA).
+## Acceptance check
 
-## Missing data handling
-
-- Business Impact fields cu mode `unknown` → `client_checkins.real_results_data.business_impact_missing[]` (deja implementat în BusinessImpactSection).
-- Generator-ul AI marchează lipsa `bookings`, `occupancy_rate`, `revenue` în `client_dashboard_contexts.missing_data` → randat în secțiunea "Ce necesită atenție" din ClientDashboard.
-- Niciun mock data; fără invenții.
-
-## RLS / multi-tenant
-
-Toate scrierile (business_impact_entries, client_checkins, client_feedback) folosesc `agency_id` + `client_id` din context, identice cu fluxul existent. Niciun policy nou necesar.
+- Footer: link „Admin” → `/admin-login`.
+- `/admin-login` arată doar email + password + buton, fără social/register/forgot.
+- robert@cascodent.ro intră ca super admin după primul login (promovat de trigger sau de edge function).
+- Orice alt user este delogat cu mesaj clar.
+- `/admin` redirect la `/admin-login` pentru oricine non-admin.
 
 ## Out of scope
 
-- Tabelă specializată `niche_hospitality_*` (similar cu `niche_real_estate_properties`) — nu necesar pentru cerințele actuale; toate datele structurate trec prin `business_impact_entries` + `client_checkins.real_results_data.hospitality`.
-- UI separat pentru room/package management — viitor.
+- Schimbarea parolei pentru contul admin (folosește Supabase Auth standard).
+- Adăugarea altor super admins — pot fi promovați manual prin DB sau extinzând `ALLOWED_ADMIN_EMAILS` în edge function.
