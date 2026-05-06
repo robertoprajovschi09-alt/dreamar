@@ -740,6 +740,143 @@ export type Database = {
           },
         ]
       }
+      competitor_observations: {
+        Row: {
+          agency_id: string
+          ai_analysis: Json
+          caption: string | null
+          client_id: string
+          competitor_id: string
+          content_angle: string | null
+          content_type: string | null
+          content_url: string | null
+          created_at: string
+          created_by: string | null
+          estimated_performance: string | null
+          hook: string | null
+          id: string
+          notes: string | null
+          observed_date: string
+          offer: string | null
+          platform: string | null
+          screenshot_url: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          visible_to_client: boolean
+        }
+        Insert: {
+          agency_id: string
+          ai_analysis?: Json
+          caption?: string | null
+          client_id: string
+          competitor_id: string
+          content_angle?: string | null
+          content_type?: string | null
+          content_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimated_performance?: string | null
+          hook?: string | null
+          id?: string
+          notes?: string | null
+          observed_date?: string
+          offer?: string | null
+          platform?: string | null
+          screenshot_url?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          visible_to_client?: boolean
+        }
+        Update: {
+          agency_id?: string
+          ai_analysis?: Json
+          caption?: string | null
+          client_id?: string
+          competitor_id?: string
+          content_angle?: string | null
+          content_type?: string | null
+          content_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimated_performance?: string | null
+          hook?: string | null
+          id?: string
+          notes?: string | null
+          observed_date?: string
+          offer?: string | null
+          platform?: string | null
+          screenshot_url?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          visible_to_client?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_observations_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitors: {
+        Row: {
+          agency_id: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          linkedin_url: string | null
+          name: string
+          niche: string | null
+          notes: string | null
+          tiktok_url: string | null
+          updated_at: string
+          website: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          agency_id: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          name: string
+          niche?: string | null
+          notes?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          website?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
+          name?: string
+          niche?: string | null
+          notes?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          website?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       content_approvals: {
         Row: {
           agency_id: string
@@ -1420,6 +1557,7 @@ export type Database = {
           ai_strategy_room: boolean
           approval_workflow: boolean
           client_portal: boolean
+          competitor_tracking: boolean
           competitor_watch: boolean
           custom_branding: boolean
           health_score: boolean
@@ -1441,6 +1579,7 @@ export type Database = {
           ai_strategy_room?: boolean
           approval_workflow?: boolean
           client_portal?: boolean
+          competitor_tracking?: boolean
           competitor_watch?: boolean
           custom_branding?: boolean
           health_score?: boolean
@@ -1462,6 +1601,7 @@ export type Database = {
           ai_strategy_room?: boolean
           approval_workflow?: boolean
           client_portal?: boolean
+          competitor_tracking?: boolean
           competitor_watch?: boolean
           custom_branding?: boolean
           health_score?: boolean

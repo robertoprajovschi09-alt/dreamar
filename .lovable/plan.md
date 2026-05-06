@@ -1,76 +1,87 @@
-## Module 3: Swipe File Library
+## Module 4: Competitor Tracking
 
-Internal library where the agency saves reusable ideas, hooks, scripts, captions, formats, and content examples — with AI to generate variations and adapt across niches.
+Internal per-client competitor tracker with observations, screenshots, AI insights, and integration with Swipe File.
 
-### 1. Database
+### 1. Database (new migration)
 
-**New table `swipe_files`** (RLS enabled):
-- `id uuid pk`, `agency_id uuid not null`, `client_id uuid null`, `niche text null`
-- `title text not null`
-- `type text not null` — enum-checked: `hook | script | caption | video_idea | ad_angle | carousel_idea | story_idea | offer | cta | full_example`
-- `platform text null` (instagram/tiktok/youtube/facebook/linkedin/other)
-- `hook text`, `script text`, `caption text`
-- `content_angle text`, `content_format text`
-- `performance_notes text`, `why_it_worked text`
-- `source_url text`, `file_url text`
-- `tags text[] default '{}'`
-- `visibility text not null default 'agency_internal'` — `agency_internal | client_specific | global_template` (client_specific = visible to that client user)
-- `usage_count int default 0`, `performance_score numeric null`
-- `source_post_id uuid null` (link back to content_posts when saved from one)
+**Table `competitors`** (RLS enabled):
+- `id uuid pk default gen_random_uuid()`
+- `agency_id uuid not null`, `client_id uuid not null`
+- `name text not null`, `website text`
+- `instagram_url`, `tiktok_url`, `facebook_url`, `youtube_url`, `linkedin_url` — all `text null`
+- `niche text null`, `notes text null`
 - `created_by uuid`, `created_at`, `updated_at` (with `tg_set_updated_at` trigger)
-- Indexes: `(agency_id, created_at desc)`, `(agency_id, type)`, GIN on `tags`
+- Index: `(agency_id, client_id, created_at desc)`
 
-**RLS policies:**
-- `swipe_files_read`: agency members OR (visibility='client_specific' AND `is_client_viewer_of(auth.uid(), client_id)`) OR saas_admin. Global templates are readable by any authenticated agency member (cross-agency curated bank reserved for SaaS admin to seed; for now agency-only sees own + globals).
-- Insert/update/delete: agency members of `agency_id`. Global templates: only saas_admin can write (`agency_id` still set to creator's agency for traceability).
+**Table `competitor_observations`** (RLS enabled):
+- `id uuid pk`, `agency_id uuid`, `client_id uuid`, `competitor_id uuid not null`
+- `title text not null`
+- `platform text` (instagram/tiktok/youtube/facebook/linkedin/x/other)
+- `content_type text` (reel/story/post/carousel/video/short/ad/live)
+- `content_url text`, `screenshot_url text`
+- `observed_date date default current_date`
+- `hook text`, `caption text`, `offer text`, `content_angle text`
+- `estimated_performance text` (low/medium/high/viral) — free text
+- `notes text`, `ai_analysis jsonb default '{}'`
+- `tags text[] default '{}'`
+- `visible_to_client boolean not null default false`
+- `created_by uuid`, `created_at`, `updated_at` (trigger)
+- Indexes: `(agency_id, client_id, observed_date desc)`, `(competitor_id, observed_date desc)`, GIN on `tags`
 
-**Plan flag:** add `swipe_file boolean default false` to `plans`; enable for `growth`, `unlimited`, `white_label`.
+**RLS:**
+- `competitors_*`: agency members CRUD on own agency; saas_admin read.
+- `competitor_observations_read`: agency member OR (`visible_to_client=true AND is_client_viewer_of(auth.uid(), client_id)`) OR saas_admin.
+- Insert/update/delete: agency members.
 
-### 2. Edge Functions (Lovable AI Gateway, model `google/gemini-3-flash-preview`)
+**Storage**: reuse existing `agency-files` bucket; upload screenshots under `competitors/{client_id}/{competitor_id}/{uuid}.png`. No new bucket needed.
 
-All return JSON via tool-calling, handle 429/402, validate JWT in code.
+**Plan flag**: add `competitor_tracking boolean default false` to `plans`; enable for `growth`, `unlimited`, `white_label`.
 
-- **`swipe-analyze`** — input `{ swipe_id }`. AI explains *why it worked* based on hook/script/notes; writes `why_it_worked` back if empty.
-- **`swipe-generate-variations`** — input `{ swipe_id, count?=10 }`. Returns 10 hook/script variations preserving angle and tone.
-- **`swipe-adapt-niche`** — input `{ swipe_id, target_niche }`. Rewrites hook/script for new niche (e.g. real estate → restaurant). Returns `{ title, hook, script, caption, suggested_tags }`.
-- **`swipe-suggest-reuse`** — input `{ swipe_id }`. Returns list of clients (from agency) and platforms where this idea could be reused, with reasoning.
+### 2. Edge functions (Lovable AI Gateway, model `google/gemini-3-flash-preview`)
 
-AI rule: never invent metrics; if data missing, say so.
+All validate JWT, handle 429/402, return JSON via tool-calling. AI rule: **never copy competitor content verbatim — produce original, differentiated ideas**; if data is missing, say so.
+
+- **`competitor-insights`** — input `{ client_id }`. Loads competitors + observations + the client's niche/brand voice. Returns:
+  ```
+  { patterns: string[], common_content_types: string[],
+    missed_opportunities: string[], differentiation_angles: string[],
+    original_ideas: { title, hook, angle, why_it_works }[] }
+  ```
+- **`competitor-compare`** — input `{ client_id, competitor_ids: string[] }`. Returns side-by-side strengths, weaknesses, content mix, and what the client should adopt vs avoid.
+- **`competitor-observation-analyze`** — input `{ observation_id }`. Writes structured `ai_analysis` (why it likely worked, hook/offer breakdown, originality score, ideas to test — none copied).
 
 ### 3. Frontend
 
 **New files:**
-- `src/lib/swipe.ts` — types, type/visibility/platform constants & labels, helpers.
-- `src/components/swipe/SwipeCard.tsx` — grid card (title, type badge, platform, tags, usage_count, actions).
-- `src/components/swipe/SwipeRow.tsx` — list row.
-- `src/components/swipe/SwipeFormDialog.tsx` — create/edit form with validation (zod), all fields, tag input, visibility selector, optional client/niche picker.
-- `src/components/swipe/SwipeDetailDialog.tsx` — full view with AI panel (Analyze, Generate Variations, Adapt to Niche, Suggest Reuse) and action buttons.
-- `src/components/swipe/SaveToSwipeButton.tsx` — reusable button used from `Content.tsx` (saves a `content_post` as swipe — pre-fills hook/script/caption/platform/source_post_id).
-- `src/components/swipe/UseInCalendarDialog.tsx` — picks client + scheduled date, inserts row in `content_posts` from a swipe (increments `usage_count`).
-- `src/pages/agency/SwipeLibrary.tsx` — main page. Filters: search, type, platform, niche, client, tag, visibility. Sort: recent / most_used / performance. Toggle list/grid. Empty states. Premium gate via existing pattern.
+- `src/lib/competitors.ts` — types (`Competitor`, `CompetitorObservation`), platform constants, helpers (`listCompetitors`, `listObservations`, CRUD, `uploadScreenshot`, AI invokers, `saveObservationAsSwipe`).
+- `src/components/competitors/CompetitorCard.tsx` — name, niche, social link icons, observation count, last-observed snippet, actions.
+- `src/components/competitors/CompetitorFormDialog.tsx` — create/edit (zod-validated; URL fields validated).
+- `src/components/competitors/ObservationFormDialog.tsx` — full form, screenshot upload to `agency-files`, tag chips, `visible_to_client` switch.
+- `src/components/competitors/ObservationCard.tsx` — preview with screenshot thumbnail, platform badge, hook snippet, actions: View, AI Analyze, Save to Swipe File, Edit, Delete.
+- `src/components/competitors/ObservationDetailDialog.tsx` — full view + AI analysis panel + "Save to Swipe File" (prefills hook/caption/angle/platform/source_url).
+- `src/components/competitors/CompetitorInsightsDialog.tsx` — runs `competitor-insights`, renders patterns / opportunities / differentiation / original ideas; "Save idea to Swipe File" per item.
+- `src/components/competitors/CompareDialog.tsx` — multi-select competitors, calls `competitor-compare`, renders comparison table.
 
 **Wiring:**
-- `App.tsx` — add route `/agency/swipe` → `SwipeLibrary`.
-- `AgencyLayout.tsx` — add nav link "Swipe File" (icon: `BookmarkPlus` or `Library`).
-- `src/pages/agency/Content.tsx` — add "Save to Swipe File" action on each content post row/card.
-- `src/pages/agency/ClientProfile.tsx` — small section "Client swipe ideas" listing client_specific entries.
-- `src/pages/client/ClientPortal.tsx` — only when `visibility='client_specific'` items exist, show read-only "Inspiration" tab.
+- `src/pages/agency/ClientProfile.tsx` — add new **Competitors** tab containing competitor list + filters (platform, tag, search), "Add Competitor", "Generate AI Insights", "Compare". Selecting a competitor opens a panel with that competitor's observations and "Add Observation".
+- `src/pages/client/ClientPortal.tsx` — add a read-only **"Market Insights"** section that lists only `visible_to_client=true` observations for that client (no AI internals, no notes). Hidden when none exist.
+- No top-level nav route — module is per-client only (matches spec: internal per client).
 
-### 4. Action buttons (per spec)
-- **Save to Swipe File** — on content posts and from a manual "+ New" button.
-- **Generate Similar Ideas** — calls `swipe-generate-variations`, displays results, each with "Save as new swipe".
-- **Use in Content Calendar** — opens `UseInCalendarDialog`, creates a `content_posts` row.
-- **Create Content From This** — same as above but routes user to `/agency/content` after creating draft.
+### 4. Swipe File integration
+
+- "Save to Swipe File" on observations and on AI-generated original ideas → opens existing `SwipeFormDialog` prefilled (`type='video_idea'` or `'hook'`, `platform`, `hook`, `caption`, `content_angle`, `source_url`, `client_id`, `visibility='agency_internal'` by default).
 
 ### 5. Permissions summary
-- Agency members: full CRUD on agency's swipes.
-- Client users: see only swipes where `visibility='client_specific' AND client_id = their client`.
-- Saas admin: can create `global_template` swipes visible across.
 
-### Files created / edited
-- New migration: `swipe_files` table + RLS + plan flag.
-- 4 edge functions: `swipe-analyze`, `swipe-generate-variations`, `swipe-adapt-niche`, `swipe-suggest-reuse`.
-- New: `src/lib/swipe.ts`, `src/components/swipe/*` (6 components), `src/pages/agency/SwipeLibrary.tsx`.
-- Edited: `src/App.tsx`, `src/components/AgencyLayout.tsx`, `src/pages/agency/Content.tsx`, `src/pages/agency/ClientProfile.tsx`, `src/pages/client/ClientPortal.tsx`.
+- Agency members (`agency_owner`, `agency_team`, `saas_admin`): full CRUD on competitors and observations.
+- Client viewers: see only observations where `visible_to_client=true` for their client; cannot see AI analysis, notes, or competitor management UI.
+- Risk Detector / Health Score not modified.
+
+### 6. Files created / edited
+
+- New migration: `competitors`, `competitor_observations`, RLS, `plans.competitor_tracking` flag.
+- 3 edge functions: `competitor-insights`, `competitor-compare`, `competitor-observation-analyze`.
+- New: `src/lib/competitors.ts`, `src/components/competitors/*` (7 components).
+- Edited: `src/pages/agency/ClientProfile.tsx` (new tab), `src/pages/client/ClientPortal.tsx` (Market Insights section).
 
 Approve to implement.
