@@ -1,53 +1,63 @@
-# AI Knowledge Base & Memory
+# Continuous Improvement Engine
 
-Builds a controlled, source-cited memory layer the AI uses (never invents) on top of the existing `ai_memory` table (which we keep for backward compatibility with the current `AiMemory.tsx` page).
+A controlled 7-step loop that turns real app data + feedback into reviewed, human-approved improvements. No auto-training: all impactful actions go through the existing `ai_action_requests` approval queue.
 
-## 1. Database (migration)
+## 1. Database
 
-### Enums
-- `ai_memory_type`: `agency_preference`, `client_brand_voice`, `client_goal`, `niche_insight`, `content_pattern`, `winning_hook`, `failed_hook`, `reporting_preference`, `business_context`, `audience_insight`, `competitor_insight`
-- `ai_memory_visibility`: `internal_agency`, `client_visible`, `super_admin_only`
-- `ai_knowledge_source_status`: `pending`, `processing`, `processed`, `failed`, `archived`
+### Type
+- `cie_status`: `collecting | evaluating | awaiting_review | completed | failed`
 
-### Table `ai_memory_items`
-Columns: `id`, `agency_id` (not null), `client_id` (nullable), `memory_type` (enum), `title`, `content`, `source_type` (text, **not null**), `source_id` (text, **not null**), `confidence_score` (numeric, default 0.5), `is_active` (bool default true), `visibility` (enum default `internal_agency`), `created_by` (uuid), `created_at`, `updated_at`. Trigger `tg_set_updated_at`. CHECK ensuring `source_type` and `source_id` are non-empty (rule: AI can never save memory without a source).
-
-### Table `ai_knowledge_sources`
-Columns: `id`, `agency_id`, `client_id` nullable, `source_type` (e.g. `document`, `report`, `brief`, `feedback`, `analytics`, `competitor`), `source_id`, `title`, `content_summary` (text), `extracted_facts` (jsonb), `status` (enum), `last_processed_at`, `created_at`, `updated_at`. Unique `(agency_id, source_type, source_id)`.
+### Table `continuous_improvement_runs`
+`id`, `agency_id` (nullable — null = platform run), `run_type` (`weekly_agency` | `monthly_strategy` | `manual` | `platform`), `input_summary` jsonb, `detected_patterns` jsonb[], `recommended_improvements` jsonb[], `approved_improvements` jsonb[], `rejected_improvements` jsonb[], `performance_before` jsonb, `performance_after` jsonb, `status` cie_status, `triggered_by` uuid, `created_at`, `updated_at`. Trigger `tg_set_updated_at`.
 
 ### RLS
-- **Read** `ai_memory_items`:
-  - `is_saas_admin(auth.uid())` → all
-  - `is_member_of(auth.uid(), agency_id)` AND `visibility <> 'super_admin_only'` → agency members see internal + client_visible
-  - `is_client_viewer_of(auth.uid(), client_id)` AND `visibility = 'client_visible'` → client users only see `client_visible`
-- **Insert/Update/Delete**: agency members or saas_admin. Client viewers cannot write.
-- `ai_knowledge_sources`: read/write for agency members + saas_admin; client viewer no access.
+- Saas admin: full access (incl. platform-wide rows where `agency_id` is null).
+- Agency members: read/insert/update only for their own agency.
+- Client viewers: no access.
 
-## 2. Edge functions
+## 2. Edge function `continuous-improvement-engine`
 
-- **`ai-memory-upsert`**: validates auth + agency membership, requires `source_type` + `source_id`, inserts/updates an `ai_memory_items` row. Used by other AI functions (e.g. report generation that wants to remember a winning hook from a specific post).
-- **`ai-knowledge-ingest`**: takes a source (document/report/feedback/brief), summarizes content with Lovable AI (gemini-2.5-flash), extracts structured `facts[]` JSON, stores in `ai_knowledge_sources`, and (optionally) proposes one or more `ai_memory_items` via the existing `ai_action_requests` queue (so a human approves before the memory goes live for high-impact types like `client_brand_voice`).
-- Update **`openai-ai-core`** context loader: when `client_id` is present, loads relevant active `ai_memory_items` (filtered by visibility for the calling user’s role) and injects them into the system prompt under `KNOWN_FACTS:` with citations `[source_type:source_id]`. Also adds the rule: *"If no memory item is relevant, only use current data; never invent."*
+Body: `{ run_type, agency_id?, since_days?, measure_run_id? }`. Auth required; agency members must belong to `agency_id`.
 
-## 3. Frontend
+Pipeline:
 
-- **Rewrite `src/pages/agency/AiMemory.tsx`** to use `ai_memory_items`:
-  - Tabs: *Memories* (list, filter by `memory_type`, `client`, `visibility`, `is_active`) and *Knowledge Sources* (list of ingested docs/reports/feedback with status + extracted facts preview).
-  - Row actions: edit, toggle active, change visibility, delete. Each row shows source citation badge `source_type · source_id`.
-  - "Add memory" dialog: requires title, content, type, visibility, client (optional), and **mandatory** source_type + source_id (or "manual" + free-text reference).
-- **`src/lib/aiMemory.ts`** helper: `listMemories`, `upsertMemory`, `setMemoryActive`, `deleteMemory`, `listKnowledgeSources`, `ingestKnowledgeSource`.
-- Existing `AiMemory.tsx`'s old `ai_memory` table queries are removed; old table is kept in DB but no longer surfaced in UI.
+1. **Collect** — pulls last N days from: `analytics_entries`, `content_metrics`, `monthly_reports`, `monthly_strategies`, `ai_outputs`, `ai_feedback`, `post_approvals`, `tasks`, `client_health_scores`, `client_risk_alerts`, `swipe_files`, `competitor_observations`, `documents`. Each table read is wrapped in a safe try (degrades gracefully if a table is missing or empty).
+2. **Evaluate** — computes per-feature feedback aggregates, useful/not-useful counts, avg rating, strategy approval/rejection counts, AI-sourced task completion rate, and per-`prompt_version_id` success/missing/blocked stats from `ai_outputs`.
+3. **Detect Patterns** — heuristics over the evaluation: `weak_prompt_version` (success <60%), `frequent_missing_data` (>40%), `ai_feedback_negative`, `strategy_rejection_high`, `clients_at_risk`, `winning_niches` (top swipe niches by avg performance), `ai_tasks_low_completion`.
+4. **Recommend Improvements** — heuristic mapping pattern → action (e.g. `weak_prompt_version` → `update_prompt_version` (high risk); `frequent_missing_data` → `create_task` to collect data; `winning_niches` → `create_content_idea`; `ai_feedback_negative` → `create_lovable_prompt`; etc.). Optional Lovable AI enrichment via `google/gemini-2.5-flash` with strict JSON output (no invention — only patterns are sent in).
+5. **Human Review** — every recommendation is inserted into `ai_action_requests` with appropriate `risk_level`, the existing risk-vs-role matrix in `ai-action-decide` enforces who can approve.
+6. **Implement** — already handled by the existing `ai-action-decide` execute step (creates tasks, flips prompts, queues lovable prompts, creates memory items, etc.).
+7. **Measure Again** — calling the function with `measure_run_id` re-runs Collect+Evaluate over the same window and stores `performance_after` on the original run. UI compares before vs after.
 
-## 4. Rules enforced
-- DB CHECK + edge function validation: no memory without `source_type`/`source_id`.
-- Visibility filter in RLS prevents Client User from seeing internal/super_admin memories.
-- AI core injects memory + citations; if none relevant, system prompt instructs "use only current data".
-- Auto-ingestion proposals route through `ai_action_requests` for human approval before becoming active.
+The run row is updated through `collecting → evaluating → awaiting_review → completed (after measure)`. Any throw sets `failed`.
 
-## Files
-- `supabase/migrations/<ts>_ai_knowledge_base.sql`
-- `supabase/functions/ai-memory-upsert/index.ts`
-- `supabase/functions/ai-knowledge-ingest/index.ts`
-- edit `supabase/functions/openai-ai-core/index.ts` (memory injection)
-- `src/lib/aiMemory.ts`
-- rewrite `src/pages/agency/AiMemory.tsx`
+## 3. Cron jobs
+
+Add scheduled invocations using `pg_cron` + `pg_net` (run via the insert tool, not migration, since they include the project URL/anon key):
+- `cie-weekly-agencies`: every Monday 06:00 UTC, fan-out to each agency_id (a tiny SQL function loops over `agencies` and calls the function per agency).
+- `cie-monthly-strategy`: 1st of each month 06:30 UTC, run with `run_type='monthly_strategy'` and `since_days=30` per agency.
+- `cie-platform-weekly`: Sunday 22:00 UTC, `agency_id=null`, `run_type='platform'` (admin overview).
+
+## 4. Frontend
+
+### `src/lib/continuousImprovement.ts`
+Helpers: `runEngine({ run_type, agency_id?, since_days? })`, `measureRunAgain(run_id)`, `listRuns({ agency_id? })`, `getRun(run_id)`.
+
+### `src/pages/admin/ContinuousImprovement.tsx`  (route `/agency/admin/continuous-improvement`)
+- "Run Improvement Engine" button (admin) with run_type + scope (all agencies / specific agency) + since_days.
+- Table of recent runs: status badge, run_type, agency, recommendations count, performance delta (when after exists).
+- Click row → detail drawer showing input_summary counts, detected patterns, recommendations (with "View in approvals" link to existing AI Actions page), and a "Measure again" button that calls the function with `measure_run_id`.
+- Add nav link in `AgencyLayout.tsx` admin block.
+
+## 5. Files
+- `supabase/migrations/<ts>_continuous_improvement_runs.sql` (table + RLS)
+- `supabase/functions/continuous-improvement-engine/index.ts`
+- Insert-tool SQL to register the 3 cron jobs
+- `src/lib/continuousImprovement.ts`
+- `src/pages/admin/ContinuousImprovement.tsx`
+- edit `src/App.tsx` (add route) and `src/components/AgencyLayout.tsx` (nav link)
+
+## 6. Guarantees
+- No auto-changes: every recommendation is queued in the existing approval system; the engine itself never flips prompts, sends emails, or mutates client data.
+- Source-cited evaluation: all metrics derive from real tables; missing tables are reported as zero counts in `input_summary` rather than hallucinated.
+- RLS prevents agencies from seeing each other's runs.

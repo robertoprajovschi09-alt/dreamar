@@ -2232,6 +2232,57 @@ export type Database = {
           },
         ]
       }
+      continuous_improvement_runs: {
+        Row: {
+          agency_id: string | null
+          approved_improvements: Json
+          created_at: string
+          detected_patterns: Json
+          id: string
+          input_summary: Json
+          performance_after: Json
+          performance_before: Json
+          recommended_improvements: Json
+          rejected_improvements: Json
+          run_type: string
+          status: Database["public"]["Enums"]["cie_status"]
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          approved_improvements?: Json
+          created_at?: string
+          detected_patterns?: Json
+          id?: string
+          input_summary?: Json
+          performance_after?: Json
+          performance_before?: Json
+          recommended_improvements?: Json
+          rejected_improvements?: Json
+          run_type: string
+          status?: Database["public"]["Enums"]["cie_status"]
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          approved_improvements?: Json
+          created_at?: string
+          detected_patterns?: Json
+          id?: string
+          input_summary?: Json
+          performance_after?: Json
+          performance_before?: Json
+          recommended_improvements?: Json
+          rejected_improvements?: Json
+          run_type?: string
+          status?: Database["public"]["Enums"]["cie_status"]
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_niche_fields: {
         Row: {
           agency_id: string
@@ -3486,6 +3537,12 @@ export type Database = {
         | "agency_team"
         | "content_creator"
         | "client_viewer"
+      cie_status:
+        | "collecting"
+        | "evaluating"
+        | "awaiting_review"
+        | "completed"
+        | "failed"
       client_status: "active" | "paused" | "onboarding" | "churned"
       niche:
         | "real_estate"
@@ -3695,6 +3752,13 @@ export const Constants = {
         "agency_team",
         "content_creator",
         "client_viewer",
+      ],
+      cie_status: [
+        "collecting",
+        "evaluating",
+        "awaiting_review",
+        "completed",
+        "failed",
       ],
       client_status: ["active", "paused", "onboarding", "churned"],
       niche: [
