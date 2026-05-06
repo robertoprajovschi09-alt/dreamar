@@ -65,6 +65,7 @@ const App = () => (
                   <Route path="reports" element={<Reports />} />
                   <Route path="assistant" element={<Assistant />} />
                   <Route path="risk" element={<Risk />} />
+                  <Route path="swipe" element={<SwipeLibrary />} />
                 </Route>
 
                 <Route
