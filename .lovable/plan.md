@@ -1,123 +1,134 @@
 ## Goal
 
-Promote "Custom Niche" from a single text field into a first-class, reusable **per-agency niche library** with full custom KPI / business-impact / monthly-question schemas. Reusable across future clients of the same agency. Global presets remain available to all agencies.
+Make the agency↔client connection smarter by upgrading the existing `client_invites` system into a fully-featured **Client Invitations** model with granular permissions, lifecycle tracking (sent / opened / accepted / expired), email delivery, and a complete **Client Portal Settings** panel inside the Client Profile page.
 
-## 1. Database (one migration)
+The existing schema already has the right foundations (`client_invites`, `client_users`, `permissions jsonb`, `portal_role`, `accept_client_invite` RPC). We will extend it rather than create a parallel `client_invitations` table — that keeps RLS, RPC, AcceptInvite page, and AddClientWizard working without breakage.
 
-Create three new tables and link `clients` to them.
+## Scope summary
 
-```sql
--- Niche registry: global (agency_id NULL) + per-agency custom niches
-CREATE TABLE public.niches (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  agency_id uuid REFERENCES public.agencies(id) ON DELETE CASCADE, -- NULL = global
-  key text NOT NULL,                 -- slug, unique per scope
-  label text NOT NULL,
-  is_custom boolean NOT NULL DEFAULT false,
-  created_by uuid,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE (agency_id, key)
-);
-
-CREATE TABLE public.custom_niche_kpis (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  niche_id uuid NOT NULL REFERENCES public.niches(id) ON DELETE CASCADE,
-  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
-  key text NOT NULL,
-  label text NOT NULL,
-  kpi_type text NOT NULL CHECK (kpi_type IN ('number','percentage','currency','text','boolean')),
-  reporting_frequency text NOT NULL DEFAULT 'monthly'
-       CHECK (reporting_frequency IN ('daily','weekly','monthly')),
-  visible_to_client boolean NOT NULL DEFAULT true,
-  sort_order int DEFAULT 0,
-  created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE public.custom_niche_fields (        -- business impact fields
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  niche_id uuid NOT NULL REFERENCES public.niches(id) ON DELETE CASCADE,
-  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
-  key text NOT NULL,
-  label text NOT NULL,
-  field_type text NOT NULL DEFAULT 'number'
-       CHECK (field_type IN ('number','percentage','currency','text','boolean')),
-  sort_order int DEFAULT 0,
-  created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE public.custom_niche_questions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  niche_id uuid NOT NULL REFERENCES public.niches(id) ON DELETE CASCADE,
-  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
-  key text NOT NULL,
-  label text NOT NULL,
-  sort_order int DEFAULT 0,
-  created_at timestamptz DEFAULT now()
-);
-
-ALTER TABLE public.clients
-  ADD COLUMN IF NOT EXISTS niche_id uuid REFERENCES public.niches(id) ON DELETE SET NULL;
+```text
+1. DB migration  ─ extend client_invites + client_users
+2. Edge function  ─ send-client-invite (email + tracking pixel)
+3. AcceptInvite   ─ mark "opened" on link visit
+4. UI             ─ rebuild Portal Settings tab in ClientProfile
+5. Dialog         ─ upgrade InviteClientDialog (permissions + role + email send)
+6. Workspace      ─ confirm provisioning already creates all sub-areas
 ```
 
-**Seed**: insert one global row per existing preset (`real_estate`, `restaurant`, …, plus `custom` excluded). Done in same migration with `INSERT … ON CONFLICT DO NOTHING` and `agency_id = NULL`.
+## 1. Database migration
 
-**RLS**:
-- `niches`: SELECT → `agency_id IS NULL OR is_member_of(auth.uid(), agency_id)`; INSERT/UPDATE/DELETE → `is_member_of(auth.uid(), agency_id)` AND `agency_id IS NOT NULL` (no edits to globals).
-- `custom_niche_kpis` / `_fields` / `_questions`: full CRUD restricted by `is_member_of(auth.uid(), agency_id)`. Clients can SELECT via `is_client_viewer_of` joining through `clients.niche_id` (read-only).
-- `updated_at` trigger on `niches`.
+Extend existing tables (no breaking renames):
 
-## 2. Frontend — `src/lib/niches.ts` / `nichePresets.ts`
+**`client_invites`** — add columns:
+- `opened_at timestamptz`
+- `accepted_at timestamptz`
+- `last_sent_at timestamptz default now()`
+- `send_count int not null default 1`
+- `revoked_at timestamptz`
+- Status check constraint extended to: `pending | sent | opened | accepted | expired | revoked`
 
-- Keep static presets as fallback/seed source.
-- New helper `useAgencyNiches(agencyId)` (in `src/hooks/useAgencyNiches.ts`) that loads `niches` (global + agency) + their KPIs/fields/questions in one query.
+**`client_users`** — add columns:
+- `last_login_at timestamptz`
+- `revoked_at timestamptz`
 
-## 3. AddClientWizard refactor (Step 2)
+**Trigger**: on `auth.users` sign-in (or via `accept_client_invite`), update `client_users.last_login_at`. Simpler: update `last_login_at` from a small RPC `touch_client_login()` called by ClientPortal on mount.
 
-Replace the hard-coded `NICHE_PRESET_OPTIONS` dropdown with the dynamic list from `useAgencyNiches`, with one extra entry **"+ Create custom niche"**.
+**RPC updates**:
+- `accept_client_invite(_token)` — set `accepted_at = now()`, status `accepted`.
+- New `mark_invite_opened(_token)` — security definer, sets `opened_at`/status `opened` if currently `pending|sent`. Public-callable (token is the secret).
+- New `resend_client_invite(_invite_id)` — bumps `last_sent_at`, `send_count`, resets `expires_at = now() + 7 days`, status back to `sent` if expired.
+- New `revoke_client_invite(_invite_id)` — sets `revoked_at`, status `revoked`.
 
-When user picks "+ Create custom niche":
-- Reveal an inline panel with:
-  - **Custom Niche Name** input (placeholder per spec).
-  - **Custom KPIs** editor — rows of `{label, type (number/percentage/currency/text/boolean), reporting_frequency (daily/weekly/monthly), visible_to_client (switch)}`.
-  - **Custom Business Impact Fields** editor — rows of `{label, field_type}`.
-  - **Custom Monthly Questions** editor — list of question labels.
-- Each section has "Add" button + remove buttons; pre-seeded with 1 empty row each.
+**Permissions JSON shape** (stored on both `client_invites.permissions` and `client_users.permissions`, already exists):
+```
+{
+  can_view_dashboard, can_view_calendar, can_approve_content,
+  can_request_changes, can_view_reports, can_upload_documents,
+  can_complete_impact_forms, can_comment
+}
+```
+All booleans, default `true` for viewer/owner except `can_approve_content` defaults `false` for `client_viewer`.
 
-Validation in Step 2: when custom niche selected, `name` and ≥1 KPI label required.
+**RLS** — already enforced (`is_client_viewer_of`); no new tables, so existing policies apply. Confirm clients can only `SELECT` their own `client_id` rows everywhere — already in place.
 
-When user picks an existing custom niche from the agency library, the editors are pre-filled and editable for **this client only** (overrides stored on `client_kpi_schemas` as today). Global presets behave as today.
+## 2. Edge function: `send-client-invite`
 
-## 4. Provisioning on Create
+New function (uses Lovable's built-in transactional emails via `send-transactional-email`).
+- Input: `{ invite_id }`
+- Loads invite + agency + client
+- Calls `supabase.functions.invoke('send-transactional-email', { templateName: 'client-portal-invite', recipientEmail, idempotencyKey: 'invite-<id>-<send_count>', templateData: { agencyName, clientName, inviteUrl, expiresAt } })`
+- Updates `last_sent_at`, `status = 'sent'`
 
-In `provision()`:
+Template: `supabase/functions/_shared/transactional-email-templates/client-portal-invite.tsx` — branded React Email with CTA button → `/accept-invite?token=...`.
 
-1. If user created a brand-new custom niche this session:
-   - Insert into `niches` with `agency_id=agencyId, is_custom=true, key=slug(name), label=name, created_by=user.id`. Capture `niche_id`.
-   - Bulk-insert `custom_niche_kpis`, `custom_niche_fields`, `custom_niche_questions`.
-2. Insert `clients` row with `niche='custom'`, `custom_niche=name`, `niche_id=<id>` (or selected existing niche id; for global presets `niche_id` resolves from the seeded global row).
-3. Continue inserting `client_kpi_schemas` snapshot exactly as today (per-client copy used by dashboards / monthly reports).
+Prerequisites tool chain (will be triggered automatically): `email_domain--check_email_domain_status` → if no domain, surface `<lov-open-email-setup>` button → `setup_email_infra` → `scaffold_transactional_email` → deploy.
 
-## 5. Dashboard / Analytics / Monthly Reports
+If user has not configured an email domain yet, the **Send Invite** button still works (creates invite + copies link), and we show an inline notice: "Set up an email domain to send invites by email." The link-copy fallback always works.
 
-- The existing `client_kpi_schemas` snapshot already drives dashboard/analytics/monthly report fields, so custom KPIs & fields surface automatically there. No change needed to those screens beyond reading `kpi_type` / `reporting_frequency` / `visible_to_client` (added as optional props on `KpiField` type) when rendering.
-- Update `KpiField` type to include `kpi_type`, `reporting_frequency`, `visible_to_client`, defaulting safely for older rows.
+## 3. AcceptInvite page change
 
-## 6. Reuse UX
+On mount (before login), call `supabase.rpc('mark_invite_opened', { _token })` so the agency sees `opened` status even before account creation.
 
-- Step 2 dropdown groups: **My agency niches**, **Global presets**, **+ Create custom niche**. Once a custom niche is created, it appears for all future clients of the same agency.
-- Add small "Manage niches" link → opens a lightweight modal listing agency custom niches with rename / delete (delete forbidden if any client still references it; show count).
+## 4. Portal Settings panel (ClientProfile → Settings tab)
 
-## Files to change
+Replace the current `UsersTab` + `InvitesTab` blocks with a unified **Client Portal Settings** card containing:
 
-- New migration `supabase/migrations/<ts>_niche_library.sql`
-- `src/lib/niches.ts` — extend `KpiField` type with new props
-- `src/hooks/useAgencyNiches.ts` — new
-- `src/components/client/AddClientWizard.tsx` — Step 2 rewrite, provisioning logic
-- `src/components/client/CustomNicheEditor.tsx` — new (KPIs/fields/questions editors)
-- `src/components/client/ManageNichesDialog.tsx` — new (small)
-- `src/integrations/supabase/types.ts` — auto-regenerated
+```text
+┌─ Client Portal Access ──────────────────────────┐
+│ [Invite client] button                          │
+│                                                 │
+│ Active members                                  │
+│  • email · role · last login · [⋯ menu]         │
+│      ↳ Edit permissions  / Revoke access        │
+│                                                 │
+│ Pending invitations                             │
+│  • email · status badge · expires · [⋯ menu]    │
+│      ↳ Copy link / Resend / Revoke              │
+└─────────────────────────────────────────────────┘
+```
+
+Status badges with color: `not sent` (gray), `sent` (blue), `opened` (amber), `accepted` (green), `expired` (red), `revoked` (muted).
+
+**Edit permissions dialog** — 8 toggles matching the JSON shape above; updates `client_users.permissions` (or `client_invites.permissions` for pending).
+
+## 5. Upgraded InviteClientDialog
+
+Stepper-free, single dialog with:
+- Email input
+- Display name (optional)
+- Portal role: `Owner` / `Viewer` (radio)
+- Permissions section (8 switches, sensible defaults per role)
+- Two actions:
+  - **Send Invite** → insert invite + invoke `send-client-invite` (if email infra ready) + toast with copy-link fallback
+  - **Create link only** → insert invite, show copyable link
+
+`AddClientWizard` already inserts an invite at the end; update it to also call `send-client-invite` when `invite_enabled`.
+
+## 6. Workspace provisioning (already done — verify only)
+
+`AddClientWizard` already creates: client record, `client_kpi_schemas`, `client_platforms`, `monthly_goals`, default onboarding tasks. The Client Profile page already exposes all required tabs (Overview, Calendar, Analytics, Reports, Documents, Approvals, Goals, Strategy, Tasks, Settings). The new Portal Settings card lives inside the Settings tab — **no new tab needed**.
+
+The Business Impact form is already covered by the existing `client_feedback` flow; no schema change.
+
+## Files to add / change
+
+**New**
+- `supabase/migrations/<ts>_client_invite_lifecycle.sql`
+- `supabase/functions/send-client-invite/index.ts`
+- `supabase/functions/_shared/transactional-email-templates/client-portal-invite.tsx`
+- `src/components/client/PortalSettingsCard.tsx` (the new unified panel)
+- `src/components/client/EditPortalPermissionsDialog.tsx`
+
+**Edit**
+- `src/pages/agency/InviteClientDialog.tsx` (role + permissions + send email)
+- `src/pages/agency/ClientProfile.tsx` (replace UsersTab + InvitesTab with `<PortalSettingsCard />`)
+- `src/pages/AcceptInvite.tsx` (call `mark_invite_opened` on mount)
+- `src/components/client/AddClientWizard.tsx` (invoke `send-client-invite` after invite insert)
+- `src/pages/client/ClientPortal.tsx` (call `touch_client_login` once on mount)
+- `src/integrations/supabase/types.ts` (auto-regenerated)
 
 ## Out of scope
 
-No changes to `client-strategy-base` edge function or RLS on existing tables beyond the new ones.
+- A separate `client_invitations` table (existing `client_invites` already covers it; renaming would break the live AcceptInvite flow, RPC, and RLS).
+- Real-time "open tracking" via email pixel — we mark `opened` when the user actually visits the accept-invite page, which is more reliable than image-pixel tracking.
+- Permission *enforcement* in every UI tab — RLS already restricts data; UI gating per-permission can be layered in afterwards (this plan stores the permissions correctly so enforcement is a UI-only follow-up).
