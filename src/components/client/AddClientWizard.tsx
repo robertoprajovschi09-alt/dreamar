@@ -298,11 +298,55 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       const social_links: Record<string, string> = {};
       form.platforms.forEach((p) => { if (p.username || p.url) social_links[p.platform] = p.username || p.url; });
 
+      // 1) If creating a new custom niche, insert into the agency niche library first.
+      let nicheId: string | null = form.niche_id;
+      if (form.creating_custom_niche) {
+        const niceLabel = form.custom_niche.trim();
+        const niceKey = `${slug(niceLabel)}_${Date.now().toString(36)}`;
+        const { data: nicheRow, error: nErr } = await supabase.from("niches").insert({
+          agency_id: agencyId, key: niceKey, label: niceLabel, is_custom: true, created_by: user.id,
+        }).select("id").single();
+        if (nErr || !nicheRow) { toast.error(nErr?.message || "Could not save custom niche"); return; }
+        nicheId = nicheRow.id as string;
+
+        const validKpis = form.kpi_fields.filter((k) => k.label.trim());
+        if (validKpis.length) {
+          await supabase.from("custom_niche_kpis").insert(validKpis.map((k, i) => ({
+            niche_id: nicheId!, agency_id: agencyId,
+            key: k.key || `kpi_${i + 1}`, label: k.label.trim(),
+            kpi_type: (k.kpi_type as any) || "number",
+            reporting_frequency: (k.reporting_frequency as any) || "monthly",
+            visible_to_client: k.visible_to_client !== false,
+            sort_order: i,
+          })));
+        }
+        const validBI = form.business_impact_fields.filter((f) => f.label.trim());
+        if (validBI.length) {
+          await supabase.from("custom_niche_fields").insert(validBI.map((f, i) => ({
+            niche_id: nicheId!, agency_id: agencyId,
+            key: f.key || `bi_${i + 1}`, label: f.label.trim(),
+            field_type: (f.field_type as any) || "number",
+            sort_order: i,
+          })));
+        }
+        const validQs = form.monthly_questions.filter((q) => q.label.trim());
+        if (validQs.length) {
+          await supabase.from("custom_niche_questions").insert(validQs.map((q, i) => ({
+            niche_id: nicheId!, agency_id: agencyId,
+            key: q.key || `q_${i + 1}`, label: q.label.trim(),
+            sort_order: i,
+          })));
+        }
+        refetchNiches();
+      }
+
+      const isCustom = form.creating_custom_niche || (selectedNiche?.is_custom ?? false);
       const clientPayload: any = {
         agency_id: agencyId,
         name: form.name.trim(),
-        niche: form.niche,
-        custom_niche: form.niche === "custom" ? form.custom_niche.trim() : null,
+        niche: isCustom ? "custom" : form.niche,
+        custom_niche: isCustom ? (form.custom_niche.trim() || selectedNiche?.label || null) : null,
+        niche_id: nicheId,
         website: form.website.trim() || null,
         logo_url: form.logo_url || null,
         brand_color: form.brand_color || null,
@@ -325,11 +369,11 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       if (cErr || !clientRow) { toast.error(cErr?.message || "Could not create client"); return; }
       const clientId = clientRow.id as string;
 
-      // KPI schema
+      // Per-client KPI snapshot (drives dashboard / analytics / monthly reports)
       await supabase.from("client_kpi_schemas").insert({
         agency_id: agencyId, client_id: clientId,
-        niche_key: form.niche,
-        custom_niche_label: form.niche === "custom" ? form.custom_niche.trim() : null,
+        niche_key: isCustom ? "custom" : form.niche,
+        custom_niche_label: isCustom ? (form.custom_niche.trim() || selectedNiche?.label || null) : null,
         kpi_fields: form.kpi_fields as any,
         business_impact_fields: form.business_impact_fields as any,
         monthly_questions: form.monthly_questions as any,
