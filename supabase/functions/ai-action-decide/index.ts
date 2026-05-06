@@ -7,7 +7,7 @@ type Decision = "approve" | "reject" | "execute";
 const ALLOWED_TYPES = new Set([
   "create_task","update_task","create_content_idea","create_calendar_item",
   "generate_report","send_report_to_client","create_strategy",
-  "update_prompt_version","create_lovable_prompt",
+  "update_prompt_version","create_lovable_prompt","create_ai_memory_item",
   "suggest_database_change","suggest_ui_change","suggest_pricing_change","suggest_security_change",
 ]);
 
