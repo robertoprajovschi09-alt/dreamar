@@ -133,7 +133,7 @@ export default function ClientPortal() {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
-          <TabsContent value="overview"><OverviewTab clientId={client.id} niche={client.niche} /></TabsContent>
+          <TabsContent value="overview"><ClientDashboard agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id} /></TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
