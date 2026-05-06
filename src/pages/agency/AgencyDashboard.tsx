@@ -193,6 +193,24 @@ export default function AgencyDashboard() {
         </Card>
       </div>
 
+      {healthScores.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Heart className="h-4 w-4 text-accent" /> Client Health
+              <span className="text-xs font-normal text-muted-foreground">— sorted by risk</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {healthScores.map((s) => (
+                <HealthScoreMini key={s.id} score={s} clientName={clientNames[s.client_id] || "Client"} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Recent clients</CardTitle></CardHeader>
         <CardContent>
