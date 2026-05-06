@@ -576,14 +576,13 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                 </div>
               )}
 
-              <FieldEditor
-                title="KPI fields"
-                description="Metrics tracked monthly for this client."
+              <KpiEditor
+                title="Custom KPIs"
+                description="Metrics you want to track for this niche."
                 items={form.kpi_fields}
                 onAdd={addKpi}
                 onRemove={removeKpi}
                 onUpdate={updateKpi}
-                withType
               />
               <FieldEditor
                 title="Business impact fields"
