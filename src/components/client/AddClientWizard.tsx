@@ -596,8 +596,8 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Monthly questions</Label>
-                    <p className="text-xs text-muted-foreground">Asked to the client every month.</p>
+                    <Label>Custom Monthly Questions</Label>
+                    <p className="text-xs text-muted-foreground">Open-ended prompts the client answers each month.</p>
                   </div>
                   <Button type="button" size="sm" variant="outline" onClick={addQ}><Plus className="h-3 w-3 mr-1" />Add</Button>
                 </div>
