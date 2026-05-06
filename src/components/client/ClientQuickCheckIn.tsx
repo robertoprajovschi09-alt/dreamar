@@ -166,6 +166,21 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
 
     const cleanedMetrics = resultsObserved === "yes" ? cleanMetrics(resultsMetrics, otherResults) : {};
 
+    // Pack niche-specific extras
+    if (niche === "real_estate") {
+      const re: Record<string, any> = {
+        buyer_leads: numOrNull(reBuyerLeads),
+        seller_leads: numOrNull(reSellerLeads),
+        property_inquiries_observed: reHasInquiries,
+        viewings: numOrNull(reViewings),
+        promote_properties: rePromoteProperties.trim().slice(0, 300) || null,
+        has_new_properties: reHasNewProperties === "yes",
+        lead_quality: reLeadQuality,
+      };
+      Object.keys(re).forEach((k) => re[k] == null && delete re[k]);
+      (cleanedMetrics as any).real_estate = re;
+    }
+
     setSaving(true);
     try {
       const m = cleanedMetrics as Record<string, any>;
