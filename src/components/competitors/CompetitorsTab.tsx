@@ -15,6 +15,7 @@ import { ObservationDetailDialog } from "@/components/competitors/ObservationDet
 import { CompetitorInsightsDialog } from "@/components/competitors/CompetitorInsightsDialog";
 import { CompareDialog } from "@/components/competitors/CompareDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Props = { agencyId: string; clientId: string };
@@ -107,7 +108,7 @@ export function CompetitorsTab({ agencyId, clientId }: Props) {
           {selectedComp.niche && <p className="text-sm text-muted-foreground">{selectedComp.niche}</p>}
         </div>
         {observationsForSelected.length === 0 ? (
-          <EmptyState title="No observations yet" description="Add screenshots, hooks and offers you noticed at this competitor." />
+          <EmptyState icon={Eye} title="No observations yet" description="Add screenshots, hooks and offers you noticed at this competitor." />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {observationsForSelected.map((o) => (
@@ -146,7 +147,7 @@ export function CompetitorsTab({ agencyId, clientId }: Props) {
       </div>
 
       {filteredCompetitors.length === 0 ? (
-        <EmptyState title="No competitors yet" description="Track competitors to spot patterns and surface original ideas for this client." />
+        <EmptyState icon={Eye} title="No competitors yet" description="Track competitors to spot patterns and surface original ideas for this client." />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredCompetitors.map((c) => {
