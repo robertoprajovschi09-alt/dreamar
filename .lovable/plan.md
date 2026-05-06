@@ -1,128 +1,206 @@
-# Module Integration & Coherence Pass
+## AI Core Engine — integrare OpenAI prin backend securizat
 
-Goal: ship a coherent, end-to-end experience across the 7 premium modules (Health Score, Risk Detector, Swipe File, Competitors, Approvals, Strategies, Analytics) that already exist in the codebase, with the exact navigation, dashboards, and tabs you specified. No new tables — schema is already in place and RLS is correct (verified below).
+Construim un sistem complet „AI Core Engine" peste arhitectura existentă (Lovable + Supabase). Toate apelurile către OpenAI se fac **doar din edge functions**; cheia trăiește exclusiv în secrets, niciodată în frontend.
 
-## 1. RLS & multi-tenancy verification (no migrations expected)
+---
 
-Audit pass — confirm each module table has the standard quartet (already present in schema):
-- `is_member_of(auth.uid(), agency_id)` for agency CRUD
-- `is_client_viewer_of(auth.uid(), client_id)` for read where client must see
-- `is_saas_admin(auth.uid())` for super-admin read everywhere
+### 0. Securitate cheie API (înainte de orice cod)
 
-Already correct: `client_health_scores`, `client_risk_alerts` (agency-only, not exposed to clients ✓), `competitor_observations` (client read only when `visible_to_client=true` ✓), `competitors` (agency-only ✓), `content_approvals` (agency + client viewer ✓), `monthly_strategies` (client read only when `status='sent_to_client'` ✓), `analytics_entries` & `content_metrics` (client read-only ✓).
+- Rotești cheia OpenAI pe care ai postat (e publică acum).
+- În build mode, voi cere prin tool-ul de secrets:
+  - `OPENAI_API_KEY` (cheia nouă)
+  - `OPENAI_MODEL` (default `gpt-5.2`; configurabil; fallback pe `gpt-5-mini`)
+  - `OPENAI_BASE_URL` (opțional, default `https://api.openai.com/v1`)
+- Edge functions citesc `Deno.env.get(...)`. Frontend nu vede niciodată cheia.
 
-Action: only add a new migration if the audit (a single `supabase--linter` + targeted `read_query`s) finds a gap. Expectation: zero migrations.
+> Notă: păstrăm și `LOVABLE_API_KEY` pentru funcțiile actuale (Gemini etc.); migrăm progresiv. Coexistă curat.
 
-## 2. Navigation refactor (`src/components/AgencyLayout.tsx`)
+---
 
-Replace the current `nav` array with the exact ordered list:
+### 1. Tabele noi în Supabase (toate cu RLS strict pe `agency_id`)
 
+```text
+ai_prompts                # versionare prompts de sistem
+  id, agency_id (nullable=global), key, version, content, model,
+  temperature, is_active, created_by, created_at
+
+ai_prompt_runs            # fiecare apel OpenAI
+  id, agency_id, client_id (nullable), user_id, prompt_key,
+  prompt_version, model, input_messages jsonb, output_text,
+  tool_calls jsonb, tokens_in, tokens_out, latency_ms,
+  cost_usd numeric, status (success|error|blocked),
+  error_text, safety_flags jsonb, created_at
+
+ai_feedback               # feedback uman pe un run
+  id, run_id, agency_id, user_id, rating (-1|0|1),
+  category text, comment text, created_at
+
+ai_evaluations            # evaluări automate / golden set
+  id, agency_id, prompt_key, prompt_version, dataset_name,
+  score numeric, metrics jsonb, created_at
+
+ai_actions                # action approval queue
+  id, agency_id, client_id, requested_by_user_id, action_type,
+  payload jsonb (ce vrea AI să facă), reasoning text, run_id,
+  status (pending|approved|rejected|executed|failed),
+  decided_by, decided_at, executed_at, result jsonb, created_at
+
+ai_memory                 # knowledge base / long-term memory
+  id, agency_id, client_id (nullable), scope (agency|client|global),
+  kind (fact|preference|playbook|doc_chunk),
+  title, content text, embedding vector(1536) nullable,
+  source text, created_by, created_at, updated_at
+
+ai_audit_events           # monitoring & site/app maintainer
+  id, agency_id (nullable), source (frontend|edge|cron|maintainer),
+  level (info|warn|error|critical), event text, payload jsonb,
+  user_id (nullable), created_at
+
+ai_safety_rules           # guardrails configurabile
+  id, agency_id (nullable=global), rule_key, description,
+  pattern text, action (block|warn|require_approval),
+  enabled boolean, created_at
 ```
-Dashboard · Clients · Calendar · Content · Approvals · Analytics · Campaigns ·
-Reports · Strategies · Documents · Tasks · Swipe File · Competitors ·
-AI Assistant · Team · Billing · Settings
+
+RLS: pattern-ul existent — `is_member_of(auth.uid(), agency_id)` pentru CRUD agenție, `is_saas_admin` peste tot, `is_client_viewer_of` doar pentru read pe înregistrările marcate vizibile (memory cu scope client). `ai_prompt_runs`/`ai_audit_events` nu sunt vizibile clientului.
+
+Pentru `ai_memory` cu embeddings activăm extensia `vector` (pgvector).
+
+---
+
+### 2. Edge functions noi (toate folosesc OpenAI)
+
+```text
+ai-core-chat             # AI Assistant agency-wide (înlocuiește treptat ai-assistant)
+ai-core-complete         # one-shot completion cu prompt versionat
+ai-core-embed            # creează embeddings pentru ai_memory
+ai-core-rag-query        # caută în ai_memory + răspunde
+ai-feedback-submit       # salvează feedback + leagă de run
+ai-action-execute        # execută o ai_actions aprobată (server-side, cu RLS user)
+ai-evaluate-prompt       # rulează un prompt pe golden dataset, salvează scor
+ai-maintainer-scan       # cron: citește ai_audit_events + erori recente, propune fix-uri
+ai-safety-check          # helper intern: rulează ai_safety_rules pe input/output
 ```
 
-- Drop standalone `Performance` and `Risk` from the sidebar (Risk surfaces inside Dashboard + Clients; Performance is replaced by Analytics).
-- Add a new top-level `/agency/competitors` page (agency-wide competitor library — currently only exists per-client).
-- Add placeholders routes for `Team`, `Billing`, `Settings` that render a clean "Coming soon" premium card if no implementation exists yet (keeps nav coherent without faking data).
+Toate:
+- validează JWT prin `getClaims`,
+- verifică `is_member_of(user, agency_id)`,
+- aplică `ai-safety-check` pe input și output,
+- înregistrează rezultatul în `ai_prompt_runs` + `ai_audit_events`,
+- suportă streaming SSE unde e cazul,
+- folosesc `OPENAI_MODEL` din env, override per request permis doar pentru saas_admin.
 
-For the **Client Portal** (`src/pages/client/ClientPortal.tsx`), replace tabs with the exact list:
-
-```
-Overview · Calendar · Approvals · Reports · Results · Objectives · Documents · Feedback
-```
-
-- "Results" = read-only `ClientPortalAnalyticsTab` (renamed label).
-- "Objectives" = read-only monthly goals view.
-- Remove `Health`, `Strategy`, `Market Insights` from client tabs (Strategy still accessible inline only when `sent_to_client`, surfaced inside Overview as a card link; Health Score and Market Insights are agency-internal per your spec).
-
-## 3. Client Detail tabs (`src/pages/agency/ClientProfile.tsx`)
-
-Reduce to the exact ordered set:
-
-```
-Overview · Content · Calendar · Analytics · Goals · Reports · Strategy ·
-Approvals · Documents · Competitors · Tasks · Settings
+Apelul OpenAI:
+```ts
+fetch(`${BASE}/chat/completions`, {
+  headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+  body: JSON.stringify({ model, messages, stream, temperature })
+})
 ```
 
-- Merge `Brand`, `Platforms`, `Brief`, `Users`, `Invites`, `Feedback` into a single **Settings** tab with sub-sections (accordion). Keeps tab bar premium and scannable.
-- Add new `Content` tab (filtered `content_posts` for that client) and `Approvals` tab (filtered `content_approvals`).
-- Drop `Health` / `Performance` from the tab bar; show Health Score as a card in the Overview header.
+---
 
-## 4. Agency Dashboard (`src/pages/agency/AgencyDashboard.tsx`)
+### 3. Cele 10 module ale AI Core Engine
 
-Restructure into the requested 8 sections, all powered by real Supabase queries (no mock data):
+1. **AI Assistant pentru agenție** — refactor `Assistant.tsx` să cheme `ai-core-chat`. Context grounding existent (clienți, briefs, analytics, strategy) păstrat. Adăugăm tool-calling: `create_task`, `draft_strategy`, `flag_at_risk_client` — fiecare devine o cerere în `ai_actions` (nu execută direct).
 
-1. **Health Score overview** — average + distribution from `client_health_scores` (already wired).
-2. **Clients at Risk** — `client_risk_alerts` where `status='active'`, sorted by `risk_score` desc.
-3. **Pending Approvals** — `content_approvals` where `status='pending_approval'`, oldest first; overdue badge if `due_date < now()`.
-4. **Missing Analytics Data** — clients with zero `analytics_entries` for current month.
-5. **Reports to Generate** — clients without a `monthly_reports` row for previous month.
-6. **Top Performing Content** — top 5 `content_metrics` by `views` for current month, joined with `content_posts`.
-7. **Upcoming Content** — next 5 `content_posts` with `scheduled_for >= now()`.
-8. **AI Recommendations** — surfaces unread items from latest health score `ai_recommendation` jsonb across clients.
+2. **AI Website/App Maintainer** — pagină `/admin/ai-maintainer` (doar saas_admin):
+   - listează `ai_audit_events` level ≥ warn,
+   - cron `ai-maintainer-scan` (rulat manual din UI sau planificat) care trimite la OpenAI logurile recente + erorile din `supabase.edge_function_logs` (proxy via edge) și produce: cauze probabile, fix-uri propuse, prioritate.
+   - rezultatele → `ai_actions` cu `action_type='code_suggestion'` (nu modifică cod, doar sugerează — codul real îl scrie omul / Lovable).
 
-Each card links to the deep view. Loading + empty states styled premium.
+3. **AI Learning & Improvement Loop** — job nightly `ai-evaluate-prompt`:
+   - rulează prompt-urile active pe un mic golden dataset stocat în `ai_evaluations.dataset_name`,
+   - salvează scor + diff vs versiunea precedentă,
+   - dacă scor scade → notificare în `ai_audit_events`.
 
-## 5. Client Dashboard (Overview tab in Client Portal)
+4. **AI Feedback System** — buton 👍/👎 pe orice mesaj AI (chat, raport, strategy). `ai-feedback-submit` salvează în `ai_feedback` cu `run_id`. Pagină Settings → AI → Feedback Review pentru saas_admin.
 
-Rebuild Overview to show, in order, only the cards the client should see:
+5. **AI Prompt Versioning** — UI `/admin/ai-prompts` (saas_admin):
+   - listă prompt-uri (`key`), versiuni, diff,
+   - activare/dezactivare versiune,
+   - test rapid în sandbox (cheamă `ai-core-complete` cu `prompt_version` explicit).
+   - Toate edge functions citesc prompt-ul activ din `ai_prompts` în loc de string hardcodat.
 
-- Health Score (read-only mini, only if agency has marked client-visible — gated by a new `clients.show_health_to_client` boolean? **No new column** — instead always hide per your spec; show a friendlier "Account Health" qualitative summary derived from `monthly_strategies.executive_summary` when sent).
-- Monthly Goals (from `monthly_goals`).
-- Analytics Summary (current month from `analytics_entries`, read-only).
-- Best Performing Content (top 3 from `content_metrics`).
-- Upcoming Calendar (next 5 `content_posts` with `scheduled_for`).
-- Pending Approvals badge → link to Approvals tab.
-- Reports list (only `sent_to_client` reports).
-- Business Impact Form (existing `business_impact_entries` insert form).
-- AI Recommendations card — render only if a `monthly_strategies` row with `status='sent_to_client'` exists for current/previous month.
+6. **AI Evaluation System** — tab în `/admin/ai-prompts` cu rezultate `ai_evaluations`, grafic scor în timp, comparație versiuni.
 
-## 6. Cleanup & deduplication
+7. **AI Memory / Knowledge Base** —
+   - UI agenție `/agency/ai-memory`: adaugă fapte/playbook-uri (per agency sau per client),
+   - upload doc → split + embed via `ai-core-embed`,
+   - `ai-core-rag-query` injectează top-k bucăți în system prompt înainte de a chema OpenAI,
+   - asistentul „își amintește" preferințele agenției/clientului între sesiuni.
 
-- Remove `src/pages/agency/Performance.tsx` route + file (superseded by Analytics).
-- Remove `src/pages/agency/Risk.tsx` route (Risk lives inside Dashboard + Client tabs).
-- Audit `videos` table usages in `AgencyDashboard.tsx` — replace with `content_metrics` aggregation (the `videos` table is legacy/mock; `content_metrics` is the real source).
-- Search for any remaining mock arrays / placeholder data in dashboard components and replace with live queries (`rg "mock|placeholder|TODO" src/pages src/components`).
-- Ensure every Supabase select in dashboards filters by `agency_id` (or relies on RLS for client-scoped views).
+8. **AI Action Approval System** — coadă `/agency/ai-actions`:
+   - card per acțiune cu `action_type`, payload JSON pretty-printed, raționament AI, butoane Approve/Reject,
+   - la Approve → `ai-action-execute` rulează acțiunea cu identitatea utilizatorului (insert content_post, create monthly_goal, send strategy etc.),
+   - rezultat salvat în `ai_actions.result`.
+   - Acțiuni „critice" (delete, send_to_client, modify billing) cer `is_owner_of`.
 
-## 7. Acceptance verification
+9. **AI Logs & Monitoring** — `/admin/ai-logs`:
+   - tabel `ai_prompt_runs` (filtrare după agency, prompt_key, status, cost),
+   - cost agregat lunar / per agency,
+   - export CSV.
+   - Pentru agency owner: vede doar runs din propria agenție.
 
-Run a manual smoke test after build (no automated e2e in scope):
+10. **AI Safety Guardrails** —
+    - `ai-safety-check` rulează `ai_safety_rules` (regex / keyword / lungime) pe input și output,
+    - rule-uri default: PII (email/telefon clienți finali în output public), limbaj ofensator, încercări de prompt injection (`"ignore previous instructions"`),
+    - `action=block` → 422 cu motiv; `warn` → log; `require_approval` → forțează intrare în `ai_actions`.
+    - UI `/admin/ai-safety` pentru saas_admin.
 
-1. Create a fresh agency owner → see empty dashboard with friendly empty states (no mock data).
-2. Create a client, pick a niche → appears in Clients + Dashboard.
-3. Add an analytics entry manually → flows to Analytics tab, Health Score recompute available.
-4. Generate Risk → appears in Dashboard "Clients at Risk".
-5. Save a swipe item → only visible to agency.
-6. Add a competitor + observation with `visible_to_client=true` → appears in Client Portal Market Insights (kept only as inline card on Overview if any visible exists).
-7. Send a post for approval → client sees it in Approvals tab, can approve/request changes.
-8. Generate strategy → agency edits, sets `sent_to_client` → client sees AI Recommendations on Overview.
-9. Import CSV → rows land in `analytics_entries` with `source='csv_import'`.
-10. Sign in as client of agency A → cannot see any data from agency B (RLS enforced via existing helpers).
+---
 
-## Out of scope
+### 4. Frontend nou / modificat
 
-- Real platform API integrations (Instagram/TikTok/Meta) — manual + CSV only, per spec.
-- New tables or columns — schema already covers all 7 modules.
-- Team / Billing / Settings full implementations — only premium "Coming soon" placeholders so nav is coherent.
-- Visual redesign of existing module components — only dashboards + nav + tabs are restructured.
+Pagini noi:
+- `src/pages/admin/AiMaintainer.tsx`
+- `src/pages/admin/AiPrompts.tsx`
+- `src/pages/admin/AiEvaluations.tsx` (tab)
+- `src/pages/admin/AiLogs.tsx`
+- `src/pages/admin/AiSafety.tsx`
+- `src/pages/agency/AiMemory.tsx`
+- `src/pages/agency/AiActions.tsx`
 
-## File changes (estimated)
+Componente:
+- `src/components/ai/FeedbackButtons.tsx` (👍/👎 + comentariu)
+- `src/components/ai/ActionApprovalCard.tsx`
+- `src/components/ai/MemoryEditor.tsx`
+- `src/components/ai/PromptDiffViewer.tsx`
+- `src/components/ai/RunDetailDrawer.tsx`
 
-Edited:
-- `src/components/AgencyLayout.tsx` (nav array)
-- `src/App.tsx` (route additions/removals)
-- `src/pages/agency/AgencyDashboard.tsx` (8-section rebuild)
-- `src/pages/agency/ClientProfile.tsx` (tab reduction + Settings consolidation)
-- `src/pages/client/ClientPortal.tsx` (tab list + Overview rebuild)
+Modificate:
+- `Assistant.tsx` → cheamă `ai-core-chat`, atașează `FeedbackButtons` pe răspunsuri.
+- `AgencyLayout.tsx` → adaugă „AI Actions" + (pentru saas_admin) secțiune Admin (Prompts / Logs / Safety / Maintainer).
+- Funcțiile existente care invocă `LOVABLE_API_KEY` (`generate-monthly-strategy`, `analytics-insights`, `health-score-recommendation` etc.) primesc opțiunea `provider: "openai" | "lovable"` și citesc prompt-ul din `ai_prompts` când există versiune activă. Migrare progresivă, nu big-bang.
 
-Created:
-- `src/pages/agency/Competitors.tsx` (agency-wide list)
-- `src/pages/agency/Team.tsx`, `Billing.tsx`, `Settings.tsx` (premium placeholder cards)
-- `src/components/dashboard/*` small cards split out for readability (RiskList, PendingApprovalsList, MissingAnalytics, ReportsToGenerate, TopContent, UpcomingContent, AIRecommendations)
+---
 
-Deleted:
-- `src/pages/agency/Performance.tsx`
-- `src/pages/agency/Risk.tsx` (route only — `risk.ts` lib + components stay, used by dashboard)
+### 5. Logging & cost
+
+Fiecare apel OpenAI:
+1. Înregistrează start în `ai_prompt_runs` (status `running`).
+2. La răspuns: completează `tokens_in/out`, `cost_usd` (calculat după model rate hard-codat în edge), `latency_ms`, `status`.
+3. Erorile OpenAI (rate limit, 5xx) → `ai_audit_events` level `error`.
+
+---
+
+### 6. Migrare & livrabile
+
+Pași în build mode:
+1. Cer secret `OPENAI_API_KEY` + `OPENAI_MODEL` (după ce rotezi cheia).
+2. Migration SQL: cele 8 tabele noi + extensia `vector` + RLS + seed `ai_prompts` cu prompt-urile actuale extrase din funcții + seed `ai_safety_rules` default.
+3. Creez 9 edge functions noi.
+4. Refactor `ai-assistant` → `ai-core-chat` (păstrez vechea ca alias temporar).
+5. Adaug pagini + componente UI.
+6. Hook `useAiRun` pentru frontend (wrap chemările + atașează FeedbackButtons).
+7. Update `AgencyLayout.tsx` cu intrările noi.
+8. Documentez în `README.md` secțiunea „AI Core Engine".
+
+---
+
+### Out of scope (intenționat)
+
+- Modificare automată de cod în repo (Maintainer doar sugerează).
+- Fine-tuning OpenAI (folosim doar prompt versioning + RAG).
+- Înlocuirea completă a Gemini imediat — coexistență controlată via `provider` flag.
+- Plată per-token către clienți (avem doar cost tracking intern).
