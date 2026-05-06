@@ -43,7 +43,7 @@ export default function AdminDashboard() {
   useEffect(() => { if (profile?.is_saas_admin) load(); }, [profile?.is_saas_admin]);
 
   if (loading) return <div className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (!profile?.is_saas_admin) return <Navigate to="/agency" replace />;
+  if (!profile?.is_saas_admin) return <Navigate to="/admin-login" replace />;
 
   const toggleSuspend = async (a: AgencyRow) => {
     setBusy(a.id);

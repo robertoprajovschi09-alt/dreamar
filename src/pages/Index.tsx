@@ -120,6 +120,7 @@ export default function Index() {
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Secure multi-tenant workspaces</span>
             <span>© {new Date().getFullYear()} AgencyOS AI</span>
+            <Link to="/admin-login" className="text-muted-foreground/50 hover:text-foreground transition-colors">Admin</Link>
           </div>
         </div>
       </footer>
