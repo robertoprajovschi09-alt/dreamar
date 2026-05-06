@@ -880,35 +880,56 @@ export type Database = {
       content_approvals: {
         Row: {
           agency_id: string
+          assigned_to_client_user: string | null
           client_id: string
           comment: string | null
           content_post_id: string
           created_at: string
           decided_by: string | null
           decision: string
+          due_date: string | null
+          feedback: string | null
           id: string
+          requested_at: string
+          requested_by: string | null
+          responded_at: string | null
+          status: string
           updated_at: string
         }
         Insert: {
           agency_id: string
+          assigned_to_client_user?: string | null
           client_id: string
           comment?: string | null
           content_post_id: string
           created_at?: string
           decided_by?: string | null
           decision?: string
+          due_date?: string | null
+          feedback?: string | null
           id?: string
+          requested_at?: string
+          requested_by?: string | null
+          responded_at?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
           agency_id?: string
+          assigned_to_client_user?: string | null
           client_id?: string
           comment?: string | null
           content_post_id?: string
           created_at?: string
           decided_by?: string | null
           decision?: string
+          due_date?: string | null
+          feedback?: string | null
           id?: string
+          requested_at?: string
+          requested_by?: string | null
+          responded_at?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -1550,6 +1571,45 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          agency_id: string | null
+          body: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          agency_id?: string | null
+          body?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string | null
+          body?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           advanced_analytics: boolean
@@ -2114,6 +2174,13 @@ export type Database = {
         | "scheduled"
         | "published"
         | "analyzed"
+        | "draft"
+        | "internal_review"
+        | "ready_for_client"
+        | "pending_approval"
+        | "changes_requested"
+        | "rejected"
+        | "posted"
       sub_status:
         | "trialing"
         | "active"
@@ -2283,6 +2350,13 @@ export const Constants = {
         "scheduled",
         "published",
         "analyzed",
+        "draft",
+        "internal_review",
+        "ready_for_client",
+        "pending_approval",
+        "changes_requested",
+        "rejected",
+        "posted",
       ],
       sub_status: [
         "trialing",
