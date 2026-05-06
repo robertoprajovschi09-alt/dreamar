@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { PLATFORMS } from "@/lib/niches";
 import { NICHE_PRESET_OPTIONS, getNichePreset, type KpiField, type Question } from "@/lib/nichePresets";
+import { useAgencyNiches, type NicheRow } from "@/hooks/useAgencyNiches";
+import { Switch } from "@/components/ui/switch";
 import { Loader2, Check, ArrowLeft, ArrowRight, Copy, X, Sparkles, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
