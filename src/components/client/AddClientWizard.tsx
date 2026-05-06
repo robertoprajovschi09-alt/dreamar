@@ -184,7 +184,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       monthly_questions: [{ key: "q_1", label: "" }],
     }));
   };
-  const addKpi = () => set("kpi_fields", [...form.kpi_fields, { key: `kpi_${form.kpi_fields.length + 1}`, label: "", type: "number" }]);
+  const addKpi = () => set("kpi_fields", [...form.kpi_fields, { key: `kpi_${form.kpi_fields.length + 1}`, label: "", type: "number", kpi_type: "number", reporting_frequency: "monthly", visible_to_client: true }]);
   const updateKpi = (i: number, patch: Partial<KpiField>) => {
     const next = [...form.kpi_fields];
     next[i] = { ...next[i], ...patch };
@@ -193,7 +193,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
   };
   const removeKpi = (i: number) => set("kpi_fields", form.kpi_fields.filter((_, x) => x !== i));
 
-  const addBI = () => set("business_impact_fields", [...form.business_impact_fields, { key: `bi_${form.business_impact_fields.length + 1}`, label: "", type: "number" }]);
+  const addBI = () => set("business_impact_fields", [...form.business_impact_fields, { key: `bi_${form.business_impact_fields.length + 1}`, label: "", type: "number", field_type: "number" }]);
   const updateBI = (i: number, patch: Partial<KpiField>) => {
     const next = [...form.business_impact_fields];
     next[i] = { ...next[i], ...patch };
