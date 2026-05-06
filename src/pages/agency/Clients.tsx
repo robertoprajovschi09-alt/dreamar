@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { NICHES, STATUSES, nicheLabel } from "@/lib/niches";
+import { NICHES, STATUSES, displayNiche } from "@/lib/niches";
+import { AddClientWizard } from "@/components/client/AddClientWizard";
 
 type Client = {
-  id: string; name: string; niche: string; city: string | null;
+  id: string; name: string; niche: string; custom_niche: string | null; city: string | null;
   website: string | null; status: string; created_at: string;
 };
 
@@ -23,7 +24,8 @@ export default function Clients() {
   const { agency } = useUser();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // edit dialog
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
@@ -33,7 +35,7 @@ export default function Clients() {
     setLoading(true);
     const { data, error } = await supabase
       .from("clients")
-      .select("id,name,niche,city,website,status,created_at")
+      .select("id,name,niche,custom_niche,city,website,status,created_at")
       .eq("agency_id", agency.id)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
@@ -43,12 +45,13 @@ export default function Clients() {
 
   useEffect(() => { load(); }, [agency]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const openCreate = () => { setWizardOpen(true); };
   const openEdit = (c: Client) => {
     setEditing(c);
     setForm({ name: c.name, niche: c.niche, city: c.city || "", website: c.website || "", status: c.status });
     setOpen(true);
   };
+
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,14 +89,20 @@ export default function Clients() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clients</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage every client in {agency?.name}.</p>
         </div>
+        <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Plus className="h-4 w-4 mr-1.5" /> Add client
+        </Button>
+        {agency && (
+          <AddClientWizard
+            open={wizardOpen}
+            onOpenChange={setWizardOpen}
+            agencyId={agency.id}
+            onCreated={() => load()}
+          />
+        )}
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Plus className="h-4 w-4 mr-1.5" /> Add client
-            </Button>
-          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>{editing ? "Edit client" : "New client"}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Edit client</DialogTitle></DialogHeader>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Client name *</Label>
@@ -130,7 +139,7 @@ export default function Clients() {
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                 <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? "Save" : "Create"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
                 </Button>
               </DialogFooter>
             </form>
@@ -168,7 +177,7 @@ export default function Clients() {
                     <td className="px-4 py-3 font-medium">
                       <Link to={`/agency/clients/${c.id}`} className="hover:underline">{c.name}</Link>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{nicheLabel(c.niche)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{displayNiche(c.niche, c.custom_niche)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
                     <td className="px-4 py-3"><span className="text-xs uppercase tracking-wide">{c.status}</span></td>
                     <td className="px-4 py-3 text-right">

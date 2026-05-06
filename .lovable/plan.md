@@ -1,63 +1,72 @@
-# Continuous Improvement Engine
+# Refactor: Add Client → Premium Onboarding Wizard
 
-A controlled 7-step loop that turns real app data + feedback into reviewed, human-approved improvements. No auto-training: all impactful actions go through the existing `ai_action_requests` approval queue.
+Replace the simple "Add Client" dialog with a multi-step wizard that captures everything an agency needs to start working — and optionally invites the client user in the same flow. Everything saves real data into Supabase respecting RLS, multi-tenant isolation, and existing roles.
 
-## 1. Database
+## Schema change (single migration)
 
-### Type
-- `cie_status`: `collecting | evaluating | awaiting_review | completed | failed`
+Add one nullable column to `public.clients`:
+- `custom_niche text` — free-text niche label, used only when `niche = 'custom'`. The existing `niche` enum stays as-is (no enum changes needed; existing values still work).
 
-### Table `continuous_improvement_runs`
-`id`, `agency_id` (nullable — null = platform run), `run_type` (`weekly_agency` | `monthly_strategy` | `manual` | `platform`), `input_summary` jsonb, `detected_patterns` jsonb[], `recommended_improvements` jsonb[], `approved_improvements` jsonb[], `rejected_improvements` jsonb[], `performance_before` jsonb, `performance_after` jsonb, `status` cie_status, `triggered_by` uuid, `created_at`, `updated_at`. Trigger `tg_set_updated_at`.
+No RLS changes required (column inherits existing client policies).
 
-### RLS
-- Saas admin: full access (incl. platform-wide rows where `agency_id` is null).
-- Agency members: read/insert/update only for their own agency.
-- Client viewers: no access.
+## New wizard component
 
-## 2. Edge function `continuous-improvement-engine`
+Create `src/components/client/AddClientWizard.tsx` — a `Dialog` containing 4 steps with a progress indicator, Back/Next navigation, validation per step, and a final "Create client" action.
 
-Body: `{ run_type, agency_id?, since_days?, measure_run_id? }`. Auth required; agency members must belong to `agency_id`.
+```text
+[1 Basics] → [2 Brand & Audience] → [3 Services & Goals] → [4 Invite client]
+```
 
-Pipeline:
+### Step 1 — Basics (required)
+- `name *` (text)
+- `niche *` (Select from `NICHES`). When `custom` is selected, show an inline `custom_niche` input (required).
+- `city`, `website`, `status` (active/paused/prospect)
+- `contact_person`, `contact_email`, `contact_phone`
 
-1. **Collect** — pulls last N days from: `analytics_entries`, `content_metrics`, `monthly_reports`, `monthly_strategies`, `ai_outputs`, `ai_feedback`, `post_approvals`, `tasks`, `client_health_scores`, `client_risk_alerts`, `swipe_files`, `competitor_observations`, `documents`. Each table read is wrapped in a safe try (degrades gracefully if a table is missing or empty).
-2. **Evaluate** — computes per-feature feedback aggregates, useful/not-useful counts, avg rating, strategy approval/rejection counts, AI-sourced task completion rate, and per-`prompt_version_id` success/missing/blocked stats from `ai_outputs`.
-3. **Detect Patterns** — heuristics over the evaluation: `weak_prompt_version` (success <60%), `frequent_missing_data` (>40%), `ai_feedback_negative`, `strategy_rejection_high`, `clients_at_risk`, `winning_niches` (top swipe niches by avg performance), `ai_tasks_low_completion`.
-4. **Recommend Improvements** — heuristic mapping pattern → action (e.g. `weak_prompt_version` → `update_prompt_version` (high risk); `frequent_missing_data` → `create_task` to collect data; `winning_niches` → `create_content_idea`; `ai_feedback_negative` → `create_lovable_prompt`; etc.). Optional Lovable AI enrichment via `google/gemini-2.5-flash` with strict JSON output (no invention — only patterns are sent in).
-5. **Human Review** — every recommendation is inserted into `ai_action_requests` with appropriate `risk_level`, the existing risk-vs-role matrix in `ai-action-decide` enforces who can approve.
-6. **Implement** — already handled by the existing `ai-action-decide` execute step (creates tasks, flips prompts, queues lovable prompts, creates memory items, etc.).
-7. **Measure Again** — calling the function with `measure_run_id` re-runs Collect+Evaluate over the same window and stores `performance_after` on the original run. UI compares before vs after.
+### Step 2 — Brand & Audience
+- `brand_voice` (textarea)
+- `tone_of_voice` (short)
+- `target_audience` (textarea)
+- `brand_color` (color picker + hex input)
+- `social_links` (instagram / tiktok / facebook / youtube / linkedin handles → stored as jsonb)
 
-The run row is updated through `collecting → evaluating → awaiting_review → completed (after measure)`. Any throw sets `failed`.
+### Step 3 — Services & Goals
+- `platforms` (multi-select from `PLATFORMS` → text[])
+- `services` (chip input → jsonb array of strings, e.g. "Content", "Ads", "Strategy")
+- `monthly_retainer` (number), `start_date` (date), `budget_estimate` (number)
+- `objectives` (textarea), `competitors` (textarea), `notes`
 
-## 3. Cron jobs
+### Step 4 — Invite client (optional)
+- Toggle: "Invite a client user to the portal now"
+- If on: `email *` field. After client insert succeeds, also insert into `client_invites` (same logic as `InviteClientDialog`) and show the generated `/accept-invite?token=…` link with copy button.
+- User can also Skip → wizard closes; invite can always be sent later from the client profile.
 
-Add scheduled invocations using `pg_cron` + `pg_net` (run via the insert tool, not migration, since they include the project URL/anon key):
-- `cie-weekly-agencies`: every Monday 06:00 UTC, fan-out to each agency_id (a tiny SQL function loops over `agencies` and calls the function per agency).
-- `cie-monthly-strategy`: 1st of each month 06:30 UTC, run with `run_type='monthly_strategy'` and `since_days=30` per agency.
-- `cie-platform-weekly`: Sunday 22:00 UTC, `agency_id=null`, `run_type='platform'` (admin overview).
+## Save logic
 
-## 4. Frontend
+Single transactional flow on final submit:
+1. `supabase.from("clients").insert({ agency_id: agency.id, ...allFields })` — `agency_id` enforced from `useUser().agency`.
+2. If invite toggle on: `supabase.from("client_invites").insert({ agency_id, client_id, email, invited_by: user.id })` and surface the link.
+3. On success: toast, refresh list, close wizard, optionally navigate to `/agency/clients/:id`.
 
-### `src/lib/continuousImprovement.ts`
-Helpers: `runEngine({ run_type, agency_id?, since_days? })`, `measureRunAgain(run_id)`, `listRuns({ agency_id? })`, `getRun(run_id)`.
+Errors at any step roll back UI to that step with a clear message (no partial silent failures).
 
-### `src/pages/admin/ContinuousImprovement.tsx`  (route `/agency/admin/continuous-improvement`)
-- "Run Improvement Engine" button (admin) with run_type + scope (all agencies / specific agency) + since_days.
-- Table of recent runs: status badge, run_type, agency, recommendations count, performance delta (when after exists).
-- Click row → detail drawer showing input_summary counts, detected patterns, recommendations (with "View in approvals" link to existing AI Actions page), and a "Measure again" button that calls the function with `measure_run_id`.
-- Add nav link in `AgencyLayout.tsx` admin block.
+## UI polish
+- Stepper header with current step highlighted, completed steps with check.
+- Each step in its own panel; smooth transitions.
+- Sticky footer: `Back` (disabled on step 1) · `Skip` (only step 4) · `Next` / `Create client`.
+- Keyboard: Enter advances, Esc closes with confirm if dirty.
+- Reuses existing shadcn `Dialog`, `Input`, `Select`, `Textarea`, `Switch`, `Progress`, `Button`, `Label`.
 
-## 5. Files
-- `supabase/migrations/<ts>_continuous_improvement_runs.sql` (table + RLS)
-- `supabase/functions/continuous-improvement-engine/index.ts`
-- Insert-tool SQL to register the 3 cron jobs
-- `src/lib/continuousImprovement.ts`
-- `src/pages/admin/ContinuousImprovement.tsx`
-- edit `src/App.tsx` (add route) and `src/components/AgencyLayout.tsx` (nav link)
+## Touched files
 
-## 6. Guarantees
-- No auto-changes: every recommendation is queued in the existing approval system; the engine itself never flips prompts, sends emails, or mutates client data.
-- Source-cited evaluation: all metrics derive from real tables; missing tables are reported as zero counts in `input_summary` rather than hallucinated.
-- RLS prevents agencies from seeing each other's runs.
+- `supabase/migrations/<new>.sql` — add `clients.custom_niche`.
+- `src/lib/niches.ts` — export helper `displayNiche(niche, custom_niche)` returning the custom string when applicable.
+- `src/components/client/AddClientWizard.tsx` — new wizard component.
+- `src/pages/agency/Clients.tsx` — replace inline create dialog with `<AddClientWizard>`; keep the existing edit dialog (or also route edit through the wizard — out of scope for this pass, edit stays as a quick form). Update list to render `displayNiche(c.niche, c.custom_niche)`.
+- `src/pages/agency/ClientProfile.tsx` — show `custom_niche` when present (small label tweak only if it currently shows niche).
+
+## Multi-tenant & security guarantees
+- `agency_id` is taken from authenticated user context, never from the form.
+- `client_invites.invited_by` set from `auth.uid()` via `useAuth()`.
+- All inserts go through Supabase JS, so existing RLS policies on `clients` and `client_invites` apply unchanged.
+- No mock data; every field maps to a real column.
