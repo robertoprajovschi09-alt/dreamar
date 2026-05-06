@@ -1,12 +1,19 @@
 export const POST_STATUSES = [
   { value: "idea", label: "Idea", color: "bg-muted text-foreground" },
+  { value: "draft", label: "Draft", color: "bg-muted text-foreground" },
   { value: "script", label: "Script", color: "bg-muted text-foreground" },
   { value: "filming", label: "Filming", color: "bg-secondary text-secondary-foreground" },
   { value: "editing", label: "Editing", color: "bg-secondary text-secondary-foreground" },
+  { value: "internal_review", label: "Internal review", color: "bg-secondary text-secondary-foreground" },
+  { value: "ready_for_client", label: "Ready for client", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
   { value: "sent_for_approval", label: "Awaiting approval", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
+  { value: "pending_approval", label: "Awaiting approval", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
   { value: "approved", label: "Approved", color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" },
+  { value: "changes_requested", label: "Changes requested", color: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
+  { value: "rejected", label: "Rejected", color: "bg-red-500/20 text-red-700 dark:text-red-300" },
   { value: "scheduled", label: "Scheduled", color: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
   { value: "published", label: "Published", color: "bg-accent/20 text-foreground" },
+  { value: "posted", label: "Posted", color: "bg-accent/20 text-foreground" },
   { value: "analyzed", label: "Analyzed", color: "bg-accent/30 text-foreground" },
 ] as const;
 

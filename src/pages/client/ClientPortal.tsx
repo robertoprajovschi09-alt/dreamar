@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientMarketInsightsTab } from "@/components/competitors/ClientMarketInsightsTab";
+import { ClientApprovalsTab } from "@/components/approvals/ClientApprovalsTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -129,7 +130,7 @@ export default function ClientPortal() {
           <TabsContent value="overview"><OverviewTab clientId={client.id} niche={client.niche} /></TabsContent>
           <TabsContent value="health"><HealthScoreCard clientId={client.id} readOnly /></TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
-          <TabsContent value="approvals"><ApprovalsTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
+          <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="documents"><ClientDocumentsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
