@@ -121,11 +121,16 @@ export default function ClientProfile() {
         <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
         <TabsContent value="settings">
           <div className="space-y-4">
+            <PortalSettingsCard
+              agencyId={client.agency_id}
+              clientId={client.id}
+              users={users}
+              invites={invites}
+              reload={loadAll}
+            />
             <SettingsTab client={client} reload={loadAll} />
             <BrandTab client={client} reload={loadAll} />
             <PlatformsTab client={client} platforms={platforms} reload={loadAll} />
-            <UsersTab users={users} reload={loadAll} />
-            <InvitesTab invites={invites} reload={loadAll} />
             <BriefViewTab clientId={client.id} />
             <FeedbackTab feedback={feedback} />
             <ClientCampaignsTab client={client} />
