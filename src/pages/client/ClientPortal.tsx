@@ -77,7 +77,7 @@ export default function ClientPortal() {
   }
   if (briefStatus === "missing") {
     return (
-      <BriefWizard
+      <QuickClientOnboarding
         agencyId={agency.id} agencyName={agency.name}
         clientId={client.id} clientName={client.name}
         userId={user!.id}
