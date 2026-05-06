@@ -74,6 +74,7 @@ export default function AgencyLayout() {
                 { to: "/agency/admin/ai-safety", label: "AI Safety" },
                 { to: "/agency/admin/ai-maintainer", label: "AI Maintainer" },
                 { to: "/agency/admin/ai-actions", label: "AI Action Approvals" },
+                { to: "/agency/admin/continuous-improvement", label: "Continuous Improvement" },
               ].map((a) => (
                 <NavLink
                   key={a.to}

@@ -41,6 +41,7 @@ import AiLogs from "./pages/admin/AiLogs";
 import AiSafety from "./pages/admin/AiSafety";
 import AiMaintainer from "./pages/admin/AiMaintainer";
 import AiActionsApprovalQueue from "./pages/admin/AiActionsApprovalQueue";
+import ContinuousImprovement from "./pages/admin/ContinuousImprovement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,7 @@ const App = () => (
                   <Route path="admin/ai-safety" element={<AiSafety />} />
                   <Route path="admin/ai-maintainer" element={<AiMaintainer />} />
                   <Route path="admin/ai-actions" element={<AiActionsApprovalQueue />} />
+                  <Route path="admin/continuous-improvement" element={<ContinuousImprovement />} />
                 </Route>
 
                 <Route
