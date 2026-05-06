@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { PLATFORMS } from "@/lib/niches";
 import { NICHE_PRESET_OPTIONS, getNichePreset, type KpiField, type Question } from "@/lib/nichePresets";
+import { useAgencyNiches, type NicheRow } from "@/hooks/useAgencyNiches";
 import { Loader2, Check, ArrowLeft, ArrowRight, Copy, X, Sparkles, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -59,7 +60,7 @@ type Form = {
   name: string; website: string; logo_url: string; brand_color: string;
   contact_person: string; contact_email: string; contact_phone: string; status: string;
   // 2
-  niche: string; custom_niche: string;
+  niche: string; custom_niche: string; niche_id: string | null; creating_custom_niche: boolean;
   kpi_fields: KpiField[]; business_impact_fields: KpiField[]; monthly_questions: Question[];
   // 3
   platforms: PlatformEntry[];
@@ -78,7 +79,7 @@ type Form = {
 const empty: Form = {
   name: "", website: "", logo_url: "", brand_color: "#E11D2E",
   contact_person: "", contact_email: "", contact_phone: "", status: "active",
-  niche: "real_estate", custom_niche: "",
+  niche: "real_estate", custom_niche: "", niche_id: null, creating_custom_niche: false,
   kpi_fields: getNichePreset("real_estate").kpi_fields,
   business_impact_fields: getNichePreset("real_estate").business_impact_fields,
   monthly_questions: getNichePreset("real_estate").monthly_questions,
@@ -104,6 +105,13 @@ const STEPS = [
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
+function mapKpiTypeToLegacy(t?: string): "number" | "currency" | "percent" | "text" {
+  if (t === "currency") return "currency";
+  if (t === "percentage") return "percent";
+  if (t === "text" || t === "boolean") return "text";
+  return "number";
+}
+
 export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -125,18 +133,58 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
     if (!v) setTimeout(reset, 200);
   };
 
-  // ----- Step 2 helpers -----
-  const applyNiche = (key: string) => {
-    const p = getNichePreset(key);
+  // ----- Niche library -----
+  const { data: nicheLib = [], refetch: refetchNiches } = useAgencyNiches(agencyId);
+
+  const selectedNiche: NicheRow | null = useMemo(
+    () => nicheLib.find((n) => n.id === form.niche_id) ?? null,
+    [nicheLib, form.niche_id],
+  );
+
+  const applyNicheFromLibrary = (niche: NicheRow) => {
+    // Map library rows into the editor structures (kept editable per-client).
+    const kpis: KpiField[] = niche.kpis.length
+      ? niche.kpis.map((k) => ({
+          key: k.key, label: k.label,
+          kpi_type: k.kpi_type, type: mapKpiTypeToLegacy(k.kpi_type),
+          reporting_frequency: k.reporting_frequency,
+          visible_to_client: k.visible_to_client,
+        }))
+      : (niche.is_custom ? [] : getNichePreset(niche.key).kpi_fields);
+    const fields: KpiField[] = niche.fields.length
+      ? niche.fields.map((f) => ({
+          key: f.key, label: f.label,
+          field_type: f.field_type, type: mapKpiTypeToLegacy(f.field_type),
+        }))
+      : (niche.is_custom ? [] : getNichePreset(niche.key).business_impact_fields);
+    const qs: Question[] = niche.questions.length
+      ? niche.questions.map((q) => ({ key: q.key, label: q.label }))
+      : (niche.is_custom ? [] : getNichePreset(niche.key).monthly_questions);
     setForm((f) => ({
       ...f,
-      niche: key,
-      kpi_fields: p.kpi_fields.length ? p.kpi_fields : f.kpi_fields,
-      business_impact_fields: p.business_impact_fields,
-      monthly_questions: p.monthly_questions,
+      niche_id: niche.id,
+      niche: niche.is_custom ? "custom" : niche.key,
+      custom_niche: niche.is_custom ? niche.label : "",
+      creating_custom_niche: false,
+      kpi_fields: kpis,
+      business_impact_fields: fields,
+      monthly_questions: qs,
     }));
   };
-  const addKpi = () => set("kpi_fields", [...form.kpi_fields, { key: `kpi_${form.kpi_fields.length + 1}`, label: "", type: "number" }]);
+
+  const startCreatingCustomNiche = () => {
+    setForm((f) => ({
+      ...f,
+      niche_id: null,
+      niche: "custom",
+      custom_niche: "",
+      creating_custom_niche: true,
+      kpi_fields: [{ key: "kpi_1", label: "", type: "number", kpi_type: "number", reporting_frequency: "monthly", visible_to_client: true }],
+      business_impact_fields: [{ key: "bi_1", label: "", type: "number", field_type: "number" }],
+      monthly_questions: [{ key: "q_1", label: "" }],
+    }));
+  };
+  const addKpi = () => set("kpi_fields", [...form.kpi_fields, { key: `kpi_${form.kpi_fields.length + 1}`, label: "", type: "number", kpi_type: "number", reporting_frequency: "monthly", visible_to_client: true }]);
   const updateKpi = (i: number, patch: Partial<KpiField>) => {
     const next = [...form.kpi_fields];
     next[i] = { ...next[i], ...patch };
@@ -145,7 +193,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
   };
   const removeKpi = (i: number) => set("kpi_fields", form.kpi_fields.filter((_, x) => x !== i));
 
-  const addBI = () => set("business_impact_fields", [...form.business_impact_fields, { key: `bi_${form.business_impact_fields.length + 1}`, label: "", type: "number" }]);
+  const addBI = () => set("business_impact_fields", [...form.business_impact_fields, { key: `bi_${form.business_impact_fields.length + 1}`, label: "", type: "number", field_type: "number" }]);
   const updateBI = (i: number, patch: Partial<KpiField>) => {
     const next = [...form.business_impact_fields];
     next[i] = { ...next[i], ...patch };
@@ -224,7 +272,11 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       if (!form.name.trim()) return "Client name is required.";
     }
     if (step === 2) {
-      if (form.niche === "custom" && !form.custom_niche.trim()) return "Enter a custom niche name.";
+      if (!form.niche_id && !form.creating_custom_niche) return "Pick a niche or create a custom one.";
+      if (form.creating_custom_niche) {
+        if (!form.custom_niche.trim()) return "Enter a custom niche name.";
+        if (!form.kpi_fields.some((k) => k.label.trim())) return "Add at least one KPI for the custom niche.";
+      }
     }
     if (step === 6 && form.invite_enabled) {
       if (!form.invite_email.trim()) return "Enter an invite email.";
@@ -246,11 +298,55 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       const social_links: Record<string, string> = {};
       form.platforms.forEach((p) => { if (p.username || p.url) social_links[p.platform] = p.username || p.url; });
 
+      // 1) If creating a new custom niche, insert into the agency niche library first.
+      let nicheId: string | null = form.niche_id;
+      if (form.creating_custom_niche) {
+        const niceLabel = form.custom_niche.trim();
+        const niceKey = `${slug(niceLabel)}_${Date.now().toString(36)}`;
+        const { data: nicheRow, error: nErr } = await supabase.from("niches").insert({
+          agency_id: agencyId, key: niceKey, label: niceLabel, is_custom: true, created_by: user.id,
+        }).select("id").single();
+        if (nErr || !nicheRow) { toast.error(nErr?.message || "Could not save custom niche"); return; }
+        nicheId = nicheRow.id as string;
+
+        const validKpis = form.kpi_fields.filter((k) => k.label.trim());
+        if (validKpis.length) {
+          await supabase.from("custom_niche_kpis").insert(validKpis.map((k, i) => ({
+            niche_id: nicheId!, agency_id: agencyId,
+            key: k.key || `kpi_${i + 1}`, label: k.label.trim(),
+            kpi_type: (k.kpi_type as any) || "number",
+            reporting_frequency: (k.reporting_frequency as any) || "monthly",
+            visible_to_client: k.visible_to_client !== false,
+            sort_order: i,
+          })));
+        }
+        const validBI = form.business_impact_fields.filter((f) => f.label.trim());
+        if (validBI.length) {
+          await supabase.from("custom_niche_fields").insert(validBI.map((f, i) => ({
+            niche_id: nicheId!, agency_id: agencyId,
+            key: f.key || `bi_${i + 1}`, label: f.label.trim(),
+            field_type: (f.field_type as any) || "number",
+            sort_order: i,
+          })));
+        }
+        const validQs = form.monthly_questions.filter((q) => q.label.trim());
+        if (validQs.length) {
+          await supabase.from("custom_niche_questions").insert(validQs.map((q, i) => ({
+            niche_id: nicheId!, agency_id: agencyId,
+            key: q.key || `q_${i + 1}`, label: q.label.trim(),
+            sort_order: i,
+          })));
+        }
+        refetchNiches();
+      }
+
+      const isCustom = form.creating_custom_niche || (selectedNiche?.is_custom ?? false);
       const clientPayload: any = {
         agency_id: agencyId,
         name: form.name.trim(),
-        niche: form.niche,
-        custom_niche: form.niche === "custom" ? form.custom_niche.trim() : null,
+        niche: isCustom ? "custom" : form.niche,
+        custom_niche: isCustom ? (form.custom_niche.trim() || selectedNiche?.label || null) : null,
+        niche_id: nicheId,
         website: form.website.trim() || null,
         logo_url: form.logo_url || null,
         brand_color: form.brand_color || null,
@@ -273,11 +369,11 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       if (cErr || !clientRow) { toast.error(cErr?.message || "Could not create client"); return; }
       const clientId = clientRow.id as string;
 
-      // KPI schema
+      // Per-client KPI snapshot (drives dashboard / analytics / monthly reports)
       await supabase.from("client_kpi_schemas").insert({
         agency_id: agencyId, client_id: clientId,
-        niche_key: form.niche,
-        custom_niche_label: form.niche === "custom" ? form.custom_niche.trim() : null,
+        niche_key: isCustom ? "custom" : form.niche,
+        custom_niche_label: isCustom ? (form.custom_niche.trim() || selectedNiche?.label || null) : null,
         kpi_fields: form.kpi_fields as any,
         business_impact_fields: form.business_impact_fields as any,
         monthly_questions: form.monthly_questions as any,
@@ -394,8 +490,8 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
 
   const progress = (step / 7) * 100;
   const nicheLabelText = useMemo(
-    () => form.niche === "custom" ? (form.custom_niche || "Custom") : (NICHE_PRESET_OPTIONS.find((n) => n.value === form.niche)?.label || form.niche),
-    [form.niche, form.custom_niche],
+    () => form.creating_custom_niche ? (form.custom_niche || "Custom") : (selectedNiche?.label || "—"),
+    [form.creating_custom_niche, form.custom_niche, selectedNiche],
   );
 
   return (
@@ -485,36 +581,60 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           {/* STEP 2 */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Niche *</Label>
-                  <Select value={form.niche} onValueChange={applyNiche}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {NICHE_PRESET_OPTIONS.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {form.niche === "custom" && (
-                  <div className="space-y-1.5">
-                    <Label>Custom niche name *</Label>
-                    <Input autoFocus placeholder="e.g. Dentist Clinic" value={form.custom_niche} onChange={(e) => set("custom_niche", e.target.value)} />
-                  </div>
-                )}
+              <div className="space-y-1.5">
+                <Label>Niche *</Label>
+                <Select
+                  value={form.creating_custom_niche ? "__new__" : (form.niche_id || "")}
+                  onValueChange={(v) => {
+                    if (v === "__new__") return startCreatingCustomNiche();
+                    const n = nicheLib.find((x) => x.id === v);
+                    if (n) applyNicheFromLibrary(n);
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select a niche…" /></SelectTrigger>
+                  <SelectContent>
+                    {nicheLib.some((n) => n.is_custom) && (
+                      <div className="px-2 pt-1.5 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">My agency niches</div>
+                    )}
+                    {nicheLib.filter((n) => n.is_custom).map((n) => (
+                      <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
+                    ))}
+                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Global presets</div>
+                    {nicheLib.filter((n) => !n.is_custom).map((n) => (
+                      <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
+                    ))}
+                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Other</div>
+                    <SelectItem value="__new__">+ Create custom niche</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <FieldEditor
-                title="KPI fields"
-                description="Metrics tracked monthly for this client."
+              {form.creating_custom_niche && (
+                <div className="space-y-1.5 rounded-md border border-dashed p-3 bg-muted/30">
+                  <Label>Custom Niche Name *</Label>
+                  <Input
+                    autoFocus
+                    placeholder="Ex: Dental Clinic, Luxury Hotel, Car Dealership, Local Bakery"
+                    value={form.custom_niche}
+                    onChange={(e) => set("custom_niche", e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This niche will be saved to your agency library and reusable for future clients.
+                  </p>
+                </div>
+              )}
+
+              <KpiEditor
+                title="Custom KPIs"
+                description="Metrics you want to track for this niche."
                 items={form.kpi_fields}
                 onAdd={addKpi}
                 onRemove={removeKpi}
                 onUpdate={updateKpi}
-                withType
               />
               <FieldEditor
-                title="Business impact fields"
-                description="Real-world outcomes the client reports each month."
+                title="Custom Business Impact Fields"
+                description="What the client fills in every month (e.g. new customers, sales, calls)."
                 items={form.business_impact_fields}
                 onAdd={addBI}
                 onRemove={removeBI}
@@ -524,8 +644,8 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Monthly questions</Label>
-                    <p className="text-xs text-muted-foreground">Asked to the client every month.</p>
+                    <Label>Custom Monthly Questions</Label>
+                    <p className="text-xs text-muted-foreground">Open-ended prompts the client answers each month.</p>
                   </div>
                   <Button type="button" size="sm" variant="outline" onClick={addQ}><Plus className="h-3 w-3 mr-1" />Add</Button>
                 </div>
@@ -835,6 +955,75 @@ function SummaryCard({ title, children }: { title: string; children: React.React
     <div className="border rounded-md p-3">
       <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{title}</p>
       {children}
+    </div>
+  );
+}
+
+function KpiEditor({
+  title, description, items, onAdd, onRemove, onUpdate,
+}: {
+  title: string; description?: string; items: KpiField[];
+  onAdd: () => void; onRemove: (i: number) => void;
+  onUpdate: (i: number, patch: Partial<KpiField>) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>{title}</Label>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd}><Plus className="h-3 w-3 mr-1" />Add KPI</Button>
+      </div>
+      <div className="space-y-2">
+        {items.map((f, i) => (
+          <div key={i} className="rounded-md border p-2 space-y-2 bg-muted/20">
+            <div className="flex gap-2 items-center">
+              <Input
+                className="flex-1"
+                value={f.label}
+                onChange={(e) => onUpdate(i, { label: e.target.value })}
+                placeholder="KPI name (e.g. Qualified leads)"
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => onRemove(i)}><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="grid grid-cols-12 gap-2 items-center">
+              <Select
+                value={f.kpi_type || "number"}
+                onValueChange={(v) => onUpdate(i, { kpi_type: v as any, type: mapKpiTypeToLegacy(v) })}
+              >
+                <SelectTrigger className="col-span-4"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="currency">Currency</SelectItem>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="boolean">Boolean</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={f.reporting_frequency || "monthly"}
+                onValueChange={(v) => onUpdate(i, { reporting_frequency: v as any })}
+              >
+                <SelectTrigger className="col-span-4"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+              <label className="col-span-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch
+                  checked={f.visible_to_client !== false}
+                  onCheckedChange={(v) => onUpdate(i, { visible_to_client: v })}
+                />
+                Visible to client
+              </label>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-xs text-muted-foreground">No KPIs yet. Add one to get started.</p>}
+      </div>
     </div>
   );
 }

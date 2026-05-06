@@ -1,73 +1,123 @@
-# Add Client Wizard — 7-step premium onboarding
+## Goal
 
-Replace the current 4-step wizard with a richer 7-step onboarding flow that captures everything needed to operate a client end-to-end: brand basics, niche-specific KPIs (with full custom support), platform handles & objectives, goals, business context, AI-generated strategy base, portal invite with granular permissions, and a final review that provisions the workspace.
+Promote "Custom Niche" from a single text field into a first-class, reusable **per-agency niche library** with full custom KPI / business-impact / monthly-question schemas. Reusable across future clients of the same agency. Global presets remain available to all agencies.
 
-Multi-tenant integrity preserved: every insert carries `agency_id` from `useUser()`; client-scoped rows carry `client_id`. All writes go through Supabase JS so existing RLS policies apply.
+## 1. Database (one migration)
 
-## Schema changes (one migration)
+Create three new tables and link `clients` to them.
 
-1. **`client_kpi_schemas`** (new) — one row per client, holds the live KPI/impact/questions definition. Lets each client (especially Custom niches) have its own metric set without changing core tables.
-   - `id`, `agency_id`, `client_id` (unique), `niche_key text`, `custom_niche_label text NULL`,
-     `kpi_fields jsonb` (array of `{key,label,unit,type}`),
-     `business_impact_fields jsonb`,
-     `monthly_questions jsonb`,
-     `created_at/updated_at`.
-   - RLS: agency members read/write own; client viewers read only.
+```sql
+-- Niche registry: global (agency_id NULL) + per-agency custom niches
+CREATE TABLE public.niches (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id uuid REFERENCES public.agencies(id) ON DELETE CASCADE, -- NULL = global
+  key text NOT NULL,                 -- slug, unique per scope
+  label text NOT NULL,
+  is_custom boolean NOT NULL DEFAULT false,
+  created_by uuid,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE (agency_id, key)
+);
 
-2. **`client_invites`** — add `display_name text`, `portal_role text default 'client_viewer'` (`client_owner`|`client_viewer`), `permissions jsonb default '{}'`.
+CREATE TABLE public.custom_niche_kpis (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  niche_id uuid NOT NULL REFERENCES public.niches(id) ON DELETE CASCADE,
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  key text NOT NULL,
+  label text NOT NULL,
+  kpi_type text NOT NULL CHECK (kpi_type IN ('number','percentage','currency','text','boolean')),
+  reporting_frequency text NOT NULL DEFAULT 'monthly'
+       CHECK (reporting_frequency IN ('daily','weekly','monthly')),
+  visible_to_client boolean NOT NULL DEFAULT true,
+  sort_order int DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
 
-3. **`client_users`** — add `permissions jsonb default '{}'` so accepted invites keep their granted permissions.
+CREATE TABLE public.custom_niche_fields (        -- business impact fields
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  niche_id uuid NOT NULL REFERENCES public.niches(id) ON DELETE CASCADE,
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  key text NOT NULL,
+  label text NOT NULL,
+  field_type text NOT NULL DEFAULT 'number'
+       CHECK (field_type IN ('number','percentage','currency','text','boolean')),
+  sort_order int DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
 
-4. **`accept_client_invite` function** — extend to copy `display_name`/`permissions`/`portal_role` from invite to `client_users`.
+CREATE TABLE public.custom_niche_questions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  niche_id uuid NOT NULL REFERENCES public.niches(id) ON DELETE CASCADE,
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  key text NOT NULL,
+  label text NOT NULL,
+  sort_order int DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
 
-5. **`agency-files` bucket policies** — add storage RLS so agency members can upload/read at `clients/<client_id>/...` (verify via `is_member_of`). Bucket stays private.
-
-## Niche presets
-
-New `src/lib/nichePresets.ts` exports default `kpi_fields`, `business_impact_fields`, and `monthly_questions` per niche key (real_estate, restaurant, beauty, ecommerce, fitness, dental, education, automotive, legal, finance) plus an empty preset for `custom`. Selecting a niche pre-fills these editable arrays in step 2.
-
-## Wizard component
-
-Rewrite `src/components/client/AddClientWizard.tsx` with 7 steps and a sticky stepper:
-
+ALTER TABLE public.clients
+  ADD COLUMN IF NOT EXISTS niche_id uuid REFERENCES public.niches(id) ON DELETE SET NULL;
 ```
-[1 Basics] → [2 Niche & KPIs] → [3 Platforms] → [4 Goals] → [5 Context] → [6 Invite] → [7 Review]
-```
 
-- **Step 1 — Basics**: name, website, logo upload (to `agency-files`), brand color, contact name/email/phone, status (`active|onboarding|paused` — extend `client_status` enum to add `onboarding` if missing; otherwise map to existing values).
-- **Step 2 — Niche & KPIs**: niche dropdown (10 presets + Custom). On Custom → required `custom_niche_label` input. Below: editable KPI list, business-impact list, monthly-questions list (chip/row editors). Selecting a preset replaces lists; changes persist into `client_kpi_schemas`.
-- **Step 3 — Platforms**: pick from IG/TikTok/FB/YT/LinkedIn/Google Ads/Meta Ads/Website/Other. Each selected platform reveals: profile URL, username, starting followers, main objective. Stored in `client_platforms` (extend with `starting_followers int`, `objective text` columns via the same migration).
-- **Step 4 — Goals**: 9 quick templates + Custom. Each goal row: name, target metric, target value, deadline, priority (low/med/high), notes. Stored in `monthly_goals` (current month). Map: name→`objective`, metric→`metric`, value→`target`, deadline→`deadline`, priority/notes→`notes` (priority prefix) until a richer column is needed.
-- **Step 5 — Context**: textareas for sells / services / audience / USP / tone / competitors / objections / offers / notes. Saved to `clients.brand_voice`, `tone_of_voice`, `target_audience`, `competitors`, `services` (jsonb), `notes`, plus a single `business_context` summary entry written to `ai_memory_items` (visibility=`internal_agency`, source_type=`client_brief`, source_id=client_id).
-- **AI button "Generate Client Strategy Base"** in Step 5 → new edge function `client-strategy-base` (Lovable AI Gateway, `google/gemini-3-flash-preview`, structured output via tool calling) returns `{summary, content_pillars[], suggested_kpis[], recommended_platforms[], initial_content_ideas[], monthly_reporting_focus}`. Result rendered inline; on accept it writes one `ai_memory_items` row (type `business_context`) with the summary and stores the full JSON in `clients.notes` appendix or a new `ai_strategy_base` jsonb column on clients (added in same migration).
-- **Step 6 — Portal invite**: toggle on/off; if on → display_name, email, role (Client Owner / Client Viewer), 5 permission switches (approve content, view reports, upload documents, fill business impact, comment). Three actions: Send invite now / Skip / Copy invite link (after creation).
-- **Step 7 — Review**: summary cards (basics, niche + KPI count, platforms, goals, invite status). Final button **Create Client Workspace** runs the provisioning flow (or finalizes if creation already happened on step 6).
+**Seed**: insert one global row per existing preset (`real_estate`, `restaurant`, …, plus `custom` excluded). Done in same migration with `INSERT … ON CONFLICT DO NOTHING` and `agency_id = NULL`.
 
-## Provisioning on final create
+**RLS**:
+- `niches`: SELECT → `agency_id IS NULL OR is_member_of(auth.uid(), agency_id)`; INSERT/UPDATE/DELETE → `is_member_of(auth.uid(), agency_id)` AND `agency_id IS NOT NULL` (no edits to globals).
+- `custom_niche_kpis` / `_fields` / `_questions`: full CRUD restricted by `is_member_of(auth.uid(), agency_id)`. Clients can SELECT via `is_client_viewer_of` joining through `clients.niche_id` (read-only).
+- `updated_at` trigger on `niches`.
 
-In a single `Promise.all`-style sequence after `clients` insert:
-1. Insert `client_kpi_schemas` row.
-2. Insert per-platform rows in `client_platforms`.
-3. Insert per-goal rows in `monthly_goals` for current month.
-4. Insert `ai_memory_items` business-context row (and AI strategy if generated).
-5. Insert default onboarding `tasks` (fixed list: "Confirm brand assets", "Schedule kickoff call", "Connect analytics access", "Approve first content batch", "Set up monthly reporting"). All with `client_id`, status `todo`.
-6. If invite enabled: insert `client_invites` with permissions/portal_role.
-7. Toast + navigate to `/agency/clients/:id`.
+## 2. Frontend — `src/lib/niches.ts` / `nichePresets.ts`
 
-No table is needed for "default folders" or "default calendar" — `documents` and `content_posts` are queried by `client_id` and render empty states until populated. Reporting template is unchanged (uses existing `monthly_reports` flow).
+- Keep static presets as fallback/seed source.
+- New helper `useAgencyNiches(agencyId)` (in `src/hooks/useAgencyNiches.ts`) that loads `niches` (global + agency) + their KPIs/fields/questions in one query.
 
-## Touched files
-- `supabase/migrations/<new>.sql` — new table, columns, function update, storage policies.
-- `src/lib/nichePresets.ts` — new presets module.
-- `src/lib/niches.ts` — extend `NICHES` to the 10 presets + custom.
-- `src/components/client/AddClientWizard.tsx` — full rewrite (7 steps).
-- `src/pages/agency/Clients.tsx` — no change (already uses the wizard).
-- `supabase/functions/client-strategy-base/index.ts` — new edge function (Lovable AI, structured tool calling, JWT verified, 429/402 surfaced).
-- `src/integrations/supabase/types.ts` — auto-regenerated.
+## 3. AddClientWizard refactor (Step 2)
 
-## Security & multi-tenancy
-- `agency_id` always sourced from `useUser().agency.id`; never from form input.
-- `client_invites.invited_by = auth.uid()` and `permissions` validated against an allow-list before insert.
-- KPI/goal/platform inserts all carry `agency_id` + `client_id`; RLS policies on existing tables already restrict by `is_member_of`.
-- Logo upload path: `clients/<client_id>/logo-<timestamp>.<ext>` inside `agency-files` (private). Public URL only generated via signed URL when displayed.
-- AI edge function validates JWT, resolves agency from `profiles`, returns structured JSON only — no raw HTML, no client-controlled prompts.
+Replace the hard-coded `NICHE_PRESET_OPTIONS` dropdown with the dynamic list from `useAgencyNiches`, with one extra entry **"+ Create custom niche"**.
+
+When user picks "+ Create custom niche":
+- Reveal an inline panel with:
+  - **Custom Niche Name** input (placeholder per spec).
+  - **Custom KPIs** editor — rows of `{label, type (number/percentage/currency/text/boolean), reporting_frequency (daily/weekly/monthly), visible_to_client (switch)}`.
+  - **Custom Business Impact Fields** editor — rows of `{label, field_type}`.
+  - **Custom Monthly Questions** editor — list of question labels.
+- Each section has "Add" button + remove buttons; pre-seeded with 1 empty row each.
+
+Validation in Step 2: when custom niche selected, `name` and ≥1 KPI label required.
+
+When user picks an existing custom niche from the agency library, the editors are pre-filled and editable for **this client only** (overrides stored on `client_kpi_schemas` as today). Global presets behave as today.
+
+## 4. Provisioning on Create
+
+In `provision()`:
+
+1. If user created a brand-new custom niche this session:
+   - Insert into `niches` with `agency_id=agencyId, is_custom=true, key=slug(name), label=name, created_by=user.id`. Capture `niche_id`.
+   - Bulk-insert `custom_niche_kpis`, `custom_niche_fields`, `custom_niche_questions`.
+2. Insert `clients` row with `niche='custom'`, `custom_niche=name`, `niche_id=<id>` (or selected existing niche id; for global presets `niche_id` resolves from the seeded global row).
+3. Continue inserting `client_kpi_schemas` snapshot exactly as today (per-client copy used by dashboards / monthly reports).
+
+## 5. Dashboard / Analytics / Monthly Reports
+
+- The existing `client_kpi_schemas` snapshot already drives dashboard/analytics/monthly report fields, so custom KPIs & fields surface automatically there. No change needed to those screens beyond reading `kpi_type` / `reporting_frequency` / `visible_to_client` (added as optional props on `KpiField` type) when rendering.
+- Update `KpiField` type to include `kpi_type`, `reporting_frequency`, `visible_to_client`, defaulting safely for older rows.
+
+## 6. Reuse UX
+
+- Step 2 dropdown groups: **My agency niches**, **Global presets**, **+ Create custom niche**. Once a custom niche is created, it appears for all future clients of the same agency.
+- Add small "Manage niches" link → opens a lightweight modal listing agency custom niches with rename / delete (delete forbidden if any client still references it; show count).
+
+## Files to change
+
+- New migration `supabase/migrations/<ts>_niche_library.sql`
+- `src/lib/niches.ts` — extend `KpiField` type with new props
+- `src/hooks/useAgencyNiches.ts` — new
+- `src/components/client/AddClientWizard.tsx` — Step 2 rewrite, provisioning logic
+- `src/components/client/CustomNicheEditor.tsx` — new (KPIs/fields/questions editors)
+- `src/components/client/ManageNichesDialog.tsx` — new (small)
+- `src/integrations/supabase/types.ts` — auto-regenerated
+
+## Out of scope
+
+No changes to `client-strategy-base` edge function or RLS on existing tables beyond the new ones.

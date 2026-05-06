@@ -1844,6 +1844,7 @@ export type Database = {
           monthly_retainer: number | null
           name: string
           niche: Database["public"]["Enums"]["niche"]
+          niche_id: string | null
           notes: string | null
           objectives: string | null
           platforms: string[] | null
@@ -1875,6 +1876,7 @@ export type Database = {
           monthly_retainer?: number | null
           name: string
           niche?: Database["public"]["Enums"]["niche"]
+          niche_id?: string | null
           notes?: string | null
           objectives?: string | null
           platforms?: string[] | null
@@ -1906,6 +1908,7 @@ export type Database = {
           monthly_retainer?: number | null
           name?: string
           niche?: Database["public"]["Enums"]["niche"]
+          niche_id?: string | null
           notes?: string | null
           objectives?: string | null
           platforms?: string[] | null
@@ -1924,6 +1927,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
             referencedColumns: ["id"]
           },
         ]
@@ -2367,41 +2377,149 @@ export type Database = {
       custom_niche_fields: {
         Row: {
           agency_id: string
-          client_id: string
           created_at: string
-          display_order: number
-          field_key: string
-          field_label: string
           field_type: string
           id: string
-          unit: string | null
-          updated_at: string
+          key: string
+          label: string
+          niche_id: string
+          sort_order: number
         }
         Insert: {
           agency_id: string
-          client_id: string
           created_at?: string
-          display_order?: number
-          field_key: string
-          field_label: string
           field_type?: string
           id?: string
-          unit?: string | null
-          updated_at?: string
+          key: string
+          label: string
+          niche_id: string
+          sort_order?: number
         }
         Update: {
           agency_id?: string
-          client_id?: string
           created_at?: string
-          display_order?: number
-          field_key?: string
-          field_label?: string
           field_type?: string
           id?: string
-          unit?: string | null
-          updated_at?: string
+          key?: string
+          label?: string
+          niche_id?: string
+          sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "custom_niche_fields_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_niche_fields_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_niche_kpis: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          key: string
+          kpi_type: string
+          label: string
+          niche_id: string
+          reporting_frequency: string
+          sort_order: number
+          visible_to_client: boolean
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          key: string
+          kpi_type?: string
+          label: string
+          niche_id: string
+          reporting_frequency?: string
+          sort_order?: number
+          visible_to_client?: boolean
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          key?: string
+          kpi_type?: string
+          label?: string
+          niche_id?: string
+          reporting_frequency?: string
+          sort_order?: number
+          visible_to_client?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_niche_kpis_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_niche_kpis_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_niche_questions: {
+        Row: {
+          agency_id: string
+          created_at: string
+          id: string
+          key: string
+          label: string
+          niche_id: string
+          sort_order: number
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          niche_id: string
+          sort_order?: number
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          niche_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_niche_questions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_niche_questions_niche_id_fkey"
+            columns: ["niche_id"]
+            isOneToOne: false
+            referencedRelation: "niches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       documents: {
         Row: {
@@ -2986,6 +3104,47 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      niches: {
+        Row: {
+          agency_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_custom: boolean
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_custom?: boolean
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_custom?: boolean
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "niches_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
         ]
