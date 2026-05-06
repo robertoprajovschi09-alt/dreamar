@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, Check, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getNicheConfig } from "@/lib/nicheDashboardConfigs";
 
 type Props = {
   agencyId: string;
@@ -130,6 +131,11 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
   const [reHasNewProperties, setReHasNewProperties] = useState<"yes" | "no">("no");
   const [reLeadQuality, setReLeadQuality] = useState<"good" | "mixed" | "weak" | "none">("mixed");
 
+  // Generic per-niche extras driven by NICHE_CONFIGS
+  const nicheCfg = getNicheConfig(niche);
+  const [nicheExtras, setNicheExtras] = useState<Record<string, any>>({});
+  const setExtra = (k: string, v: any) => setNicheExtras((s) => ({ ...s, [k]: v }));
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -179,6 +185,24 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
       };
       Object.keys(re).forEach((k) => re[k] == null && delete re[k]);
       (cleanedMetrics as any).real_estate = re;
+    }
+
+    // Pack generic per-niche extras (config-driven niches)
+    if (nicheCfg && niche && niche !== "real_estate") {
+      const packed: Record<string, any> = {};
+      nicheCfg.checkin_extras.forEach((f) => {
+        const v = nicheExtras[f.key];
+        if (v == null || v === "") return;
+        if (f.kind === "number") {
+          const n = Number(v);
+          if (Number.isFinite(n)) packed[f.key] = n;
+        } else if (f.kind === "text") {
+          packed[f.key] = String(v).trim().slice(0, 500);
+        } else {
+          packed[f.key] = v;
+        }
+      });
+      if (Object.keys(packed).length) (cleanedMetrics as any)[niche] = packed;
     }
 
     setSaving(true);
@@ -378,6 +402,28 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
                   value={reLeadQuality} onChange={(v) => setReLeadQuality(v as any)}
                 />
               </div>
+            </div>
+          )}
+
+          {nicheCfg && niche !== "real_estate" && (
+            <div className="space-y-4 p-4 rounded-md border border-accent/30 bg-accent/5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-accent">{nicheCfg.checkin_section_title}</div>
+              {nicheCfg.checkin_extras.map((f) => (
+                <div key={f.key} className="space-y-1.5">
+                  <Label className="text-xs">{f.label}</Label>
+                  {f.kind === "number" && (
+                    <Input type="number" min={0} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder="—" />
+                  )}
+                  {f.kind === "text" && (
+                    f.long
+                      ? <Textarea rows={2} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={500} />
+                      : <Input value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={300} />
+                  )}
+                  {f.kind === "choice" && (
+                    <ChipGroup options={f.options} value={nicheExtras[f.key] ?? ""} onChange={(v) => setExtra(f.key, v)} />
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
