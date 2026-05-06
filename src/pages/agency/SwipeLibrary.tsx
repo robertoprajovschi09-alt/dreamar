@@ -14,7 +14,7 @@ import { listSwipes, deleteSwipe, SWIPE_TYPES, SWIPE_PLATFORMS, type SwipeFile }
 import { toast } from "@/hooks/use-toast";
 
 export default function SwipeLibrary() {
-  const { agency, plan } = useUser();
+  const { agency } = useUser();
   const [swipes, setSwipes] = useState<SwipeFile[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
