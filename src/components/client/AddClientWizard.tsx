@@ -490,8 +490,8 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
 
   const progress = (step / 7) * 100;
   const nicheLabelText = useMemo(
-    () => form.niche === "custom" ? (form.custom_niche || "Custom") : (NICHE_PRESET_OPTIONS.find((n) => n.value === form.niche)?.label || form.niche),
-    [form.niche, form.custom_niche],
+    () => form.creating_custom_niche ? (form.custom_niche || "Custom") : (selectedNiche?.label || "—"),
+    [form.creating_custom_niche, form.custom_niche, selectedNiche],
   );
 
   return (
