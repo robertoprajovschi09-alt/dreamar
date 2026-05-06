@@ -33,11 +33,13 @@ export default function AcceptInvite() {
   useEffect(() => {
     (async () => {
       if (!token) { setPreviewError("Missing invite token."); setPreviewLoading(false); return; }
+      // Mark as opened so the agency sees the status update
+      supabase.rpc("mark_invite_opened", { _token: token }).then(() => {});
       const { data, error } = await supabase.rpc("get_invite_preview", { _token: token });
       if (error) { setPreviewError(error.message); setPreviewLoading(false); return; }
       const row = Array.isArray(data) ? data[0] : data;
       if (!row) { setPreviewError("Invite not found."); setPreviewLoading(false); return; }
-      if (row.status !== "pending") { setPreviewError(`This invite is ${row.status}.`); setPreviewLoading(false); return; }
+      if (!["pending", "sent", "opened"].includes(row.status)) { setPreviewError(`This invite is ${row.status}.`); setPreviewLoading(false); return; }
       if (new Date(row.expires_at) < new Date()) { setPreviewError("This invite has expired."); setPreviewLoading(false); return; }
       setPreview(row);
       setEmail(row.email);
