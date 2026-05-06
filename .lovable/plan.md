@@ -1,134 +1,106 @@
 ## Goal
 
-Make the agency↔client connection smarter by upgrading the existing `client_invites` system into a fully-featured **Client Invitations** model with granular permissions, lifecycle tracking (sent / opened / accepted / expired), email delivery, and a complete **Client Portal Settings** panel inside the Client Profile page.
+Replace the heavy 4-step `BriefWizard` with a **single-screen, 3-question Quick Onboarding**, then ship a **niche-aware, AI-personalized Client Dashboard** that pulls everything else from data the agency already provided in `Add Client` (`clients.*`, `client_kpi_schemas`, `client_platforms`, `monthly_goals`, `ai_strategy_base`).
 
-The existing schema already has the right foundations (`client_invites`, `client_users`, `permissions jsonb`, `portal_role`, `accept_client_invite` RPC). We will extend it rather than create a parallel `client_invitations` table — that keeps RLS, RPC, AcceptInvite page, and AddClientWizard working without breakage.
+The client never re-types information the agency already filled in — they only confirm priorities and what they want to track. AI assembles the rest. Missing data is rendered as an explicit "Missing data" state, never invented.
 
-## Scope summary
+## What changes
 
-```text
-1. DB migration  ─ extend client_invites + client_users
-2. Edge function  ─ send-client-invite (email + tracking pixel)
-3. AcceptInvite   ─ mark "opened" on link visit
-4. UI             ─ rebuild Portal Settings tab in ClientProfile
-5. Dialog         ─ upgrade InviteClientDialog (permissions + role + email send)
-6. Workspace      ─ confirm provisioning already creates all sub-areas
-```
+### 1. Onboarding — `QuickClientOnboarding.tsx` (replaces `BriefWizard` for new clients)
 
-## 1. Database migration
+One screen. Pre-filled from `clients` row + `client_kpi_schemas`. Three lightweight questions:
 
-Extend existing tables (no breaking renames):
+1. **Confirm your top priority for the next 90 days** — single-select from goals already created in Add Client + a freeform "Other". Default = first existing `monthly_goals` row.
+2. **What does success look like in plain words?** — one short textarea (becomes `client_briefs.main_objective`).
+3. **What should we NEVER post or say?** — short textarea (becomes `client_briefs.content_donts`).
 
-**`client_invites`** — add columns:
-- `opened_at timestamptz`
-- `accepted_at timestamptz`
-- `last_sent_at timestamptz default now()`
-- `send_count int not null default 1`
-- `revoked_at timestamptz`
-- Status check constraint extended to: `pending | sent | opened | accepted | expired | revoked`
+Optional collapsible "Anything else we should know?" → `extra_notes`.
 
-**`client_users`** — add columns:
-- `last_login_at timestamptz`
-- `revoked_at timestamptz`
+On submit:
+- Upsert `client_briefs` row with: `main_objective`, `content_donts`, `extra_notes`, `completed = true`, plus `business_description = clients.brand_voice`, `target_audience = clients.target_audience`, `brand_tone = clients.tone_of_voice`, `preferred_platforms = clients.platforms`, `unique_selling_points = clients.notes` (only fields not already set). This satisfies the existing `briefStatus === "done"` gate without making the client retype them.
+- If priority differs from existing top goal, insert a new `monthly_goals` row for the current month so the dashboard reflects the choice.
+- Trigger AI personalization (step 3 below).
 
-**Trigger**: on `auth.users` sign-in (or via `accept_client_invite`), update `client_users.last_login_at`. Simpler: update `last_login_at` from a small RPC `touch_client_login()` called by ClientPortal on mount.
+Fallback: if `clients` is empty (rare), the screen still works — the three fields alone are enough to mark the brief complete.
 
-**RPC updates**:
-- `accept_client_invite(_token)` — set `accepted_at = now()`, status `accepted`.
-- New `mark_invite_opened(_token)` — security definer, sets `opened_at`/status `opened` if currently `pending|sent`. Public-callable (token is the secret).
-- New `resend_client_invite(_invite_id)` — bumps `last_sent_at`, `send_count`, resets `expires_at = now() + 7 days`, status back to `sent` if expired.
-- New `revoke_client_invite(_invite_id)` — sets `revoked_at`, status `revoked`.
+### 2. AI personalization — edge function `client-dashboard-personalize`
 
-**Permissions JSON shape** (stored on both `client_invites.permissions` and `client_users.permissions`, already exists):
+New edge function (Lovable AI Gateway, model `google/gemini-2.5-flash`).
+
+Input: `{ client_id }`. Reads (service role): `clients`, `client_kpi_schemas`, `client_platforms`, `monthly_goals`, `client_briefs`, `business_impact_entries` (last 30 days), `analytics_entries` (last 90 days). Auth check: caller must be `is_member_of` agency OR `is_client_viewer_of` client.
+
+Output JSON (saved to `clients.ai_strategy_base.dashboard_personalization`):
 ```
 {
-  can_view_dashboard, can_view_calendar, can_approve_content,
-  can_request_changes, can_view_reports, can_upload_documents,
-  can_complete_impact_forms, can_comment
+  greeting: "Short personalized welcome line",
+  niche_focus: "1 sentence describing what this dashboard prioritizes for this niche",
+  priority_metrics: ["kpi_key_1", "kpi_key_2", "kpi_key_3"],   // chosen from client_kpi_schemas.kpi_fields
+  insight_cards: [
+    { title, body, severity: "info|good|warning", missing_data?: string[] }
+  ],
+  next_actions: [{ label, why }],
+  generated_at: ISO
 }
 ```
-All booleans, default `true` for viewer/owner except `can_approve_content` defaults `false` for `client_viewer`.
 
-**RLS** — already enforced (`is_client_viewer_of`); no new tables, so existing policies apply. Confirm clients can only `SELECT` their own `client_id` rows everywhere — already in place.
+The function MUST NOT invent metrics. If a KPI value is absent, it goes into `missing_data` and the card body says exactly which field is missing.
 
-## 2. Edge function: `send-client-invite`
+Triggered: (a) at the end of QuickOnboarding, (b) once per 24h on dashboard mount via lightweight check.
 
-New function (uses Lovable's built-in transactional emails via `send-transactional-email`).
-- Input: `{ invite_id }`
-- Loads invite + agency + client
-- Calls `supabase.functions.invoke('send-transactional-email', { templateName: 'client-portal-invite', recipientEmail, idempotencyKey: 'invite-<id>-<send_count>', templateData: { agencyName, clientName, inviteUrl, expiresAt } })`
-- Updates `last_sent_at`, `status = 'sent'`
+### 3. New dashboard — `ClientDashboard.tsx` (replaces current `OverviewTab`)
 
-Template: `supabase/functions/_shared/transactional-email-templates/client-portal-invite.tsx` — branded React Email with CTA button → `/accept-invite?token=...`.
-
-Prerequisites tool chain (will be triggered automatically): `email_domain--check_email_domain_status` → if no domain, surface `<lov-open-email-setup>` button → `setup_email_infra` → `scaffold_transactional_email` → deploy.
-
-If user has not configured an email domain yet, the **Send Invite** button still works (creates invite + copies link), and we show an inline notice: "Set up an email domain to send invites by email." The link-copy fallback always works.
-
-## 3. AcceptInvite page change
-
-On mount (before login), call `supabase.rpc('mark_invite_opened', { _token })` so the agency sees `opened` status even before account creation.
-
-## 4. Portal Settings panel (ClientProfile → Settings tab)
-
-Replace the current `UsersTab` + `InvitesTab` blocks with a unified **Client Portal Settings** card containing:
+Layout, in order:
 
 ```text
-┌─ Client Portal Access ──────────────────────────┐
-│ [Invite client] button                          │
-│                                                 │
-│ Active members                                  │
-│  • email · role · last login · [⋯ menu]         │
-│      ↳ Edit permissions  / Revoke access        │
-│                                                 │
-│ Pending invitations                             │
-│  • email · status badge · expires · [⋯ menu]    │
-│      ↳ Copy link / Resend / Revoke              │
-└─────────────────────────────────────────────────┘
+┌─ Hero (greeting + niche_focus + priority chips) ───┐
+├─ Priority KPIs row (3 cards from priority_metrics) │
+│   each: label · value · target · sparkline · status│
+├─ AI Insights (insight_cards, color-coded)          │
+├─ Goals progress (this month from monthly_goals)    │
+├─ Business Impact mini-form (driven by              │
+│   client_kpi_schemas.business_impact_fields)       │
+├─ Content snapshot (scheduled / awaiting / published│
+│   counts already in OverviewTab)                   │
+├─ Latest report card                                │
+└─ Next actions (from AI)                            │
 ```
 
-Status badges with color: `not sent` (gray), `sent` (blue), `opened` (amber), `accepted` (green), `expired` (red), `revoked` (muted).
+Niche-awareness comes entirely from `client_kpi_schemas` (set during Add Client wizard) — no hard-coded niche tables. KPI cards render with the right unit (number / % / currency / boolean / text) using `kpi_type` already stored. Missing KPI values render a muted "Missing data — your agency hasn't logged this yet" pill.
 
-**Edit permissions dialog** — 8 toggles matching the JSON shape above; updates `client_users.permissions` (or `client_invites.permissions` for pending).
+`NicheSummaryCard` is kept but only shown for the legacy hard-coded niches (`real_estate`, `restaurant`, `dental`, `fitness`) where the dedicated detail tables exist; for everything else the per-client KPI snapshot is the source of truth.
 
-## 5. Upgraded InviteClientDialog
+### 4. Business Impact mini-form
 
-Stepper-free, single dialog with:
-- Email input
-- Display name (optional)
-- Portal role: `Owner` / `Viewer` (radio)
-- Permissions section (8 switches, sensible defaults per role)
-- Two actions:
-  - **Send Invite** → insert invite + invoke `send-client-invite` (if email infra ready) + toast with copy-link fallback
-  - **Create link only** → insert invite, show copyable link
+Replaces the heavyweight Feedback tab as the primary client-facing data-entry surface. Renders directly from `client_kpi_schemas.business_impact_fields` (already configured per niche). Single inline form, autosaves to `business_impact_entries` for `entry_date = today`. Required-by-RLS `created_by = auth.uid()`, `client_id`, `agency_id` all pre-set.
 
-`AddClientWizard` already inserts an invite at the end; update it to also call `send-client-invite` when `invite_enabled`.
+Existing Feedback tab stays for monthly retrospectives but is deprioritized.
 
-## 6. Workspace provisioning (already done — verify only)
-
-`AddClientWizard` already creates: client record, `client_kpi_schemas`, `client_platforms`, `monthly_goals`, default onboarding tasks. The Client Profile page already exposes all required tabs (Overview, Calendar, Analytics, Reports, Documents, Approvals, Goals, Strategy, Tasks, Settings). The new Portal Settings card lives inside the Settings tab — **no new tab needed**.
-
-The Business Impact form is already covered by the existing `client_feedback` flow; no schema change.
-
-## Files to add / change
+### 5. Files
 
 **New**
-- `supabase/migrations/<ts>_client_invite_lifecycle.sql`
-- `supabase/functions/send-client-invite/index.ts`
-- `supabase/functions/_shared/transactional-email-templates/client-portal-invite.tsx`
-- `src/components/client/PortalSettingsCard.tsx` (the new unified panel)
-- `src/components/client/EditPortalPermissionsDialog.tsx`
+- `src/components/client/QuickClientOnboarding.tsx`
+- `src/components/client/ClientDashboard.tsx`
+- `src/components/client/PriorityKpiCard.tsx`
+- `src/components/client/BusinessImpactQuickForm.tsx`
+- `supabase/functions/client-dashboard-personalize/index.ts`
 
 **Edit**
-- `src/pages/agency/InviteClientDialog.tsx` (role + permissions + send email)
-- `src/pages/agency/ClientProfile.tsx` (replace UsersTab + InvitesTab with `<PortalSettingsCard />`)
-- `src/pages/AcceptInvite.tsx` (call `mark_invite_opened` on mount)
-- `src/components/client/AddClientWizard.tsx` (invoke `send-client-invite` after invite insert)
-- `src/pages/client/ClientPortal.tsx` (call `touch_client_login` once on mount)
-- `src/integrations/supabase/types.ts` (auto-regenerated)
+- `src/pages/client/ClientPortal.tsx` — swap `BriefWizard` → `QuickClientOnboarding`; replace the `OverviewTab` body with `<ClientDashboard />`.
+- `supabase/config.toml` — register the new edge function (verify_jwt true, default).
+
+**Keep / unchanged**
+- `client_briefs` table (just used differently) — no schema migration.
+- `BriefWizard.tsx` left in place but no longer rendered in the portal flow; agency can still trigger it manually for clients that want the long form.
+
+## Multi-tenant & security
+
+- All inserts use the client's own `agency_id` and `client_id` from `useUser()`; never trust query params.
+- Edge function uses service role for reads but checks the caller's JWT against `client_users` and rejects if the requested `client_id` doesn't match.
+- RLS on `client_briefs`, `monthly_goals`, `business_impact_entries`, `clients`, `ai_strategy_base` already enforces tenant isolation — no policy changes needed.
+- AI personalization output is stored on `clients.ai_strategy_base.dashboard_personalization` (existing JSONB column), so we don't add a new table.
 
 ## Out of scope
 
-- A separate `client_invitations` table (existing `client_invites` already covers it; renaming would break the live AcceptInvite flow, RPC, and RLS).
-- Real-time "open tracking" via email pixel — we mark `opened` when the user actually visits the accept-invite page, which is more reliable than image-pixel tracking.
-- Permission *enforcement* in every UI tab — RLS already restricts data; UI gating per-permission can be layered in afterwards (this plan stores the permissions correctly so enforcement is a UI-only follow-up).
+- Removing the existing `BriefWizard` file (kept for agencies that want the long brief later).
+- Schema migrations — none needed; everything plugs into existing tables.
+- Reordering the portal tabs (Overview / Calendar / Approvals etc. stay; only Overview's contents change).
