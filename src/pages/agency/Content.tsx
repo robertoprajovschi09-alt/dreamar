@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Loader2, Search } from "lucide-react";
 import { ContentEditor } from "@/components/content/ContentEditor";
 import { POST_STATUSES, PLATFORM_OPTIONS, statusMeta } from "@/lib/content";
+import { SaveToSwipeButton } from "@/components/swipe/SaveToSwipeButton";
 import { cn } from "@/lib/utils";
 
 export default function Content() {
