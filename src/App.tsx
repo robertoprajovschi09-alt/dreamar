@@ -23,6 +23,7 @@ import Campaigns from "./pages/agency/Campaigns";
 import Documents from "./pages/agency/Documents";
 import Reports from "./pages/agency/Reports";
 import Assistant from "./pages/agency/Assistant";
+import Risk from "./pages/agency/Risk";
 import ClientPortal from "./pages/client/ClientPortal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -62,6 +63,7 @@ const App = () => (
                   <Route path="documents" element={<Documents />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="assistant" element={<Assistant />} />
+                  <Route path="risk" element={<Risk />} />
                 </Route>
 
                 <Route

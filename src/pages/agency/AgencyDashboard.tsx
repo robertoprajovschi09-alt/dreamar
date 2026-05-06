@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
 import { HealthScoreMini } from "@/components/health/HealthScoreMini";
+import { fetchAgencyAlerts, detectForAgency, type RiskAlert } from "@/lib/risk";
+import { RiskAlertCard } from "@/components/risk/RiskAlertCard";
 
 type Stats = {
   clients: number;
@@ -30,6 +32,7 @@ export default function AgencyDashboard() {
   const [missingBriefs, setMissingBriefs] = useState<any[]>([]);
   const [healthScores, setHealthScores] = useState<HealthScore[]>([]);
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
+  const [riskAlerts, setRiskAlerts] = useState<RiskAlert[]>([]);
 
   useEffect(() => {
     if (!agency) return;
@@ -95,6 +98,15 @@ export default function AgencyDashboard() {
       const names: Record<string, string> = {};
       (clientsList || []).forEach((c: any) => { names[c.id] = c.name; });
       setClientNames(names);
+
+      // Auto-detect risk if last run > 24h ago
+      const lastKey = `risk_last_run_${agency.id}`;
+      const lastRun = Number(localStorage.getItem(lastKey) || 0);
+      if (Date.now() - lastRun > 86400000) {
+        try { await detectForAgency(agency.id); localStorage.setItem(lastKey, String(Date.now())); } catch {}
+      }
+      const ra = await fetchAgencyAlerts(agency.id, "active");
+      setRiskAlerts(ra.slice(0, 4));
 
       setLoading(false);
     })();
@@ -192,6 +204,31 @@ export default function AgencyDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {riskAlerts.length > 0 && (
+        <Card className="border-amber-500/30">
+          <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" /> Clients at Risk
+              <span className="text-xs font-normal text-muted-foreground">— {riskAlerts.length} active</span>
+            </CardTitle>
+            <Link to="/agency/risk"><Button variant="ghost" size="sm" className="text-xs">View all →</Button></Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {riskAlerts.map((a) => (
+                <RiskAlertCard
+                  key={a.id}
+                  alert={a}
+                  clientName={clientNames[a.client_id] || "Client"}
+                  healthScore={healthScores.find((h) => h.client_id === a.client_id)?.total_score}
+                  onChange={() => { /* no-op; user can refresh */ }}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {healthScores.length > 0 && (
         <Card>
