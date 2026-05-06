@@ -187,6 +187,24 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
       (cleanedMetrics as any).real_estate = re;
     }
 
+    // Pack generic per-niche extras (config-driven niches)
+    if (nicheCfg && niche && niche !== "real_estate") {
+      const packed: Record<string, any> = {};
+      nicheCfg.checkin_extras.forEach((f) => {
+        const v = nicheExtras[f.key];
+        if (v == null || v === "") return;
+        if (f.kind === "number") {
+          const n = Number(v);
+          if (Number.isFinite(n)) packed[f.key] = n;
+        } else if (f.kind === "text") {
+          packed[f.key] = String(v).trim().slice(0, 500);
+        } else {
+          packed[f.key] = v;
+        }
+      });
+      if (Object.keys(packed).length) (cleanedMetrics as any)[niche] = packed;
+    }
+
     setSaving(true);
     try {
       const m = cleanedMetrics as Record<string, any>;
