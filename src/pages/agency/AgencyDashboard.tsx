@@ -205,6 +205,31 @@ export default function AgencyDashboard() {
         </Card>
       </div>
 
+      {riskAlerts.length > 0 && (
+        <Card className="border-amber-500/30">
+          <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" /> Clients at Risk
+              <span className="text-xs font-normal text-muted-foreground">— {riskAlerts.length} active</span>
+            </CardTitle>
+            <Link to="/agency/risk"><Button variant="ghost" size="sm" className="text-xs">View all →</Button></Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {riskAlerts.map((a) => (
+                <RiskAlertCard
+                  key={a.id}
+                  alert={a}
+                  clientName={clientNames[a.client_id] || "Client"}
+                  healthScore={healthScores.find((h) => h.client_id === a.client_id)?.total_score}
+                  onChange={() => { /* no-op; user can refresh */ }}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {healthScores.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
