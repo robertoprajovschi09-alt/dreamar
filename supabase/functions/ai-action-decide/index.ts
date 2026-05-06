@@ -146,6 +146,27 @@ Deno.serve(async (req) => {
           await svc.from("ai_prompts").update({ is_active: true }).eq("id", payload.prompt_id);
           result = { activated: payload.prompt_id }; break;
         }
+        case "create_ai_memory_item": {
+          if (!payload.agency_id || !payload.memory_type || !payload.title || !payload.content
+              || !payload.source_type || !payload.source_id) {
+            throw new Error("Missing required memory fields (incl. source_type & source_id)");
+          }
+          const { data: ins, error: insErr } = await svc.from("ai_memory_items").insert({
+            agency_id: payload.agency_id,
+            client_id: payload.client_id ?? null,
+            memory_type: payload.memory_type,
+            title: payload.title,
+            content: payload.content,
+            source_type: payload.source_type,
+            source_id: payload.source_id,
+            confidence_score: payload.confidence_score ?? 0.5,
+            visibility: payload.visibility ?? "internal_agency",
+            is_active: payload.is_active ?? true,
+            created_by: userId,
+          }).select("id").single();
+          if (insErr) throw new Error(insErr.message);
+          result = { memory_id: ins.id }; break;
+        }
         case "create_lovable_prompt":
         case "suggest_ui_change":
         case "suggest_database_change":
