@@ -410,19 +410,3 @@ function ChipGroup({ options, value, onChange }: { options: { key: string; label
   );
 }
 
-function cleanMetrics(metrics: Record<string, string>, other: string): Record<string, any> {
-  const out: Record<string, any> = {};
-  Object.entries(metrics).forEach(([k, v]) => {
-    if (v === "" || v === null || v === undefined) return;
-    const n = Number(v);
-    if (Number.isFinite(n)) out[k] = n;
-  });
-  if (other.trim()) out.other = other.trim().slice(0, 200);
-  return out;
-}
-
-function numOrNull(v: string): number | null {
-  if (v === "" || v == null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
