@@ -11,6 +11,9 @@ import { PriorityKpiCard, type KpiType, type PriorityKpi } from "./PriorityKpiCa
 import { BusinessImpactQuickForm } from "./BusinessImpactQuickForm";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
 import { RealEstateDashboardSection } from "./RealEstateDashboardSection";
+import { NicheDashboardSection } from "./NicheDashboardSection";
+import { CustomNicheDashboardSection } from "./CustomNicheDashboardSection";
+import { getNicheConfig } from "@/lib/nicheDashboardConfigs";
 
 type Personalization = {
   greeting?: string;
