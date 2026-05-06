@@ -230,6 +230,35 @@ function OverviewTab({ clientId, niche }: { clientId: string; niche: string }) {
     </div>
   );
 }
+
+function ObjectivesTab({ clientId }: { clientId: string }) {
+  const [goals, setGoals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false });
+      setGoals(data || []); setLoading(false);
+    })();
+  }, [clientId]);
+  if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No objectives set yet.</CardContent></Card>;
+  return (
+    <Card><CardContent className="pt-4">
+      <ul className="divide-y divide-border">
+        {goals.map((g) => (
+          <li key={g.id} className="py-3 flex items-center justify-between gap-2">
+            <div>
+              <div className="font-medium text-sm">{g.objective}</div>
+              <div className="text-xs text-muted-foreground">{g.metric || "—"} {g.target ? `· target ${g.target}` : ""} · {new Date(g.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
+            </div>
+            <Badge variant="secondary" className="text-[10px] uppercase">{g.status.replace("_", " ")}</Badge>
+          </li>
+        ))}
+      </ul>
+    </CardContent></Card>
+  );
+}
 function Mini({ label, value }: { label: string; value: number | string }) {
   return <div><div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div><div className="text-xl font-semibold font-mono mt-0.5">{value}</div></div>;
 }
