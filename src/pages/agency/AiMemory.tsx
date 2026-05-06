@@ -136,8 +136,8 @@ export default function AiMemory() {
     <div className="space-y-6">
       <PageHeader
         title="AI Knowledge & Memory"
-        description="Curated, source-cited facts the AI uses. No source = no memory."
-        actions={
+        subtitle="Curated, source-cited facts the AI uses. No source = no memory."
+        action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setOpenIngest(true)}>
               <FileUp className="h-4 w-4 mr-2" /> Ingest source
