@@ -291,6 +291,137 @@ export type Database = {
           },
         ]
       }
+      ai_improvement_suggestions: {
+        Row: {
+          agency_id: string | null
+          ai_reasoning: string | null
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          description: string | null
+          effort_score: number
+          id: string
+          impact_score: number
+          implemented_at: string | null
+          priority: string
+          source_id: string | null
+          source_type: string
+          status: string
+          suggested_prompt_for_lovable: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          ai_reasoning?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          effort_score?: number
+          id?: string
+          impact_score?: number
+          implemented_at?: string | null
+          priority?: string
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          suggested_prompt_for_lovable?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          ai_reasoning?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          effort_score?: number
+          id?: string
+          impact_score?: number
+          implemented_at?: string | null
+          priority?: string
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          suggested_prompt_for_lovable?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_improvement_suggestions_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_maintenance_tasks: {
+        Row: {
+          agency_id: string | null
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          status: string
+          suggestion_id: string | null
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          suggestion_id?: string | null
+          task_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          suggestion_id?: string | null
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_maintenance_tasks_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_maintenance_tasks_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "ai_improvement_suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_memory: {
         Row: {
           agency_id: string
@@ -511,6 +642,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ai_website_audits: {
+        Row: {
+          agency_id: string | null
+          ai_summary: string | null
+          audit_type: string
+          created_at: string
+          created_by: string | null
+          findings: Json
+          id: string
+          page_name: string | null
+          page_url: string | null
+          recommended_actions: Json
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          ai_summary?: string | null
+          audit_type: string
+          created_at?: string
+          created_by?: string | null
+          findings?: Json
+          id?: string
+          page_name?: string | null
+          page_url?: string | null
+          recommended_actions?: Json
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          ai_summary?: string | null
+          audit_type?: string
+          created_at?: string
+          created_by?: string | null
+          findings?: Json
+          id?: string
+          page_name?: string | null
+          page_url?: string | null
+          recommended_actions?: Json
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_website_audits_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       analytics_entries: {
         Row: {
