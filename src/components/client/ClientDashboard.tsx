@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PriorityKpiCard, type KpiType, type PriorityKpi } from "./PriorityKpiCard";
 import { BusinessImpactQuickForm } from "./BusinessImpactQuickForm";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
+import { RealEstateDashboardSection } from "./RealEstateDashboardSection";
 
 type Personalization = {
   greeting?: string;
@@ -216,7 +217,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
               </CardContent>
             </Card>
           )}
-          {counts.awaiting > 0 && (
+          {counts.awaiting > 0 && niche !== "real_estate" && (
             <Card className="border-amber-500/40 bg-amber-500/5">
               <CardContent className="p-4 flex items-center gap-3">
                 <FileEdit className="h-5 w-5 text-amber-600 shrink-0" />
@@ -231,14 +232,25 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
         </div>
       )}
 
-      {/* 3. Priority KPIs — niche-specific */}
-      {priorityKpis.length > 0 && (
-        <div>
-          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 font-semibold">{copy.kpi_section_title}</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {priorityKpis.map((k) => <PriorityKpiCard key={k.key} kpi={k} />)}
+      {/* 3. Niche-specialized section (Real Estate) replaces generic KPIs */}
+      {niche === "real_estate" ? (
+        <RealEstateDashboardSection
+          agencyId={agencyId}
+          clientId={clientId}
+          awaitingApproval={counts.awaiting}
+          insights={personalization?.insight_cards}
+          nextActions={personalization?.next_actions}
+          missingData={(personalization?.insight_cards || []).flatMap((i) => i.missing_data || [])}
+        />
+      ) : (
+        priorityKpis.length > 0 && (
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 font-semibold">{copy.kpi_section_title}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {priorityKpis.map((k) => <PriorityKpiCard key={k.key} kpi={k} />)}
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {/* 4. What works / Needs improvement */}

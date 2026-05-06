@@ -121,6 +121,15 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
   const [directionChange, setDirectionChange] = useState("keep");
   const [directionChangeOther, setDirectionChangeOther] = useState("");
 
+  // Real Estate specific
+  const [reBuyerLeads, setReBuyerLeads] = useState("");
+  const [reSellerLeads, setReSellerLeads] = useState("");
+  const [reHasInquiries, setReHasInquiries] = useState<"yes" | "no" | "unknown">("unknown");
+  const [reViewings, setReViewings] = useState("");
+  const [rePromoteProperties, setRePromoteProperties] = useState("");
+  const [reHasNewProperties, setReHasNewProperties] = useState<"yes" | "no">("no");
+  const [reLeadQuality, setReLeadQuality] = useState<"good" | "mixed" | "weak" | "none">("mixed");
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -156,6 +165,21 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
     }
 
     const cleanedMetrics = resultsObserved === "yes" ? cleanMetrics(resultsMetrics, otherResults) : {};
+
+    // Pack niche-specific extras
+    if (niche === "real_estate") {
+      const re: Record<string, any> = {
+        buyer_leads: numOrNull(reBuyerLeads),
+        seller_leads: numOrNull(reSellerLeads),
+        property_inquiries_observed: reHasInquiries,
+        viewings: numOrNull(reViewings),
+        promote_properties: rePromoteProperties.trim().slice(0, 300) || null,
+        has_new_properties: reHasNewProperties === "yes",
+        lead_quality: reLeadQuality,
+      };
+      Object.keys(re).forEach((k) => re[k] == null && delete re[k]);
+      (cleanedMetrics as any).real_estate = re;
+    }
 
     setSaving(true);
     try {
@@ -300,6 +324,63 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
             )}
           </Section>
 
+          {niche === "real_estate" && (
+            <div className="space-y-5 p-4 rounded-md border border-accent/30 bg-accent/5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-accent">Întrebări specifice — Imobiliare</div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Lead-uri cumpărători</Label>
+                  <Input type="number" min={0} value={reBuyerLeads} onChange={(e) => setReBuyerLeads(e.target.value)} placeholder="—" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Lead-uri vânzători</Label>
+                  <Input type="number" min={0} value={reSellerLeads} onChange={(e) => setReSellerLeads(e.target.value)} placeholder="—" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Ai primit cereri pentru proprietăți?</Label>
+                <ChipGroup
+                  options={[{ key: "yes", label: "Da" }, { key: "no", label: "Nu" }, { key: "unknown", label: "Nu știu" }]}
+                  value={reHasInquiries} onChange={(v) => setReHasInquiries(v as any)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Câte vizionări s-au programat?</Label>
+                <Input type="number" min={0} value={reViewings} onChange={(e) => setReViewings(e.target.value)} placeholder="—" />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Ce proprietăți vrei să promovăm luna aceasta?</Label>
+                <Textarea rows={2} value={rePromoteProperties} onChange={(e) => setRePromoteProperties(e.target.value)}
+                  placeholder="ex: vila din Pipera, apartament 2 cam. Floreasca, teren Snagov…" maxLength={300} />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Ai proprietăți noi de promovat?</Label>
+                <ChipGroup
+                  options={[{ key: "yes", label: "Da" }, { key: "no", label: "Nu" }]}
+                  value={reHasNewProperties} onChange={(v) => setReHasNewProperties(v as any)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Ai primit lead-uri bune sau slabe?</Label>
+                <ChipGroup
+                  options={[
+                    { key: "good", label: "Bune" },
+                    { key: "mixed", label: "Mixte" },
+                    { key: "weak", label: "Slabe" },
+                    { key: "none", label: "Niciunul" },
+                  ]}
+                  value={reLeadQuality} onChange={(v) => setReLeadQuality(v as any)}
+                />
+              </div>
+            </div>
+          )}
+
           <Section n={4} title="Ce feedback ai primit de la clienții tăi?">
             <Textarea rows={2} value={customerFeedback} onChange={(e) => setCustomerFeedback(e.target.value)} maxLength={500}
               placeholder="ex: clienții au menționat reel-ul de marți, oamenii au sunat după postul cu oferta…" />
@@ -391,4 +472,10 @@ function cleanMetrics(metrics: Record<string, string>, other: string): Record<st
   });
   if (other.trim()) out.other = other.trim().slice(0, 200);
   return out;
+}
+
+function numOrNull(v: string): number | null {
+  if (v === "" || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
