@@ -219,67 +219,121 @@ export type Database = {
       }
       ai_evaluations: {
         Row: {
+          actual_output: string | null
           agency_id: string | null
           created_at: string
           dataset_name: string
+          evaluator_notes: string | null
+          expected_behavior: string | null
+          feature: string | null
           id: string
+          input_sample: Json | null
           metrics: Json
+          passed: boolean | null
           prompt_key: string
           prompt_version: number
+          prompt_version_id: string | null
           score: number
+          test_name: string | null
         }
         Insert: {
+          actual_output?: string | null
           agency_id?: string | null
           created_at?: string
           dataset_name: string
+          evaluator_notes?: string | null
+          expected_behavior?: string | null
+          feature?: string | null
           id?: string
+          input_sample?: Json | null
           metrics?: Json
+          passed?: boolean | null
           prompt_key: string
           prompt_version: number
+          prompt_version_id?: string | null
           score: number
+          test_name?: string | null
         }
         Update: {
+          actual_output?: string | null
           agency_id?: string | null
           created_at?: string
           dataset_name?: string
+          evaluator_notes?: string | null
+          expected_behavior?: string | null
+          feature?: string | null
           id?: string
+          input_sample?: Json | null
           metrics?: Json
+          passed?: boolean | null
           prompt_key?: string
           prompt_version?: number
+          prompt_version_id?: string | null
           score?: number
+          test_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_evaluations_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_scoreboard"
+            referencedColumns: ["prompt_id"]
+          },
+          {
+            foreignKeyName: "ai_evaluations_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_feedback: {
         Row: {
           agency_id: string
+          ai_feature: string | null
           category: string | null
+          client_id: string | null
           comment: string | null
+          correction: string | null
           created_at: string
+          feedback_type: string | null
           id: string
           rating: number
           run_id: string
           user_id: string
+          was_useful: boolean | null
         }
         Insert: {
           agency_id: string
+          ai_feature?: string | null
           category?: string | null
+          client_id?: string | null
           comment?: string | null
+          correction?: string | null
           created_at?: string
+          feedback_type?: string | null
           id?: string
           rating: number
           run_id: string
           user_id: string
+          was_useful?: boolean | null
         }
         Update: {
           agency_id?: string
+          ai_feature?: string | null
           category?: string | null
+          client_id?: string | null
           comment?: string | null
+          correction?: string | null
           created_at?: string
+          feedback_type?: string | null
           id?: string
           rating?: number
           run_id?: string
           user_id?: string
+          was_useful?: boolean | null
         }
         Relationships: [
           {
@@ -358,6 +412,76 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_learning_events: {
+        Row: {
+          agency_id: string | null
+          client_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          proposed_prompt_version_id: string | null
+          recommended_change: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          proposed_prompt_version_id?: string | null
+          recommended_change?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          proposed_prompt_version_id?: string | null
+          recommended_change?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_learning_events_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_learning_events_proposed_prompt_version_id_fkey"
+            columns: ["proposed_prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_scoreboard"
+            referencedColumns: ["prompt_id"]
+          },
+          {
+            foreignKeyName: "ai_learning_events_proposed_prompt_version_id_fkey"
+            columns: ["proposed_prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompts"
             referencedColumns: ["id"]
           },
         ]
@@ -506,13 +630,16 @@ export type Database = {
           cost_usd: number | null
           created_at: string
           error_text: string | null
+          feature: string | null
           id: string
           input_messages: Json
           latency_ms: number | null
           model: string | null
+          output_json: Json | null
           output_text: string | null
           prompt_key: string | null
           prompt_version: number | null
+          prompt_version_id: string | null
           safety_flags: Json
           status: string
           tokens_in: number | null
@@ -526,13 +653,16 @@ export type Database = {
           cost_usd?: number | null
           created_at?: string
           error_text?: string | null
+          feature?: string | null
           id?: string
           input_messages?: Json
           latency_ms?: number | null
           model?: string | null
+          output_json?: Json | null
           output_text?: string | null
           prompt_key?: string | null
           prompt_version?: number | null
+          prompt_version_id?: string | null
           safety_flags?: Json
           status?: string
           tokens_in?: number | null
@@ -546,13 +676,16 @@ export type Database = {
           cost_usd?: number | null
           created_at?: string
           error_text?: string | null
+          feature?: string | null
           id?: string
           input_messages?: Json
           latency_ms?: number | null
           model?: string | null
+          output_json?: Json | null
           output_text?: string | null
           prompt_key?: string | null
           prompt_version?: number | null
+          prompt_version_id?: string | null
           safety_flags?: Json
           status?: string
           tokens_in?: number | null
@@ -560,7 +693,22 @@ export type Database = {
           tool_calls?: Json | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_runs_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_scoreboard"
+            referencedColumns: ["prompt_id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_runs_prompt_version_id_fkey"
+            columns: ["prompt_version_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_prompts: {
         Row: {
@@ -568,42 +716,60 @@ export type Database = {
           content: string
           created_at: string
           created_by: string | null
+          developer_prompt: string | null
+          feature: string | null
           id: string
           is_active: boolean
           key: string
           model: string | null
           notes: string | null
+          output_schema: Json | null
+          performance_score: number | null
           temperature: number | null
           updated_at: string
+          user_prompt_template: string | null
           version: number
+          version_name: string | null
         }
         Insert: {
           agency_id?: string | null
           content: string
           created_at?: string
           created_by?: string | null
+          developer_prompt?: string | null
+          feature?: string | null
           id?: string
           is_active?: boolean
           key: string
           model?: string | null
           notes?: string | null
+          output_schema?: Json | null
+          performance_score?: number | null
           temperature?: number | null
           updated_at?: string
+          user_prompt_template?: string | null
           version?: number
+          version_name?: string | null
         }
         Update: {
           agency_id?: string | null
           content?: string
           created_at?: string
           created_by?: string | null
+          developer_prompt?: string | null
+          feature?: string | null
           id?: string
           is_active?: boolean
           key?: string
           model?: string | null
           notes?: string | null
+          output_schema?: Json | null
+          performance_score?: number | null
           temperature?: number | null
           updated_at?: string
+          user_prompt_template?: string | null
           version?: number
+          version_name?: string | null
         }
         Relationships: []
       }
@@ -2940,7 +3106,25 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      ai_prompt_scoreboard: {
+        Row: {
+          acceptance_rate: number | null
+          agency_id: string | null
+          avg_rating: number | null
+          feature: string | null
+          feedback_count: number | null
+          hallucinated_count: number | null
+          is_active: boolean | null
+          last_used_at: string | null
+          negative_count: number | null
+          prompt_id: string | null
+          runs_count: number | null
+          useful_count: number | null
+          version: number | null
+          version_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_client_invite: { Args: { _token: string }; Returns: string }
