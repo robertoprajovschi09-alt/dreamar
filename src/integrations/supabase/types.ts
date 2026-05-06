@@ -1592,6 +1592,7 @@ export type Database = {
       }
       client_invites: {
         Row: {
+          accepted_at: string | null
           agency_id: string
           client_id: string
           created_at: string
@@ -1600,12 +1601,17 @@ export type Database = {
           expires_at: string
           id: string
           invited_by: string | null
+          last_sent_at: string | null
+          opened_at: string | null
           permissions: Json
           portal_role: string
+          revoked_at: string | null
+          send_count: number
           status: string
           token: string
         }
         Insert: {
+          accepted_at?: string | null
           agency_id: string
           client_id: string
           created_at?: string
@@ -1614,12 +1620,17 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string | null
+          last_sent_at?: string | null
+          opened_at?: string | null
           permissions?: Json
           portal_role?: string
+          revoked_at?: string | null
+          send_count?: number
           status?: string
           token?: string
         }
         Update: {
+          accepted_at?: string | null
           agency_id?: string
           client_id?: string
           created_at?: string
@@ -1628,8 +1639,12 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string | null
+          last_sent_at?: string | null
+          opened_at?: string | null
           permissions?: Json
           portal_role?: string
+          revoked_at?: string | null
+          send_count?: number
           status?: string
           token?: string
         }
@@ -1793,7 +1808,9 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          last_login_at: string | null
           permissions: Json
+          revoked_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           status: string
           user_id: string
@@ -1805,7 +1822,9 @@ export type Database = {
           display_name?: string | null
           email: string
           id?: string
+          last_login_at?: string | null
           permissions?: Json
+          revoked_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
           user_id: string
@@ -1817,7 +1836,9 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          last_login_at?: string | null
           permissions?: Json
+          revoked_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           status?: string
           user_id?: string
@@ -3742,6 +3763,10 @@ export type Database = {
         Returns: boolean
       }
       is_saas_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_invite_opened: { Args: { _token: string }; Returns: undefined }
+      resend_client_invite: { Args: { _invite_id: string }; Returns: undefined }
+      revoke_client_invite: { Args: { _invite_id: string }; Returns: undefined }
+      touch_client_login: { Args: never; Returns: undefined }
     }
     Enums: {
       ai_action_request_status:

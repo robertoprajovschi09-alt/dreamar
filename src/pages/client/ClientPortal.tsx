@@ -46,6 +46,12 @@ export default function ClientPortal() {
 
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
 
+  // Track last login for the agency to see
+  useEffect(() => {
+    supabase.rpc("touch_client_login").then(() => {});
+  }, []);
+
+
   useEffect(() => {
     if (!client) return;
     setBriefStatus("loading");

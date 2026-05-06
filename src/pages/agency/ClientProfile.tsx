@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, UserPlus, Trash2, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { InviteClientDialog } from "./InviteClientDialog";
+import { PortalSettingsCard } from "@/components/client/PortalSettingsCard";
 import { NICHES, STATUSES, PLATFORMS, GOAL_STATUSES, nicheLabel } from "@/lib/niches";
 import { PerformanceStats } from "@/components/performance/PerformanceStats";
 import { VideosTable } from "@/components/performance/VideosTable";
@@ -120,11 +121,16 @@ export default function ClientProfile() {
         <TabsContent value="tasks"><ClientTasksTab client={client} /></TabsContent>
         <TabsContent value="settings">
           <div className="space-y-4">
+            <PortalSettingsCard
+              agencyId={client.agency_id}
+              clientId={client.id}
+              users={users}
+              invites={invites}
+              reload={loadAll}
+            />
             <SettingsTab client={client} reload={loadAll} />
             <BrandTab client={client} reload={loadAll} />
             <PlatformsTab client={client} platforms={platforms} reload={loadAll} />
-            <UsersTab users={users} reload={loadAll} />
-            <InvitesTab invites={invites} reload={loadAll} />
             <BriefViewTab clientId={client.id} />
             <FeedbackTab feedback={feedback} />
             <ClientCampaignsTab client={client} />
