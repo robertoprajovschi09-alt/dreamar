@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, AlertCircle, CheckCircle2, Info, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, CheckCircle2, Info, RefreshCw, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PriorityKpiCard, type KpiType, type PriorityKpi } from "./PriorityKpiCard";
@@ -34,6 +34,8 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
   const [counts, setCounts] = useState({ scheduled: 0, awaiting: 0, published: 0 });
   const [goals, setGoals] = useState<any[]>([]);
   const [latestReport, setLatestReport] = useState<any>(null);
+
+  const [checkInDone, setCheckInDone] = useState(false);
 
   const load = async () => {
     setLoading(true);
