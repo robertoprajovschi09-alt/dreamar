@@ -99,6 +99,15 @@ export default function AgencyDashboard() {
       (clientsList || []).forEach((c: any) => { names[c.id] = c.name; });
       setClientNames(names);
 
+      // Auto-detect risk if last run > 24h ago
+      const lastKey = `risk_last_run_${agency.id}`;
+      const lastRun = Number(localStorage.getItem(lastKey) || 0);
+      if (Date.now() - lastRun > 86400000) {
+        try { await detectForAgency(agency.id); localStorage.setItem(lastKey, String(Date.now())); } catch {}
+      }
+      const ra = await fetchAgencyAlerts(agency.id, "active");
+      setRiskAlerts(ra.slice(0, 4));
+
       setLoading(false);
     })();
   }, [agency]);
