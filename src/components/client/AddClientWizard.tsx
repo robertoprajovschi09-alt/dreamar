@@ -126,15 +126,55 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
     if (!v) setTimeout(reset, 200);
   };
 
-  // ----- Step 2 helpers -----
-  const applyNiche = (key: string) => {
-    const p = getNichePreset(key);
+  // ----- Niche library -----
+  const { data: nicheLib = [], refetch: refetchNiches } = useAgencyNiches(agencyId);
+
+  const selectedNiche: NicheRow | null = useMemo(
+    () => nicheLib.find((n) => n.id === form.niche_id) ?? null,
+    [nicheLib, form.niche_id],
+  );
+
+  const applyNicheFromLibrary = (niche: NicheRow) => {
+    // Map library rows into the editor structures (kept editable per-client).
+    const kpis: KpiField[] = niche.kpis.length
+      ? niche.kpis.map((k) => ({
+          key: k.key, label: k.label,
+          kpi_type: k.kpi_type, type: mapKpiTypeToLegacy(k.kpi_type),
+          reporting_frequency: k.reporting_frequency,
+          visible_to_client: k.visible_to_client,
+        }))
+      : (niche.is_custom ? [] : getNichePreset(niche.key).kpi_fields);
+    const fields: KpiField[] = niche.fields.length
+      ? niche.fields.map((f) => ({
+          key: f.key, label: f.label,
+          field_type: f.field_type, type: mapKpiTypeToLegacy(f.field_type),
+        }))
+      : (niche.is_custom ? [] : getNichePreset(niche.key).business_impact_fields);
+    const qs: Question[] = niche.questions.length
+      ? niche.questions.map((q) => ({ key: q.key, label: q.label }))
+      : (niche.is_custom ? [] : getNichePreset(niche.key).monthly_questions);
     setForm((f) => ({
       ...f,
-      niche: key,
-      kpi_fields: p.kpi_fields.length ? p.kpi_fields : f.kpi_fields,
-      business_impact_fields: p.business_impact_fields,
-      monthly_questions: p.monthly_questions,
+      niche_id: niche.id,
+      niche: niche.is_custom ? "custom" : niche.key,
+      custom_niche: niche.is_custom ? niche.label : "",
+      creating_custom_niche: false,
+      kpi_fields: kpis,
+      business_impact_fields: fields,
+      monthly_questions: qs,
+    }));
+  };
+
+  const startCreatingCustomNiche = () => {
+    setForm((f) => ({
+      ...f,
+      niche_id: null,
+      niche: "custom",
+      custom_niche: "",
+      creating_custom_niche: true,
+      kpi_fields: [{ key: "kpi_1", label: "", type: "number", kpi_type: "number", reporting_frequency: "monthly", visible_to_client: true }],
+      business_impact_fields: [{ key: "bi_1", label: "", type: "number", field_type: "number" }],
+      monthly_questions: [{ key: "q_1", label: "" }],
     }));
   };
   const addKpi = () => set("kpi_fields", [...form.kpi_fields, { key: `kpi_${form.kpi_fields.length + 1}`, label: "", type: "number" }]);
