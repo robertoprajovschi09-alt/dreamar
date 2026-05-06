@@ -1761,6 +1761,7 @@ export type Database = {
           contact_person: string | null
           contact_phone: string | null
           created_at: string
+          custom_niche: string | null
           health_score: number | null
           id: string
           logo_url: string | null
@@ -1790,6 +1791,7 @@ export type Database = {
           contact_person?: string | null
           contact_phone?: string | null
           created_at?: string
+          custom_niche?: string | null
           health_score?: number | null
           id?: string
           logo_url?: string | null
@@ -1819,6 +1821,7 @@ export type Database = {
           contact_person?: string | null
           contact_phone?: string | null
           created_at?: string
+          custom_niche?: string | null
           health_score?: number | null
           id?: string
           logo_url?: string | null
@@ -3463,6 +3466,10 @@ export type Database = {
     }
     Functions: {
       accept_client_invite: { Args: { _token: string }; Returns: string }
+      cie_fanout: {
+        Args: { _run_type: string; _since_days: number }
+        Returns: undefined
+      }
       create_agency_for_current_user: {
         Args: { _name: string }
         Returns: string
