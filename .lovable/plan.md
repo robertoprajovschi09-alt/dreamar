@@ -1,90 +1,59 @@
 ## Obiectiv
 
-Înlocuim layout-ul actual al `ClientDashboard.tsx` cu o structură simplă, orientată pe client: top bar cu identitate + status, apoi 6 secțiuni clare. Eliminăm tot ce ține de "admin agenție" (risk detector, swipe, notes, costuri, comparații, strategii neaprobate, task-uri interne, schema KPI tehnică).
+Refacem Business Impact ca **secțiune dinamică pe nișă** integrată în Quick Check-In, înlocuind formularul lung separat (`BusinessImpactQuickForm`). Fiecare câmp permite 4 moduri de input: **exact / aproximativ / nu știu / nu se aplică**. „Nu știu" marchează missing data dar nu blochează submit-ul.
 
-## Structură nouă
+## Field configs per nișă
 
-**Top Section (card hero compact)**
-- Nume client + luna curentă + badge nișă
-- Health Score compact (cerc mic + status label, doar `total_score` + `score_status`)
-- Satisfaction status (din ultimul `client_checkins.satisfaction_score`)
-- "Last check-in completed" (dată sau buton "Start check-in")
+Toate definițiile centralizate în `src/lib/businessImpactByNiche.ts`:
 
-**Section 1 — This Month Snapshot** (3-4 carduri mari)
-- Main Goal (din `client_goals` activ pe luna curentă, sau din `ai_strategy_base.main_goal`)
-- Main Result (KPI #1 din `personalization.priority_metrics` cu valoare + delta)
-- Business Impact (suma `revenue_estimate` / leads / sales luna curentă)
-- Pending Approvals (count `content_posts.status = sent_for_approval` + buton "Aprobă")
+- **Real Estate**: lead-uri primite, vizionări programate, proprietăți rezervate/vândute, calitatea lead-urilor (chips)
+- **Restaurants**: rezervări, comenzi, trafic în locație, evenimente, feedback clienți (text)
+- **Beauty**: programări, cereri de preț, servicii cerute (text), clienți noi, before/after (număr)
+- **E-commerce**: vânzări, revenue, produse vândute, campanii active (text), stocuri (chips)
+- **Fitness**: trial-uri, abonamente, înscrieri, testimoniale, transformări
+- **Medical**: programări, apeluri, mesaje, pacienți noi
+- **Custom**: câmpuri din `client_kpi_schemas.business_impact_fields`
+- **Fallback**: lead-uri, apeluri, rezervări, vânzări, revenue
 
-**Section 2 — What's Working**
-- Top 3 content pieces (`content_posts` published, sortate după engagement / impressions din `content_metrics` sau `analytics_entries`)
-- Pentru fiecare: thumbnail/title + metric scurt + 1 linie AI explicație (din `personalization.insight_cards` severity=good)
-- "Ce trebuie repetat" — bullet scurt din AI
+Fiecare câmp numeric mapează la o coloană din `business_impact_entries` (`db_field`) — dashboard-urile existente continuă să agrege fără modificări.
 
-**Section 3 — What Needs Attention**
-- Date lipsă (din `client_dashboard_contexts.missing_data`)
-- Approvals pending (link)
-- Scăderi importante (insight_cards severity=warning)
-- Obiective în urmă (`client_goals` cu progress < expected pentru luna)
+## Componentă nouă
 
-**Section 4 — Next Actions**
-- Ce face agenția (din `personalization.next_actions` / `ai_priorities` filtrate `audience=client`)
-- Ce trebuie să facă clientul (approvals, check-in, business impact missing)
-- Deadline-uri (date din `next_actions.deadline` dacă există)
+`src/components/client/BusinessImpactSection.tsx`:
+- Header cu titlu + intro nișă-specific + badge cu count „nu știu"
+- Pentru fiecare câmp: label + 4 chips mod (Exact / Aprox. / Nu știu / N/A) + input adecvat (number / textarea / chips choice)
+- Disclaimer jos: "„Nu știu" și „Nu se aplică" nu blochează trimiterea"
 
-**Section 5 — Calendar Preview**
-- Următoarele 5 postări din `content_posts` cu `scheduled_for >= now()`, sortate ASC
-- Pentru fiecare: dată, platformă (icon), titlu scurt, badge status approval
-- Buton "View Calendar" → `/client/calendar` (sau tab existent)
+## Integrare în ClientQuickCheckIn
 
-**Section 6 — Report / Strategy**
-- Ultimul raport (`reports` cu `client_visible=true`) — titlu + summary scurt + buton "View Report"
-- Strategia lunii (din `ai_strategy_base.monthly_strategy` sau `client_dashboard_contexts.generated_summary`) — text scurt
+În `src/components/client/ClientQuickCheckIn.tsx`:
 
-## Ce eliminăm din dashboard-ul curent
+1. Înlocuim **Section 3** ("Ai observat rezultate reale...") cu noul `<BusinessImpactSection>` (devine Section 3 — Impact business).
+2. Eliminăm vechile `RESULT_METRICS_BY_NICHE`, `GENERIC_METRICS`, `resultsMetrics`, `otherResults`, `resultsObserved`.
+3. Eliminăm blocul Real Estate manual (proprietăți, lead quality etc.) — acum acoperit prin `BusinessImpactSection` + `nicheCfg.checkin_extras` rămas.
+4. State nou: `impactValues: Record<string, { mode, value }>`.
+5. La submit:
+   - Fetch `client_kpi_schemas.business_impact_fields` pentru clienți custom.
+   - Calculăm `impact_data` (toate valorile, inclusiv mode-urile) → salvat în `client_checkins.real_results_data.business_impact`.
+   - `missing_fields[]` = chei cu `mode === "unknown"` → tot în `real_results_data.business_impact_missing`.
+   - Pentru fiecare câmp `mode === "exact" | "approx"` cu `db_field` și valoare numerică validă → construim un `business_impact_entries` row (single insert pentru întreaga lună, agregat). `mode === "approx"` adaugă flag `qualitative_feedback: "approximate values"`.
+   - `observed_real_results` derivat: dacă există valori cu mod exact/approx → `"yes"`; dacă tot ce există e unknown/N/A → `"unknown"`.
 
-- Secțiunea generică `BusinessImpactQuickForm` mare (mutăm într-un dialog accesibil din "Pending Approvals" sau check-in)
-- `RealEstateDashboardSection` / `NicheDashboardSection` / `CustomNicheDashboardSection` ca rendering principal — păstrăm doar **niche-aware KPI labels** prin `nicheDashboardConfigs` în Section 1 (Main Result) și Section 2 (top content metric)
-- Rendering KPI schema brut, info insights generice, refresh button vizibil (mutăm într-un meniu discret)
-- Orice referință la cost intern, notes, risk detector, swipe file
+## Curățenie
+
+- Component `BusinessImpactQuickForm` rămâne în repo (nu mai e importat din `ClientDashboard`, deja eliminat) — nu îl ștergem, în caz că agenția îl folosește în alt context (verific cu `rg`).
+- Schema zod actualizată: scot `results_observed` enum hard, devine derivat.
 
 ## Fișiere
 
-**Refactor (rewrite complet):**
-- `src/components/client/ClientDashboard.tsx` — noul layout pe 6 secțiuni
+**Noi:**
+- `src/lib/businessImpactByNiche.ts` — config + tipuri
+- `src/components/client/BusinessImpactSection.tsx` — UI
 
-**Componente noi (în `src/components/client/dashboard/`):**
-- `DashboardTopBar.tsx` — nume + lună + nișă + health compact + satisfaction + check-in status
-- `MonthSnapshotCards.tsx` — 4 carduri (goal, result, impact, approvals)
-- `WhatsWorkingCard.tsx` — top 3 content + AI good insights
-- `NeedsAttentionCard.tsx` — missing data + warnings + obiective în urmă
-- `NextActionsCard.tsx` — agenție / client / deadline-uri
-- `CalendarPreviewCard.tsx` — următoarele 5 postări + buton
-- `ReportStrategyCard.tsx` — ultimul raport + strategia lunii
-
-**Neschimbate** (rămân disponibile dacă agenția le accesează în alt context, dar nu mai sunt importate de `ClientDashboard`):
-- `RealEstateDashboardSection`, `NicheDashboardSection`, `CustomNicheDashboardSection`, `PriorityKpiCard`, `BusinessImpactQuickForm` (ultimul devine accesibil prin buton "Adaugă rezultate" din Section 3 când e nevoie)
-
-## Date / queries
-
-Toate query-urile rămân în `ClientDashboard.tsx` (sau extrase într-un hook `useClientDashboardData`). Adăugăm:
-- `client_health_scores` — ultimul (luna curentă) pentru top bar
-- `client_goals` — active pe luna curentă pentru Main Goal + obiective în urmă
-- `content_posts` cu join pe `content_metrics` pentru top 3 + următoarele 5 scheduled
-- `client_checkins` — ultimul pentru satisfaction + dată check-in
-
-RLS rămâne intact (toate aceste tabele au deja policies per `client_id` / `agency_id`).
-
-## Niche awareness
-
-Folosim `getNicheDashboardCopy(niche)` doar pentru:
-- Label-ul cardului "Main Result" (ex: "Leads generate" pt real_estate, "Rezervări" pt restaurant)
-- Microcopy pentru hero eyebrow și titluri secțiuni
-
-Fără logică divergentă pe nișă în layout — același 6-secțiuni pentru toți, doar copy-ul se schimbă.
+**Editate:**
+- `src/components/client/ClientQuickCheckIn.tsx` — înlocuire Section 3 + logică submit + curățenie state vechi
 
 ## Out of scope
 
-- Modificări de schema DB
-- Edge functions noi (folosim datele existente din `client_dashboard_contexts`)
-- Pagina `/client/calendar` separată — butonul navighează la tab-ul calendar existent în `ClientPortal`
+- Modificări de schema DB (nu e nevoie — folosim `real_results_data` jsonb și `business_impact_entries` existent)
+- Edge function changes (AI deja primește `real_results_data` + `missing_data`)
