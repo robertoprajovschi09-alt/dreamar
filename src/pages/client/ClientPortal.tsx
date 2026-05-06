@@ -136,7 +136,13 @@ export default function ClientPortal() {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
-          <TabsContent value="overview"><ClientDashboard agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id} onStartCheckIn={() => setTab("checkin")} /></TabsContent>
+          <TabsContent value="overview"><ClientDashboard
+            agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id}
+            onStartCheckIn={() => setTab("checkin")}
+            onOpenCalendar={() => setTab("calendar")}
+            onOpenApprovals={() => setTab("approvals")}
+            onOpenReports={() => setTab("reports")}
+          /></TabsContent>
           <TabsContent value="checkin">
             <ClientQuickCheckIn
               agencyId={agency.id} clientId={client.id} niche={client.niche || ""} userId={user!.id}

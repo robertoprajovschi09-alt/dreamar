@@ -1,106 +1,90 @@
-## Goal
+## Obiectiv
 
-After the client submits Quick Check-In, the system runs an AI pipeline that builds a per-month **Client Dashboard Context**: summary, priorities, KPIs to surface, recommended widgets, missing-data flags, client-friendly insights, and agency-internal notes. Both the structured check-in and the generated context are persisted in two new tables.
+Înlocuim layout-ul actual al `ClientDashboard.tsx` cu o structură simplă, orientată pe client: top bar cu identitate + status, apoi 6 secțiuni clare. Eliminăm tot ce ține de "admin agenție" (risk detector, swipe, notes, costuri, comparații, strategii neaprobate, task-uri interne, schema KPI tehnică).
 
-## Database changes
+## Structură nouă
 
-### Table `client_checkins`
-Structured monthly check-in (1 row per client per year+month).
+**Top Section (card hero compact)**
+- Nume client + luna curentă + badge nișă
+- Health Score compact (cerc mic + status label, doar `total_score` + `score_status`)
+- Satisfaction status (din ultimul `client_checkins.satisfaction_score`)
+- "Last check-in completed" (dată sau buton "Start check-in")
 
-Columns: `id`, `agency_id`, `client_id`, `client_user_id`, `month` (1–12), `year`, `main_priority`, `priority_custom`, `promoted_focus`, `observed_real_results` (`yes` | `no` | `unknown`), `real_results_data` jsonb, `customer_feedback`, `important_notes`, `satisfaction_score` (1–5), `requested_direction_change`, `direction_change_custom`, `ai_processed` bool default false, `created_at`, `updated_at`. Unique on `(client_id, year, month)`.
+**Section 1 — This Month Snapshot** (3-4 carduri mari)
+- Main Goal (din `client_goals` activ pe luna curentă, sau din `ai_strategy_base.main_goal`)
+- Main Result (KPI #1 din `personalization.priority_metrics` cu valoare + delta)
+- Business Impact (suma `revenue_estimate` / leads / sales luna curentă)
+- Pending Approvals (count `content_posts.status = sent_for_approval` + buton "Aprobă")
 
-RLS:
-- Agency members: full access for their own agency rows.
-- Client portal users: SELECT + INSERT + UPDATE (only when `client_user_id = auth.uid()`, `is_client_viewer_of(auth.uid(), client_id)`, and `ai_processed = false`).
+**Section 2 — What's Working**
+- Top 3 content pieces (`content_posts` published, sortate după engagement / impressions din `content_metrics` sau `analytics_entries`)
+- Pentru fiecare: thumbnail/title + metric scurt + 1 linie AI explicație (din `personalization.insight_cards` severity=good)
+- "Ce trebuie repetat" — bullet scurt din AI
 
-### Table `client_dashboard_contexts`
-AI-generated context (1 row per client per year+month).
+**Section 3 — What Needs Attention**
+- Date lipsă (din `client_dashboard_contexts.missing_data`)
+- Approvals pending (link)
+- Scăderi importante (insight_cards severity=warning)
+- Obiective în urmă (`client_goals` cu progress < expected pentru luna)
 
-Columns: `id`, `agency_id`, `client_id`, `month`, `year`, `generated_summary`, `ai_priorities` jsonb, `recommended_widgets` jsonb, `missing_data` jsonb, `client_friendly_insights` jsonb, `agency_internal_notes`, `confidence_score` numeric(3,2), `generated_by_ai_output_id` uuid, `created_at`, `updated_at`. Unique on `(client_id, year, month)`.
+**Section 4 — Next Actions**
+- Ce face agenția (din `personalization.next_actions` / `ai_priorities` filtrate `audience=client`)
+- Ce trebuie să facă clientul (approvals, check-in, business impact missing)
+- Deadline-uri (date din `next_actions.deadline` dacă există)
 
-RLS:
-- Agency members: full access for their own agency rows.
-- Client portal users: SELECT only (cannot insert/update/delete).
+**Section 5 — Calendar Preview**
+- Următoarele 5 postări din `content_posts` cu `scheduled_for >= now()`, sortate ASC
+- Pentru fiecare: dată, platformă (icon), titlu scurt, badge status approval
+- Buton "View Calendar" → `/client/calendar` (sau tab existent)
 
-Both tables get `tg_set_updated_at` trigger and indexes on `(client_id, year DESC, month DESC)` and `(agency_id, year DESC, month DESC)`.
+**Section 6 — Report / Strategy**
+- Ultimul raport (`reports` cu `client_visible=true`) — titlu + summary scurt + buton "View Report"
+- Strategia lunii (din `ai_strategy_base.monthly_strategy` sau `client_dashboard_contexts.generated_summary`) — text scurt
 
-### Migration of existing check-in writes
-`ClientQuickCheckIn` currently writes only to `client_feedback` (with structured payload in `objections`). Update it to **also** insert into `client_checkins` with the explicit columns. `client_feedback` is kept for backward compatibility with existing reports.
+## Ce eliminăm din dashboard-ul curent
 
-## Edge function `client-dashboard-context-generate`
+- Secțiunea generică `BusinessImpactQuickForm` mare (mutăm într-un dialog accesibil din "Pending Approvals" sau check-in)
+- `RealEstateDashboardSection` / `NicheDashboardSection` / `CustomNicheDashboardSection` ca rendering principal — păstrăm doar **niche-aware KPI labels** prin `nicheDashboardConfigs` în Section 1 (Main Result) și Section 2 (top content metric)
+- Rendering KPI schema brut, info insights generice, refresh button vizibil (mutăm într-un meniu discret)
+- Orice referință la cost intern, notes, risk detector, swipe file
 
-New function that produces and stores the AI context.
+## Fișiere
 
-Input (POST JSON, JWT verified in code via Supabase auth):
-```
-{ client_id: uuid, year?: number, month?: number }   // defaults to current month
-```
+**Refactor (rewrite complet):**
+- `src/components/client/ClientDashboard.tsx` — noul layout pe 6 secțiuni
 
-Authorization: caller must be either an active `agency_members` row of the client's agency OR an active `client_users` row for that client. Otherwise 403.
+**Componente noi (în `src/components/client/dashboard/`):**
+- `DashboardTopBar.tsx` — nume + lună + nișă + health compact + satisfaction + check-in status
+- `MonthSnapshotCards.tsx` — 4 carduri (goal, result, impact, approvals)
+- `WhatsWorkingCard.tsx` — top 3 content + AI good insights
+- `NeedsAttentionCard.tsx` — missing data + warnings + obiective în urmă
+- `NextActionsCard.tsx` — agenție / client / deadline-uri
+- `CalendarPreviewCard.tsx` — următoarele 5 postări + buton
+- `ReportStrategyCard.tsx` — ultimul raport + strategia lunii
 
-Pipeline (uses service role to read across tables, scoped to the client_id):
-1. Load **client** (`clients`), **niche** (label + `client_kpi_schemas`), **platforms** (`client_platforms`).
-2. Load **goals** for current and previous month (`monthly_goals`).
-3. Load **content calendar** (`content_posts` last 60 days + scheduled next 30).
-4. Load **analytics** (`analytics_entries` last 90 days).
-5. Load **content_metrics** for the same posts (if table present).
-6. Load **monthly_reports** (last 3) and **documents** marked `client_visible`.
-7. Load **business_impact_entries** last 90 days.
-8. Load **client_feedback** + the new **client_checkins** row for `(year, month)`.
-9. Load **competitor_observations** (if any) and **swipe_files** scoped to agency/client.
-10. Load **ai_memory** entries for `(agency_id, client_id)` (most recent N).
-11. Build a compact, redacted JSON context (cap each section to top-N, strip PII like emails/phones).
-12. Call Lovable AI Gateway (`google/gemini-2.5-flash`) with a strict JSON-schema response:
-   ```json
-   {
-     "generated_summary": "string",
-     "ai_priorities": [{ "title": "...", "why": "...", "owner": "agency|client" }],
-     "recommended_widgets": [{ "key": "...", "title": "...", "props": { ... } }],
-     "missing_data": [{ "field": "...", "where_to_fill": "...", "blocks": "summary|kpi|insight" }],
-     "client_friendly_insights": [{ "title": "...", "body_plain_language": "...", "tone": "good|neutral|warning" }],
-     "agency_internal_notes": "string",
-     "confidence_score": 0.0
-   }
-   ```
-   System prompt instructs the model to **never invent metrics** — if a metric is missing, add it to `missing_data` and reference it in insights instead.
-13. UPSERT into `client_dashboard_contexts` on `(client_id, year, month)`.
-14. UPDATE `client_checkins.ai_processed = true` for that period.
-15. Return `{ context }`.
+**Neschimbate** (rămân disponibile dacă agenția le accesează în alt context, dar nu mai sunt importate de `ClientDashboard`):
+- `RealEstateDashboardSection`, `NicheDashboardSection`, `CustomNicheDashboardSection`, `PriorityKpiCard`, `BusinessImpactQuickForm` (ultimul devine accesibil prin buton "Adaugă rezultate" din Section 3 când e nevoie)
 
-CORS handled, zod input validation, timeout-safe (14s soft cap), errors return 4xx with structured messages.
+## Date / queries
 
-## Client wiring
+Toate query-urile rămân în `ClientDashboard.tsx` (sau extrase într-un hook `useClientDashboardData`). Adăugăm:
+- `client_health_scores` — ultimul (luna curentă) pentru top bar
+- `client_goals` — active pe luna curentă pentru Main Goal + obiective în urmă
+- `content_posts` cu join pe `content_metrics` pentru top 3 + următoarele 5 scheduled
+- `client_checkins` — ultimul pentru satisfaction + dată check-in
 
-1. **`ClientQuickCheckIn` submit**: after the existing `client_feedback` insert, also insert into `client_checkins` (mapping check-in payload 1:1). Then `await supabase.functions.invoke("client-dashboard-context-generate", { body: { client_id } })` (fire-and-forget UI, but we await to flip into the new dashboard context once it lands).
-2. **`ClientDashboard`**: read `client_dashboard_contexts` for the current month first; fall back to the existing `clients.ai_strategy_base.dashboard_personalization` for legacy clients. Render:
-   - Hero = `generated_summary`
-   - Priority KPI cards = derived from `recommended_widgets[*].key` mapped against existing aggregates (impact + analytics) — same `resolveKpiValue` helper as today.
-   - "AI insights" section = `client_friendly_insights`.
-   - "What we're missing" section = `missing_data` (one chip per item; clicking deep-links to the right form).
-3. **Agency `ClientProfile` Overview**: new `<DashboardContextCard />` showing `generated_summary`, `ai_priorities`, `agency_internal_notes`, and a "Regenerate" button calling the same edge function.
+RLS rămâne intact (toate aceste tabele au deja policies per `client_id` / `agency_id`).
 
-## Files
+## Niche awareness
 
-**New**
-- `supabase/functions/client-dashboard-context-generate/index.ts`
-- `src/components/client/DashboardContextCard.tsx` (agency-side)
+Folosim `getNicheDashboardCopy(niche)` doar pentru:
+- Label-ul cardului "Main Result" (ex: "Leads generate" pt real_estate, "Rezervări" pt restaurant)
+- Microcopy pentru hero eyebrow și titluri secțiuni
 
-**Edit**
-- `src/components/client/ClientQuickCheckIn.tsx` — also insert into `client_checkins`, then invoke the edge function
-- `src/components/client/ClientDashboard.tsx` — read from `client_dashboard_contexts` first
-- `src/pages/agency/ClientProfile.tsx` — mount `<DashboardContextCard />`
-- `src/integrations/supabase/types.ts` — auto-regenerated after migration
-
-## Multi-tenant & security
-
-- New tables enforce tenant isolation via `is_member_of` / `is_client_viewer_of` (existing security definer helpers).
-- Client portal users can never write to `client_dashboard_contexts` and can only update their own check-in before it's processed.
-- Edge function double-checks caller membership against the requested client before reading anything; service role is used only for the read fan-out.
-- AI prompt strictly forbids inventing data; missing inputs surface in `missing_data` instead of being hallucinated.
-- All inputs validated with zod; outputs stored in jsonb columns with size caps (truncate any field over 8KB before persist).
+Fără logică divergentă pe nișă în layout — același 6-secțiuni pentru toți, doar copy-ul se schimbă.
 
 ## Out of scope
 
-- Backfilling historical months (only generate for the current period on submit + on demand).
-- Email/Slack notifications when a new context is generated.
-- Showing version history of contexts (we keep one row per period; regenerate overwrites).
+- Modificări de schema DB
+- Edge functions noi (folosim datele existente din `client_dashboard_contexts`)
+- Pagina `/client/calendar` separată — butonul navighează la tab-ul calendar existent în `ClientPortal`
