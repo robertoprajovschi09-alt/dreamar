@@ -24,7 +24,8 @@ export default function Clients() {
   const { agency } = useUser();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // edit dialog
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
@@ -34,7 +35,7 @@ export default function Clients() {
     setLoading(true);
     const { data, error } = await supabase
       .from("clients")
-      .select("id,name,niche,city,website,status,created_at")
+      .select("id,name,niche,custom_niche,city,website,status,created_at")
       .eq("agency_id", agency.id)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
@@ -44,12 +45,13 @@ export default function Clients() {
 
   useEffect(() => { load(); }, [agency]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const openCreate = () => { setWizardOpen(true); };
   const openEdit = (c: Client) => {
     setEditing(c);
     setForm({ name: c.name, niche: c.niche, city: c.city || "", website: c.website || "", status: c.status });
     setOpen(true);
   };
+
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
