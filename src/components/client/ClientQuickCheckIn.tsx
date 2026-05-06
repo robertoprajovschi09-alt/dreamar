@@ -405,6 +405,28 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
             </div>
           )}
 
+          {nicheCfg && niche !== "real_estate" && (
+            <div className="space-y-4 p-4 rounded-md border border-accent/30 bg-accent/5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-accent">{nicheCfg.checkin_section_title}</div>
+              {nicheCfg.checkin_extras.map((f) => (
+                <div key={f.key} className="space-y-1.5">
+                  <Label className="text-xs">{f.label}</Label>
+                  {f.kind === "number" && (
+                    <Input type="number" min={0} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder="—" />
+                  )}
+                  {f.kind === "text" && (
+                    f.long
+                      ? <Textarea rows={2} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={500} />
+                      : <Input value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={300} />
+                  )}
+                  {f.kind === "choice" && (
+                    <ChipGroup options={f.options} value={nicheExtras[f.key] ?? ""} onChange={(v) => setExtra(f.key, v)} />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <Section n={4} title="Ce feedback ai primit de la clienții tăi?">
             <Textarea rows={2} value={customerFeedback} onChange={(e) => setCustomerFeedback(e.target.value)} maxLength={500}
               placeholder="ex: clienții au menționat reel-ul de marți, oamenii au sunat după postul cu oferta…" />
