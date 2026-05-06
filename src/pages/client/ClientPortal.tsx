@@ -23,9 +23,9 @@ import { MonthCalendar, type CalendarItem } from "@/components/content/MonthCale
 import { statusMeta } from "@/lib/content";
 import { nicheLabel } from "@/lib/niches";
 import { ClientReportsView } from "@/components/reports/ClientReportsView";
-import { BriefWizard } from "@/components/client/BriefWizard";
+import { QuickClientOnboarding } from "@/components/client/QuickClientOnboarding";
 import { getClientBrief } from "@/lib/brief";
-import { NicheSummaryCard } from "@/components/client/NicheSummaryCard";
+import { ClientDashboard } from "@/components/client/ClientDashboard";
 
 
 const monthInputDefault = () => {
