@@ -585,8 +585,8 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                 onUpdate={updateKpi}
               />
               <FieldEditor
-                title="Business impact fields"
-                description="Real-world outcomes the client reports each month."
+                title="Custom Business Impact Fields"
+                description="What the client fills in every month (e.g. new customers, sales, calls)."
                 items={form.business_impact_fields}
                 onAdd={addBI}
                 onRemove={removeBI}
