@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { RoleRoute } from "@/components/RoleRoute";
 import AgencyLayout from "@/components/AgencyLayout";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
