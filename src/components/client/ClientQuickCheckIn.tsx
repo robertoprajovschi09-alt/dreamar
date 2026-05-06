@@ -121,6 +121,15 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, 
   const [directionChange, setDirectionChange] = useState("keep");
   const [directionChangeOther, setDirectionChangeOther] = useState("");
 
+  // Real Estate specific
+  const [reBuyerLeads, setReBuyerLeads] = useState("");
+  const [reSellerLeads, setReSellerLeads] = useState("");
+  const [reHasInquiries, setReHasInquiries] = useState<"yes" | "no" | "unknown">("unknown");
+  const [reViewings, setReViewings] = useState("");
+  const [rePromoteProperties, setRePromoteProperties] = useState("");
+  const [reHasNewProperties, setReHasNewProperties] = useState<"yes" | "no">("no");
+  const [reLeadQuality, setReLeadQuality] = useState<"good" | "mixed" | "weak" | "none">("mixed");
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
