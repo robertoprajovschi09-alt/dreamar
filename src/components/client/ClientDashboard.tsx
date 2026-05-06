@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, AlertCircle, CheckCircle2, Info, RefreshCw } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, CheckCircle2, Info, RefreshCw, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PriorityKpiCard, type KpiType, type PriorityKpi } from "./PriorityKpiCard";
@@ -21,9 +21,10 @@ type Props = {
   clientId: string;
   clientName: string;
   userId: string;
+  onStartCheckIn?: () => void;
 };
 
-export function ClientDashboard({ agencyId, clientId, clientName, userId }: Props) {
+export function ClientDashboard({ agencyId, clientId, clientName, userId, onStartCheckIn }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [personalization, setPersonalization] = useState<Personalization | null>(null);
@@ -34,12 +35,15 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId }: Prop
   const [goals, setGoals] = useState<any[]>([]);
   const [latestReport, setLatestReport] = useState<any>(null);
 
+  const [checkInDone, setCheckInDone] = useState(false);
+
   const load = async () => {
     setLoading(true);
     const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const monthDateStr = monthStart.toISOString().slice(0, 10);
     const since30 = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
 
-    const [client, schema, imp, an, a, b, c, g, rep] = await Promise.all([
+    const [client, schema, imp, an, a, b, c, g, rep, ci] = await Promise.all([
       supabase.from("clients").select("ai_strategy_base").eq("id", clientId).maybeSingle(),
       supabase.from("client_kpi_schemas").select("*").eq("client_id", clientId).maybeSingle(),
       supabase.from("business_impact_entries").select("*").eq("client_id", clientId).gte("entry_date", since30),
@@ -49,6 +53,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId }: Prop
       supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "published").gte("scheduled_for", monthStart.toISOString()),
       supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false }).limit(5),
       supabase.from("reports").select("id,title,summary,period_start,period_end,created_at").eq("client_id", clientId).eq("client_visible", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase.from("client_feedback").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("month", monthDateStr),
     ]);
 
     setKpiSchema(schema.data);
@@ -57,6 +62,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId }: Prop
     setCounts({ scheduled: a.count || 0, awaiting: b.count || 0, published: c.count || 0 });
     setGoals(g.data || []);
     setLatestReport(rep.data);
+    setCheckInDone((ci.count || 0) > 0);
 
     const p = ((client.data as any)?.ai_strategy_base || {})?.dashboard_personalization as Personalization | undefined;
     setPersonalization(p || null);
@@ -158,6 +164,22 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId }: Prop
           </div>
         </CardContent>
       </Card>
+
+      {/* Monthly check-in CTA */}
+      {!checkInDone && onStartCheckIn && (
+        <Card className="border-accent/40 bg-accent/5">
+          <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+            <ClipboardList className="h-5 w-5 text-accent shrink-0" />
+            <div className="flex-1 min-w-[200px]">
+              <div className="text-sm font-semibold">Quick check-in pentru luna aceasta</div>
+              <div className="text-xs text-muted-foreground">7 întrebări scurte. Sub 2 minute. Ajută agenția să prioritizeze conținutul.</div>
+            </div>
+            <Button onClick={onStartCheckIn} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              Start check-in
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Priority KPIs */}
       {priorityKpis.length > 0 && (

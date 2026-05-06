@@ -26,6 +26,7 @@ import { ClientReportsView } from "@/components/reports/ClientReportsView";
 import { QuickClientOnboarding } from "@/components/client/QuickClientOnboarding";
 import { getClientBrief } from "@/lib/brief";
 import { ClientDashboard } from "@/components/client/ClientDashboard";
+import { ClientQuickCheckIn } from "@/components/client/ClientQuickCheckIn";
 
 
 const monthInputDefault = () => {
@@ -45,6 +46,7 @@ export default function ClientPortal() {
   const navigate = useNavigate();
 
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
+  const [tab, setTab] = useState<string>("overview");
 
   // Track last login for the agency to see
   useEffect(() => {
@@ -122,9 +124,10 @@ export default function ClientPortal() {
           </p>
         </div>
 
-        <Tabs defaultValue="overview">
+        <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="checkin">Check-in</TabsTrigger>
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="approvals">Approvals</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -133,7 +136,13 @@ export default function ClientPortal() {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
-          <TabsContent value="overview"><ClientDashboard agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id} /></TabsContent>
+          <TabsContent value="overview"><ClientDashboard agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id} onStartCheckIn={() => setTab("checkin")} /></TabsContent>
+          <TabsContent value="checkin">
+            <ClientQuickCheckIn
+              agencyId={agency.id} clientId={client.id} niche={client.niche || ""} userId={user!.id}
+              onDone={() => setTab("overview")} onCancel={() => setTab("overview")}
+            />
+          </TabsContent>
           <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>

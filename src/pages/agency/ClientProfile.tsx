@@ -26,6 +26,7 @@ import { HealthScoreCard } from "@/components/health/HealthScoreCard";
 import { CompetitorsTab } from "@/components/competitors/CompetitorsTab";
 import { ClientStrategiesTab } from "@/components/strategies/ClientStrategiesTab";
 import { ClientAnalyticsTab } from "@/components/analytics/ClientAnalyticsTab";
+import { LatestCheckInCard } from "@/components/client/LatestCheckInCard";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -106,6 +107,7 @@ export default function ClientProfile() {
         <TabsContent value="overview">
           <div className="space-y-4">
             <HealthScoreCard clientId={client.id} />
+            <LatestCheckInCard clientId={client.id} />
             <OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} />
           </div>
         </TabsContent>
