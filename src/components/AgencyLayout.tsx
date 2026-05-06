@@ -26,6 +26,8 @@ const nav = [
   { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
   { to: "/agency/competitors", icon: Target, label: "Competitors" },
   { to: "/agency/assistant", icon: Sparkles, label: "AI Assistant" },
+  { to: "/agency/ai-actions", icon: ClipboardCheck, label: "AI Actions" },
+  { to: "/agency/ai-memory", icon: Lightbulb, label: "AI Memory" },
   { to: "/agency/team", icon: UserCog, label: "Team" },
   { to: "/agency/billing", icon: CreditCard, label: "Billing" },
   { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
