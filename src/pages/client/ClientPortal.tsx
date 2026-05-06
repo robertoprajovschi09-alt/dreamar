@@ -46,6 +46,7 @@ export default function ClientPortal() {
   const navigate = useNavigate();
 
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
+  const [tab, setTab] = useState<string>("overview");
 
   // Track last login for the agency to see
   useEffect(() => {

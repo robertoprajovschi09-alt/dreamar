@@ -21,9 +21,10 @@ type Props = {
   clientId: string;
   clientName: string;
   userId: string;
+  onStartCheckIn?: () => void;
 };
 
-export function ClientDashboard({ agencyId, clientId, clientName, userId }: Props) {
+export function ClientDashboard({ agencyId, clientId, clientName, userId, onStartCheckIn }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [personalization, setPersonalization] = useState<Personalization | null>(null);
