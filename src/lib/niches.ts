@@ -1,16 +1,21 @@
 export const NICHES = [
-  { value: "real_estate", label: "Real estate" },
-  { value: "restaurant", label: "Restaurant" },
-  { value: "beauty", label: "Beauty / Salon / Clinic" },
+  { value: "real_estate", label: "Real Estate" },
+  { value: "restaurant", label: "Restaurants" },
+  { value: "beauty", label: "Beauty / Aesthetics" },
   { value: "ecommerce", label: "E-commerce" },
-  { value: "fitness", label: "Fitness / Gym / Coach" },
+  { value: "fitness", label: "Fitness / Coaches" },
+  { value: "medical", label: "Medical / Clinics" },
   { value: "dental", label: "Dental" },
+  { value: "education", label: "Education" },
+  { value: "auto", label: "Automotive" },
+  { value: "legal", label: "Legal" },
+  { value: "finance", label: "Finance" },
   { value: "custom", label: "Custom" },
 ] as const;
 
 export type NicheValue = typeof NICHES[number]["value"];
 
-export const STATUSES = ["active", "paused", "churned", "prospect"] as const;
+export const STATUSES = ["active", "onboarding", "paused", "churned", "prospect"] as const;
 
 export const PLATFORMS = [
   { value: "instagram", label: "Instagram" },
@@ -18,6 +23,10 @@ export const PLATFORMS = [
   { value: "facebook", label: "Facebook" },
   { value: "youtube", label: "YouTube" },
   { value: "linkedin", label: "LinkedIn" },
+  { value: "google_ads", label: "Google Ads" },
+  { value: "meta_ads", label: "Meta Ads" },
+  { value: "website", label: "Website" },
+  { value: "other", label: "Other" },
 ] as const;
 
 export const GOAL_STATUSES = [
