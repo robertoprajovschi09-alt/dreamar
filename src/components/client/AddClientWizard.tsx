@@ -79,7 +79,7 @@ type Form = {
 const empty: Form = {
   name: "", website: "", logo_url: "", brand_color: "#E11D2E",
   contact_person: "", contact_email: "", contact_phone: "", status: "active",
-  niche: "real_estate", custom_niche: "",
+  niche: "real_estate", custom_niche: "", niche_id: null, creating_custom_niche: false,
   kpi_fields: getNichePreset("real_estate").kpi_fields,
   business_impact_fields: getNichePreset("real_estate").business_impact_fields,
   monthly_questions: getNichePreset("real_estate").monthly_questions,
