@@ -23,6 +23,7 @@ import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
 import { getClientBrief, BRAND_TONES } from "@/lib/brief";
 import { HealthScoreCard } from "@/components/health/HealthScoreCard";
 import { CompetitorsTab } from "@/components/competitors/CompetitorsTab";
+import { ClientStrategiesTab } from "@/components/strategies/ClientStrategiesTab";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -93,6 +94,7 @@ export default function ClientProfile() {
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="strategies">Strategies</TabsTrigger>
           <TabsTrigger value="competitors">Competitors</TabsTrigger>
           <TabsTrigger value="brand">Brand</TabsTrigger>
           <TabsTrigger value="platforms">Platforms ({platforms.filter((p) => p.active).length})</TabsTrigger>
@@ -111,6 +113,7 @@ export default function ClientProfile() {
         <TabsContent value="campaigns"><ClientCampaignsTab client={client} /></TabsContent>
         <TabsContent value="documents"><ClientDocumentsTab client={client} /></TabsContent>
         <TabsContent value="reports"><ClientReportsTab client={client} /></TabsContent>
+        <TabsContent value="strategies"><ClientStrategiesTab clientId={client.id} agencyId={client.agency_id} /></TabsContent>
         <TabsContent value="competitors"><CompetitorsTab agencyId={client.agency_id} clientId={client.id} /></TabsContent>
         <TabsContent value="brand"><BrandTab client={client} reload={loadAll} /></TabsContent>
         <TabsContent value="platforms"><PlatformsTab client={client} platforms={platforms} reload={loadAll} /></TabsContent>

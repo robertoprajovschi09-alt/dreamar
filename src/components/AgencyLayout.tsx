@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, AlertTriangle, BookmarkPlus, ClipboardCheck } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, AlertTriangle, BookmarkPlus, ClipboardCheck, Lightbulb } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -22,6 +22,7 @@ const nav = [
   { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
   { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
   { to: "/agency/reports", icon: FileText, label: "Reports" },
+  { to: "/agency/strategies", icon: Lightbulb, label: "Strategies" },
   { to: "/agency/risk", icon: AlertTriangle, label: "Risk" },
   { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
   { to: "/agency/assistant", icon: Sparkles, label: "Assistant" },
