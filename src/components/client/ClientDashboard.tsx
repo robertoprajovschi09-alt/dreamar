@@ -43,7 +43,11 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
     const monthDateStr = monthStart.toISOString().slice(0, 10);
     const since30 = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
 
-    const [client, schema, imp, an, a, b, c, g, rep, ci] = await Promise.all([
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+
+    const [client, schema, imp, an, a, b, c, g, rep, ci, ctx] = await Promise.all([
       supabase.from("clients").select("ai_strategy_base").eq("id", clientId).maybeSingle(),
       supabase.from("client_kpi_schemas").select("*").eq("client_id", clientId).maybeSingle(),
       supabase.from("business_impact_entries").select("*").eq("client_id", clientId).gte("entry_date", since30),
@@ -54,6 +58,7 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
       supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false }).limit(5),
       supabase.from("reports").select("id,title,summary,period_start,period_end,created_at").eq("client_id", clientId).eq("client_visible", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("client_feedback").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("month", monthDateStr),
+      supabase.from("client_dashboard_contexts").select("*").eq("client_id", clientId).eq("year", curYear).eq("month", curMonth).maybeSingle(),
     ]);
 
     setKpiSchema(schema.data);
@@ -64,8 +69,33 @@ export function ClientDashboard({ agencyId, clientId, clientName, userId, onStar
     setLatestReport(rep.data);
     setCheckInDone((ci.count || 0) > 0);
 
-    const p = ((client.data as any)?.ai_strategy_base || {})?.dashboard_personalization as Personalization | undefined;
-    setPersonalization(p || null);
+    // Prefer the new client_dashboard_contexts row; fall back to legacy ai_strategy_base
+    let p: Personalization | null = null;
+    if (ctx.data) {
+      const cd: any = ctx.data;
+      p = {
+        greeting: undefined,
+        niche_focus: cd.generated_summary || undefined,
+        priority_metrics: Array.isArray(cd.recommended_widgets)
+          ? cd.recommended_widgets.map((w: any) => w?.key).filter(Boolean).slice(0, 3)
+          : [],
+        insight_cards: Array.isArray(cd.client_friendly_insights)
+          ? cd.client_friendly_insights.map((i: any) => ({
+              title: i.title || "",
+              body: i.body_plain_language || i.body || "",
+              severity: (i.tone === "good" ? "good" : i.tone === "warning" ? "warning" : "info") as any,
+              missing_data: Array.isArray(cd.missing_data) ? cd.missing_data.map((m: any) => m.field).filter(Boolean) : undefined,
+            }))
+          : [],
+        next_actions: Array.isArray(cd.ai_priorities)
+          ? cd.ai_priorities.map((pr: any) => ({ label: pr.title || "", why: pr.why || "" }))
+          : [],
+        generated_at: cd.updated_at || cd.created_at,
+      };
+    } else {
+      p = ((client.data as any)?.ai_strategy_base || {})?.dashboard_personalization as Personalization | undefined ?? null;
+    }
+    setPersonalization(p);
 
     // If never generated or older than 24h, regenerate quietly
     const gen = p?.generated_at ? new Date(p.generated_at).getTime() : 0;
