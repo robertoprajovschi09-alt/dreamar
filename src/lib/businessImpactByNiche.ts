@@ -100,6 +100,22 @@ export const IMPACT_BY_NICHE: Record<string, NicheImpactConfig> = {
       { key: "transformations_count", label: "Transformări documentate", kind: "number" },
     ],
   },
+  hospitality: {
+    title: "Impact business — Hotels / Hospitality",
+    intro: "Cum a mers ocuparea, rezervările și interacțiunea cu oaspeții?",
+    fields: [
+      { key: "bookings", label: "Rezervări confirmate", kind: "number", db_field: "bookings" },
+      { key: "reservation_requests", label: "Cereri de rezervare", kind: "number", db_field: "dms" },
+      { key: "direct_inquiries", label: "Cereri directe (telefon/WhatsApp/website)", kind: "number", db_field: "calls" },
+      { key: "booked_nights", label: "Nopți rezervate", kind: "number" },
+      { key: "occupancy_rate", label: "Rată de ocupare (%)", kind: "number",
+        hint: "Procent estimat 0–100" },
+      { key: "revenue", label: "Revenue estimat (lei)", kind: "currency", db_field: "revenue_estimate" },
+      { key: "guest_reviews_count", label: "Review-uri noi de la oaspeți", kind: "number" },
+      { key: "review_score", label: "Scor mediu review-uri (1–5)", kind: "number" },
+      { key: "events_booked", label: "Evenimente / nunți rezervate", kind: "number", db_field: "contracts" },
+    ],
+  },
   medical: {
     title: "Impact business — Medical",
     intro: "Cum au mers programările și interacțiunea cu pacienții?",

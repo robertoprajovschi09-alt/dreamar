@@ -50,6 +50,7 @@ const NICHE_BADGES: Record<string, string> = {
   ecommerce: "eCommerce",
   fitness: "Fitness",
   medical: "Medical",
+  hospitality: "Hotels",
   custom: "Custom",
 };
 

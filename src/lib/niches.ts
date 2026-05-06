@@ -10,6 +10,7 @@ export const NICHES = [
   { value: "auto", label: "Automotive" },
   { value: "legal", label: "Legal" },
   { value: "finance", label: "Finance" },
+  { value: "hospitality", label: "Hotels / Hospitality / Tourism" },
   { value: "custom", label: "Custom" },
 ] as const;
 

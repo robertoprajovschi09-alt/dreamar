@@ -175,6 +175,15 @@ Deno.serve(async (req) => {
       period: { year, month },
     };
 
+    const nicheGuidance =
+      clientRow.niche === "hospitality"
+        ? `\nNICHE GUIDANCE — hospitality (hotels, B&Bs, boutique hotels, resorts, villas, Airbnb, glamping, retreats, event venues with accommodation):
+- Frame insights around bookings, reservation requests, occupancy/availability impact, room/package interest, guest messages, and reviews.
+- Identify which content drives booking inquiries, which packages/rooms attract interest, which low-occupancy periods need promotion, and which reviews can become content (UGC/testimonial).
+- Suggest seasonal campaigns to test and CTAs that lift DIRECT bookings (vs OTA dependence).
+- If bookings, occupancy_rate, or revenue are missing, add explicit entries to missing_data — never invent them.`
+        : "";
+
     const systemPrompt = `You are an analyst that builds a per-month "Client Dashboard Context" for a marketing agency portal.
 Rules you MUST follow:
 - Use ONLY the data provided. Do NOT invent metrics, numbers, dates, or facts.
@@ -183,7 +192,7 @@ Rules you MUST follow:
 - "agency_internal_notes" can be more technical and direct.
 - "ai_priorities" must reflect the client's current_checkin priority and promoted_focus when present.
 - "recommended_widgets" maps to KPI keys present in kpi_schema.kpi_fields or kpi_schema.business_impact_fields ONLY.
-- confidence_score in [0,1] reflects how grounded the output is in the supplied data.
+- confidence_score in [0,1] reflects how grounded the output is in the supplied data.${nicheGuidance}
 Return STRICT JSON matching the requested schema. No prose outside JSON.`;
 
     const userPrompt = `Build the dashboard context for this client (year=${year}, month=${month}).
