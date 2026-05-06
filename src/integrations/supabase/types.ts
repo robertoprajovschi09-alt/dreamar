@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       agencies: {
         Row: {
+          ai_auto_execute_low: boolean
           brand_color: string | null
           created_at: string
           created_by: string | null
@@ -28,6 +29,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_auto_execute_low?: boolean
           brand_color?: string | null
           created_at?: string
           created_by?: string | null
@@ -40,6 +42,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_auto_execute_low?: boolean
           brand_color?: string | null
           created_at?: string
           created_by?: string | null
@@ -81,6 +84,95 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_action_requests: {
+        Row: {
+          action_type: string
+          agency_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          client_id: string | null
+          created_at: string
+          description: string | null
+          edited_payload: Json | null
+          executed_at: string | null
+          execution_error: string | null
+          execution_result: Json | null
+          id: string
+          payload: Json
+          reasoning: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          requested_at: string
+          requested_by_ai_output_id: string | null
+          requested_by_user_id: string | null
+          risk_level: Database["public"]["Enums"]["ai_action_risk"]
+          status: Database["public"]["Enums"]["ai_action_request_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          agency_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          edited_payload?: Json | null
+          executed_at?: string | null
+          execution_error?: string | null
+          execution_result?: Json | null
+          id?: string
+          payload?: Json
+          reasoning?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          requested_by_ai_output_id?: string | null
+          requested_by_user_id?: string | null
+          risk_level?: Database["public"]["Enums"]["ai_action_risk"]
+          status?: Database["public"]["Enums"]["ai_action_request_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          agency_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          edited_payload?: Json | null
+          executed_at?: string | null
+          execution_error?: string | null
+          execution_result?: Json | null
+          id?: string
+          payload?: Json
+          reasoning?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          requested_by_ai_output_id?: string | null
+          requested_by_user_id?: string | null
+          risk_level?: Database["public"]["Enums"]["ai_action_risk"]
+          status?: Database["public"]["Enums"]["ai_action_request_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_action_requests_requested_by_ai_output_id_fkey"
+            columns: ["requested_by_ai_output_id"]
+            isOneToOne: false
+            referencedRelation: "ai_outputs"
             referencedColumns: ["id"]
           },
         ]
@@ -3261,6 +3353,15 @@ export type Database = {
       is_saas_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      ai_action_request_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "executed"
+        | "failed"
+        | "auto_executed"
+        | "cancelled"
+      ai_action_risk: "low" | "medium" | "high" | "critical"
       app_role:
         | "saas_admin"
         | "agency_owner"
@@ -3435,6 +3536,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_action_request_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "executed",
+        "failed",
+        "auto_executed",
+        "cancelled",
+      ],
+      ai_action_risk: ["low", "medium", "high", "critical"],
       app_role: [
         "saas_admin",
         "agency_owner",

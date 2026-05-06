@@ -1,153 +1,122 @@
 
-# OpenAI AI Core — Edge Function unificat
+# AI Action Approval System
 
-Construim un singur entry-point backend pentru toate feature-urile AI, cu output JSON strict, control de rol și logging complet. Toate apelurile la OpenAI rămân pe server; cheia nu ajunge niciodată în frontend.
+Sistem dedicat de propunere → aprobare → execuție pentru orice acțiune pe care AI-ul vrea să o facă, cu nivele de risc și reguli stricte de cine poate aproba ce. Coexistă cu vechiul `ai_actions` (rămâne intact pentru compat); tot codul nou folosește `ai_action_requests`.
 
 ## 1. Bază de date — migrație nouă
 
-Tabela nouă `ai_outputs` (separată de `ai_prompt_runs`, dedicată output-urilor structurate per feature):
+```sql
+CREATE TYPE ai_action_risk AS ENUM ('low','medium','high','critical');
+CREATE TYPE ai_action_request_status AS ENUM (
+  'pending','approved','rejected','executed','failed','auto_executed','cancelled'
+);
 
-```text
-ai_outputs
-  id uuid PK
-  agency_id uuid (nullable pentru saas_admin global)
-  client_id uuid nullable
-  user_id uuid not null
-  feature text not null            -- ex: monthly_report_generation
-  context_type text                -- ex: client_dashboard, agency_overview, admin_panel
-  prompt_key text
-  prompt_version int
-  prompt_version_id uuid FK ai_prompts(id) on delete set null
-  model text
-  input_payload jsonb              -- ce a trimis caller-ul (sanitizat)
-  output_json jsonb                -- răspunsul structurat
-  output_text text                 -- generated_text
-  tokens_in int, tokens_out int
-  cost_usd numeric
-  latency_ms int
-  status text default 'success'    -- success | blocked | error | missing_data
-  error_text text
-  safety_flags jsonb default '[]'
-  confidence_score numeric
-  missing_data jsonb default '[]'
-  warnings jsonb default '[]'
-  created_at timestamptz default now()
+CREATE TABLE public.ai_action_requests (
+  id uuid PK default gen_random_uuid(),
+  agency_id uuid,                      -- nullable (admin-level critical)
+  client_id uuid,
+  requested_by_ai_output_id uuid REFERENCES ai_outputs(id) ON DELETE SET NULL,
+  requested_by_user_id uuid,           -- if user-triggered
+  action_type text NOT NULL,
+  title text NOT NULL,
+  description text,
+  payload jsonb NOT NULL DEFAULT '{}',
+  edited_payload jsonb,                -- for "edit before approve"
+  reasoning text,                      -- AI explanation
+  risk_level ai_action_risk NOT NULL DEFAULT 'medium',
+  status ai_action_request_status NOT NULL DEFAULT 'pending',
+  requested_at timestamptz NOT NULL DEFAULT now(),
+  approved_by uuid, approved_at timestamptz,
+  rejected_by uuid, rejected_at timestamptz, rejection_reason text,
+  executed_at timestamptz, execution_result jsonb, execution_error text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ON ai_action_requests (agency_id, status, created_at DESC);
+CREATE INDEX ON ai_action_requests (status, risk_level);
 ```
 
 RLS:
-- `select`: `is_saas_admin(uid) OR is_member_of(uid, agency_id) OR (client_id IS NOT NULL AND is_client_viewer_of(uid, client_id))`
-- `insert`: `user_id = auth.uid()` AND (saas_admin OR membru al agency_id-ului scris)
-- fără `delete` / `update` (append-only); doar saas_admin poate update pentru audit.
+- `select`: saas_admin OR membru al agency_id (sau record cu agency_id NULL → doar saas_admin).
+- `insert`: saas_admin OR membru al agency. Edge function folosește service role pentru AI-generated.
+- `update`: saas_admin OR membru al agency (validările pentru cine poate aproba ce risk se fac în edge function — RLS lasă doar ownership-ul).
+- fără `delete`.
 
-Index pe `(agency_id, feature, created_at desc)`, `(client_id, created_at desc)`, `(user_id)`.
+Trigger `tg_set_updated_at` pe `updated_at`.
 
-## 2. Edge function nouă: `supabase/functions/openai-ai-core/index.ts`
+Setting nou pe agency pentru auto-execute low-risk: adăugăm coloana `agencies.ai_auto_execute_low boolean default false`.
 
-Reutilizează helperele din `_shared/openai.ts` (deja avem `userClient`, `serviceClient`, `requireUser`, `getActivePrompt`, `runSafety`, `estimateCost`, `OPENAI_*`).
+## 2. Edge function: `supabase/functions/ai-action-decide/index.ts`
 
-**Request body**:
+Un singur endpoint pentru `approve | reject | execute | auto`.
+
+**Body**:
 ```ts
-{
-  feature: string,            // obligatoriu, din whitelist
-  agency_id?: string,         // obligatoriu (excepție: super_admin features)
-  client_id?: string | null,
-  input: Record<string, unknown> | string,
-  context_type?: string,      // 'client_dashboard' | 'agency_overview' | 'admin_panel' | ...
-  prompt_version_id?: string  // override versiune
-}
+{ action_id: string, decision: 'approve'|'reject'|'execute', edited_payload?: any, rejection_reason?: string }
 ```
-(`user_id` îl ia din JWT, nu din body — anti-spoofing.)
 
 **Flow**:
-1. CORS preflight.
-2. `requireUser` → JWT valid; `userId` din claims.
-3. Citește `profiles` (role, agency_id, client_id, is_saas_admin).
-4. **Whitelist feature** + maparea `feature → required_role_scope`:
-   - admin-only: `lovable_fix_prompt_generator`, `website_audit` (la nivel super) → doar `saas_admin`.
-   - agency-level: `monthly_report_generation`, `next_month_strategy`, `content_idea_generation`, `video_performance_analysis`, `health_score_explanation`, `risk_detector_analysis`, `competitor_insights`, `swipe_file_variations`, `analytics_interpretation`, `document_summary` → `agency_owner` / `agency_member` din agency_id-ul cerut.
-   - client-visible: dacă userul e `client_viewer`, permitem doar `health_score_explanation`, `monthly_report_generation` și doar pentru `client_id`-ul de care aparține; restul → 403.
-5. **Cross-agency guard**: dacă userul nu e saas_admin și `agency_id` ≠ profil/membership → 403. Dacă `client_id` setat, verifică `clients.agency_id = agency_id`.
-6. Încarcă promptul:
-   - dacă `prompt_version_id` → fetch by id;
-   - altfel `getActivePrompt(svc, feature, agency_id)` (cheia = `feature`).
-   - 404 dacă lipsește, cu hint clar.
-7. Construiește **context permis** prin helper intern `loadContext(feature, role, agency_id, client_id)`:
-   - client_viewer: doar date despre `client_id` propriu (KPI-uri publice ale clientului).
-   - agency: date din `agency_id` (clienti, KPI agregat).
-   - saas_admin: agregat global / metadata sistem.
-   - dacă o sursă lipsește, adaugă în `missing_data`.
-8. Safety pe input + context (`runSafety`). Dacă `block` → log status='blocked' și 422.
-9. Compose messages:
-   - system = `promptRow.developer_prompt || promptRow.content` + reguli globale (vezi mai jos).
-   - user = JSON cu `{ feature, context_type, input, context, missing_data }`.
-10. **Apel OpenAI** la `${OPENAI_BASE_URL}/chat/completions` cu:
-    - `model = promptRow.model || OPENAI_MODEL || 'gpt-5.2'` (fallback in code, easy override via env).
-    - `response_format: { type: 'json_object' }`.
-    - `temperature = promptRow.temperature ?? 0.2`.
-11. Parse JSON. Dacă fail → re-prompt cu mesaj de corecție o singură dată; dacă tot eșuează → status='error', salvează raw în `output_text`, return 502.
-12. Validează cheile cerute (vezi schema mai jos); completează cu null/[] dacă lipsesc.
-13. Safety pe output. Dacă `block` → status='blocked'.
-14. Insert în `ai_outputs` (input sanitizat, output_json, tokens, cost via `estimateCost`, latency, status, safety_flags, confidence_score, missing_data, warnings).
-15. Mirror minimal în `ai_prompt_runs` (compatibilitate cu Learning Loop existent).
-16. Răspunde cu `{ output_id, output: <json structurat>, tokens, cost_usd, model, prompt_version }`.
+1. Auth + load profile (role, is_saas_admin) + load action_request via service role.
+2. Validare matrice risk → role (în cod):
+   - `low`: orice membru agency. Dacă `agencies.ai_auto_execute_low=true` și request creat de AI, `auto` permis.
+   - `medium`: membru agency.
+   - `high`: doar `agency_owner` sau `saas_admin`.
+   - `critical`: doar `saas_admin`.
+3. Pe `approve`: setează `status='approved'`, `approved_by`, `approved_at`. Dacă `edited_payload` trimis, salvează-l.
+4. Pe `reject`: `status='rejected'`, `rejected_*`, `rejection_reason`.
+5. Pe `execute` (după aprobare):
+   - Re-validează rolul; verifică `status='approved'`.
+   - Dispatch pe `action_type` (lista sub) folosind clientul user-scoped (RLS).
+   - `suggest_*` și `lovable_fix_prompt_generator` → no-op care marchează `executed_at` (review-only).
+   - `update_prompt_version` și orice `*_security_change`/`*_database_change`/`*_pricing_change` → execuție blocată dacă risk≠critical sau approver nu e saas_admin → 403.
+   - `send_report_to_client`, `update_prompt_version` setează `executed_at` și salvează `execution_result`.
+6. Pe failure: `status='failed'`, `execution_error`.
+7. Log în `ai_audit_events`.
 
-**Reguli globale injectate în system prompt**:
-- "Răspunde STRICT cu JSON valid în acest schema." + schema text.
-- "Folosește doar datele primite. Dacă lipsesc, adaugă-le în `missing_data` și NU inventa cifre."
-- "Nu menționa alte agenții sau date interne." (relevant când rolul e client_viewer).
+**Action types acceptate**: `create_task`, `update_task`, `create_content_idea`, `create_calendar_item`, `generate_report`, `send_report_to_client`, `create_strategy`, `update_prompt_version`, `create_lovable_prompt`, `suggest_database_change`, `suggest_ui_change`, `suggest_pricing_change`, `suggest_security_change`. Orice action_type necunoscut → 400.
 
-**Schema răspuns enforced**:
-```json
-{
-  "title": "string",
-  "summary": "string",
-  "insights": ["string"],
-  "recommendations": ["string"],
-  "missing_data": ["string"],
-  "confidence_score": 0.0,
-  "action_items": [{ "title": "string", "priority": "low|medium|high", "owner": "string|null" }],
-  "warnings": ["string"],
-  "generated_text": "string"
-}
-```
+**Default risk per type** (folosit la INSERT dacă apelantul nu specifică, helper SQL `default_risk_for(text)`):
+- low: `create_content_idea`, `suggest_ui_change`
+- medium: `create_task`, `update_task`, `create_calendar_item`, `create_strategy`, `create_lovable_prompt`, `generate_report`
+- high: `send_report_to_client`, `update_prompt_version`
+- critical: `suggest_database_change`, `suggest_pricing_change`, `suggest_security_change`
 
-## 3. Securitate
+## 3. Helper frontend
 
-- `OPENAI_API_KEY` rămâne secret Supabase (deja există). Nu e expus niciodată.
-- Toate apelurile OpenAI se fac din această edge function.
-- RLS pe `ai_outputs` + verificare aplicativă a rolului înainte de fetch context.
-- Client viewer NU primește context intern (lista clienților agenției, KPI agency-wide, billing, etc.) — `loadContext` filtrează la sursă.
-- Agency members NU pot citi date din alte agency_id (verificare explicită + RLS pe sursele de context).
-- Saas admin nu primește date operaționale ale clienților decât prin features marcate „admin” (zonele administrative).
+`src/lib/aiActionRequests.ts`:
+- `requestAiAction({...})` → insert via service-role NU; folosim `supabase.from('ai_action_requests').insert(...)` (e ok, RLS permite membrilor).
+- `decideAiAction(id, decision, opts)` → invoke `ai-action-decide`.
 
-## 4. Frontend
+## 4. UI — Admin AI Actions
 
-- Nu modificăm UI-ul existent acum. Doar adăugăm un helper `src/lib/aiCore.ts` care invocă funcția:
-```ts
-supabase.functions.invoke("openai-ai-core", { body: {...} })
-```
-Componente existente (AiActions, AiAssistant, rapoarte) pot migra ulterior la acest endpoint unificat.
+Pagină nouă `src/pages/admin/AiActionsApprovalQueue.tsx`, rută `/admin/ai-actions`, cu link în AdminLayout. Conținut:
 
-## 5. Whitelist features (constantă în function)
+- Filtre: `status` (pending default), `risk_level`, `agency_id` (saas_admin).
+- Card per request: `title`, `risk_level` (badge color-coded), `action_type`, `description`, `reasoning` (AI), payload preview JSON colapsabil, sursa (`ai_output` link), agency/client.
+- Acțiuni:
+  - **Approve** (disabled dacă rolul nu permite risk-ul respectiv);
+  - **Approve & Execute** (one-click);
+  - **Edit & Approve** (deschide dialog cu textarea JSON pentru `edited_payload`);
+  - **Reject** (dialog pentru `rejection_reason`);
+  - **Execute** (apare doar pe `approved`);
+- Tab „History” pentru `executed | rejected | failed`.
 
-```ts
-const FEATURES = [
-  "monthly_report_generation","next_month_strategy","content_idea_generation",
-  "video_performance_analysis","health_score_explanation","risk_detector_analysis",
-  "website_audit","lovable_fix_prompt_generator","document_summary",
-  "competitor_insights","swipe_file_variations","analytics_interpretation"
-];
-```
-Orice `feature` în afara listei → 400.
+Și pagina existentă `src/pages/agency/AiActions.tsx` o actualizăm să folosească noul tabel `ai_action_requests` în paralel cu vechiul (fallback grațios), fără regresie.
 
-## 6. Config
+## 5. Securitate
 
-- `supabase/config.toml`: nu modificăm (deploy default `verify_jwt=false`, validăm în cod cu `getClaims`).
-- Modelul se schimbă doar din env (`OPENAI_MODEL`), fallback hardcodat `gpt-5.2`.
+- AI-ul (server-side) nu execută niciodată direct; toate rutele de execuție merg prin `ai-action-decide` care necesită JWT user.
+- Critical actions necesită `is_saas_admin=true` la approve ȘI la execute.
+- High actions necesită `agency_owner` (verificat prin `is_owner_of`).
+- Low/medium pot fi aprobate de orice agency member; auto-execute doar dacă agency a activat explicit.
+- Niciun action type nu permite ștergere de date nici acum (toate handlerele fac doar insert/update controlate; suggest_* sunt review-only).
+- `RLS` previne cross-agency leakage.
 
 ## Files
-
-- create `supabase/migrations/<ts>_ai_outputs.sql`
-- create `supabase/functions/openai-ai-core/index.ts`
-- create `src/lib/aiCore.ts`
-- edit `src/integrations/supabase/types.ts` (auto-regenerate)
+- create `supabase/migrations/<ts>_ai_action_requests.sql`
+- create `supabase/functions/ai-action-decide/index.ts`
+- create `src/lib/aiActionRequests.ts`
+- create `src/pages/admin/AiActionsApprovalQueue.tsx`
+- edit `src/App.tsx` (rută)
+- edit `src/components/AdminLayout.tsx` (link)
+- edit `src/pages/agency/AiActions.tsx` (citire din noul tabel + butoane decide)
