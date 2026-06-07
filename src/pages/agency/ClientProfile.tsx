@@ -115,7 +115,18 @@ export default function ClientProfile() {
 
         <TabsContent value="overview">
           <div className="space-y-4">
-            <HealthScoreCard clientId={client.id} />
+            {collecting ? (
+              <Card>
+                <CardContent className="py-6 flex items-start gap-3">
+                  <CollectingDataBadge />
+                  <p className="text-sm text-muted-foreground">
+                    We'll start scoring health and risk after 30 days or once analytics / business-impact data is added.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <HealthScoreCard clientId={client.id} />
+            )}
             <DashboardContextCard agencyId={client.agency_id} clientId={client.id} />
             <LatestCheckInCard clientId={client.id} />
             <OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} />
