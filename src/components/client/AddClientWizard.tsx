@@ -59,6 +59,7 @@ type Form = {
   // 1
   name: string; website: string; logo_url: string; brand_color: string;
   contact_person: string; contact_email: string; contact_phone: string; status: string;
+  city: string;
   // 2
   niche: string; custom_niche: string; niche_id: string | null; creating_custom_niche: boolean;
   kpi_fields: KpiField[]; business_impact_fields: KpiField[]; monthly_questions: Question[];
