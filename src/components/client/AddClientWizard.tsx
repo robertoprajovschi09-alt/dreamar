@@ -96,13 +96,13 @@ const empty: Form = {
 };
 
 const STEPS = [
-  { n: 1, title: "Basics" },
-  { n: 2, title: "Niche & KPIs" },
-  { n: 3, title: "Platforms" },
-  { n: 4, title: "Goals" },
+  { n: 1, title: "Date de bază" },
+  { n: 2, title: "Nișă & KPI" },
+  { n: 3, title: "Platforme" },
+  { n: 4, title: "Obiective" },
   { n: 5, title: "Context" },
-  { n: 6, title: "Invite" },
-  { n: 7, title: "Review" },
+  { n: 6, title: "Invitație" },
+  { n: 7, title: "Verificare" },
 ];
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
@@ -280,7 +280,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
 
   // ----- Step 5 AI -----
   const generateStrategy = async () => {
-    if (!form.name.trim()) { toast.error("Add the client name first."); return; }
+    if (!form.name.trim()) { toast.error("Adaugă mai întâi numele clientului."); return; }
     setAiBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("client-strategy-base", {
@@ -295,7 +295,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       if (error) { toast.error(error.message); return; }
       if ((data as any)?.error) { toast.error((data as any).error); return; }
       set("strategy", (data as any).strategy);
-      toast.success("Strategy base generated");
+      toast.success("Bază de strategie generată");
     } finally { setAiBusy(false); }
   };
 
@@ -317,17 +317,17 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
   // ----- Validation -----
   const validateStep = (): string | null => {
     if (step === 1) {
-      if (!form.name.trim()) return "Client name is required.";
+      if (!form.name.trim()) return "Numele clientului este obligatoriu.";
     }
     if (step === 2) {
-      if (!form.niche_id && !form.creating_custom_niche) return "Pick a niche or create a custom one.";
+      if (!form.niche_id && !form.creating_custom_niche) return "Alege o nișă sau creează una personalizată.";
       if (form.creating_custom_niche) {
-        if (!form.custom_niche.trim()) return "Enter a custom niche name.";
-        if (!form.kpi_fields.some((k) => k.label.trim())) return "Add at least one KPI for the custom niche.";
+        if (!form.custom_niche.trim()) return "Introdu un nume pentru nișa personalizată.";
+        if (!form.kpi_fields.some((k) => k.label.trim())) return "Adaugă cel puțin un KPI pentru nișa personalizată.";
       }
     }
     if (step === 6 && form.invite_enabled) {
-      if (!form.invite_email.trim()) return "Enter an invite email.";
+      if (!form.invite_email.trim()) return "Introdu un email pentru invitație.";
     }
     return null;
   };
@@ -354,7 +354,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
         const { data: nicheRow, error: nErr } = await supabase.from("niches").insert({
           agency_id: agencyId, key: niceKey, label: niceLabel, is_custom: true, created_by: user.id,
         }).select("id").single();
-        if (nErr || !nicheRow) { toast.error(nErr?.message || "Could not save custom niche"); return; }
+        if (nErr || !nicheRow) { toast.error(nErr?.message || "Nu s-a putut salva nișa personalizată"); return; }
         nicheId = nicheRow.id as string;
 
         const validKpis = form.kpi_fields.filter((k) => k.label.trim());
@@ -415,7 +415,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
       };
 
       const { data: clientRow, error: cErr } = await supabase.from("clients").insert(clientPayload).select("id").single();
-      if (cErr || !clientRow) { toast.error(cErr?.message || "Could not create client"); return; }
+      if (cErr || !clientRow) { toast.error(cErr?.message || "Nu s-a putut crea clientul"); return; }
       const clientId = clientRow.id as string;
 
       // Per-client KPI snapshot (drives dashboard / analytics / monthly reports)
@@ -512,14 +512,14 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           permissions: form.invite_permissions as any,
           invited_by: user.id,
         }).select("token").single();
-        if (iErr) toast.error(`Client created, invite failed: ${iErr.message}`);
+        if (iErr) toast.error(`Client creat, invitația a eșuat: ${iErr.message}`);
         else {
           const link = `${window.location.origin}/accept-invite?token=${inv!.token}`;
           setInviteLink(link);
         }
       }
 
-      toast.success("Client workspace created");
+      toast.success("Spațiul de lucru al clientului a fost creat");
       clearDraft();
       onCreated?.(clientId);
       if (!form.invite_enabled) {
@@ -535,12 +535,12 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
   const copyInvite = async () => {
     if (!inviteLink) return;
     await navigator.clipboard.writeText(inviteLink);
-    toast.success("Link copied");
+    toast.success("Link copiat");
   };
 
   const progress = (step / 7) * 100;
   const nicheLabelText = useMemo(
-    () => form.creating_custom_niche ? (form.custom_niche || "Custom") : (selectedNiche?.label || "—"),
+    () => form.creating_custom_niche ? (form.custom_niche || "Personalizată") : (selectedNiche?.label || "—"),
     [form.creating_custom_niche, form.custom_niche, selectedNiche],
   );
 
@@ -550,7 +550,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-accent" />
-            <DialogTitle>Add new client</DialogTitle>
+            <DialogTitle>Adaugă client nou</DialogTitle>
           </div>
           <div className="mt-3 space-y-2">
             <Progress value={progress} className="h-1.5" />
@@ -577,7 +577,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           {hasDraft && !draftLoaded && (
             <div className="flex items-center justify-between gap-3 p-3 rounded-md border border-accent/40 bg-accent/5 text-sm">
-              <span>Am găsit un draft salvat. Continui de unde ai rămas?</span>
+              <span>Există un draft salvat. Continuăm de unde am rămas?</span>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={discardDraft}>Șterge</Button>
                 <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground" onClick={continueDraft}>Continuă</Button>
@@ -588,7 +588,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label>Client / brand name *</Label>
+                <Label>Numele clientului / brandului *</Label>
                 <Input autoFocus value={form.name} onChange={(e) => set("name", e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -607,8 +607,8 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>City</Label>
-                <Input placeholder="Optional" value={form.city} onChange={(e) => set("city", e.target.value)} />
+                <Label>Oraș</Label>
+                <Input placeholder="Opțional" value={form.city} onChange={(e) => set("city", e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -616,14 +616,14 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                   <div className="flex items-center gap-2">
                     <label className="inline-flex items-center gap-2 px-3 py-2 border rounded-md cursor-pointer hover:bg-muted text-sm">
                       {logoUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                      Upload
+                      Încarcă
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onLogoFile(e.target.files[0])} />
                     </label>
                     {form.logo_url && <img src={form.logo_url} alt="logo" className="h-10 w-10 rounded object-cover border" />}
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Brand color</Label>
+                  <Label>Culoare brand</Label>
                   <div className="flex gap-2">
                     <Input type="color" className="w-14 p-1 h-10" value={form.brand_color} onChange={(e) => set("brand_color", e.target.value)} />
                     <Input value={form.brand_color} onChange={(e) => set("brand_color", e.target.value)} />
@@ -631,10 +631,10 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                 </div>
               </div>
               <div className="pt-2 border-t">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Primary contact</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Persoană de contact</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <Input placeholder="Name" value={form.contact_person} onChange={(e) => set("contact_person", e.target.value)} />
-                  <Input placeholder="Phone (optional)" value={form.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} />
+                  <Input placeholder="Nume" value={form.contact_person} onChange={(e) => set("contact_person", e.target.value)} />
+                  <Input placeholder="Telefon (opțional)" value={form.contact_phone} onChange={(e) => set("contact_phone", e.target.value)} />
                 </div>
                 <Input className="mt-3" type="email" placeholder="Email" value={form.contact_email} onChange={(e) => set("contact_email", e.target.value)} />
               </div>
@@ -654,50 +654,50 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                     if (n) applyNicheFromLibrary(n);
                   }}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select a niche…" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Alege o nișă…" /></SelectTrigger>
                   <SelectContent>
                     {nicheLib.some((n) => n.is_custom) && (
-                      <div className="px-2 pt-1.5 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">My agency niches</div>
+                      <div className="px-2 pt-1.5 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Nișele agenției mele</div>
                     )}
                     {nicheLib.filter((n) => n.is_custom).map((n) => (
                       <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
                     ))}
-                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Global presets</div>
+                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Presetări globale</div>
                     {nicheLib.filter((n) => !n.is_custom).map((n) => (
                       <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
                     ))}
-                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Other</div>
-                    <SelectItem value="__new__">+ Create custom niche</SelectItem>
+                    <div className="px-2 pt-2 pb-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">Altele</div>
+                    <SelectItem value="__new__">+ Creează nișă personalizată</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {form.creating_custom_niche && (
                 <div className="space-y-1.5 rounded-md border border-dashed p-3 bg-muted/30">
-                  <Label>Custom Niche Name *</Label>
+                  <Label>Numele nișei personalizate *</Label>
                   <Input
                     autoFocus
-                    placeholder="Ex: Dental Clinic, Luxury Hotel, Car Dealership, Local Bakery"
+                    placeholder="Ex: Clinică stomatologică, Hotel de lux, Dealer auto, Brutărie locală"
                     value={form.custom_niche}
                     onChange={(e) => set("custom_niche", e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    This niche will be saved to your agency library and reusable for future clients.
+                    Această nișă va fi salvată în biblioteca agenției și reutilizabilă pentru clienții viitori.
                   </p>
                 </div>
               )}
 
               <KpiEditor
-                title="Custom KPIs"
-                description="Metrics you want to track for this niche."
+                title="KPI personalizate"
+                description="Metricile pe care vrei să le urmărești pentru această nișă."
                 items={form.kpi_fields}
                 onAdd={addKpi}
                 onRemove={removeKpi}
                 onUpdate={updateKpi}
               />
               <FieldEditor
-                title="Custom Business Impact Fields"
-                description="What the client fills in every month (e.g. new customers, sales, calls)."
+                title="Câmpuri personalizate de impact în business"
+                description="Ce completează clientul lunar (ex: clienți noi, vânzări, apeluri)."
                 items={form.business_impact_fields}
                 onAdd={addBI}
                 onRemove={removeBI}
@@ -707,15 +707,15 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Custom Monthly Questions</Label>
-                    <p className="text-xs text-muted-foreground">Open-ended prompts the client answers each month.</p>
+                    <Label>Întrebări lunare personalizate</Label>
+                    <p className="text-xs text-muted-foreground">Întrebări deschise la care clientul răspunde lunar.</p>
                   </div>
-                  <Button type="button" size="sm" variant="outline" onClick={addQ}><Plus className="h-3 w-3 mr-1" />Add</Button>
+                  <Button type="button" size="sm" variant="outline" onClick={addQ}><Plus className="h-3 w-3 mr-1" />Adaugă</Button>
                 </div>
                 <div className="space-y-2">
                   {form.monthly_questions.map((q, i) => (
                     <div key={i} className="flex gap-2">
-                      <Input value={q.label} onChange={(e) => updateQ(i, e.target.value)} placeholder="Question" />
+                      <Input value={q.label} onChange={(e) => updateQ(i, e.target.value)} placeholder="Întrebare" />
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeQ(i)}><X className="h-4 w-4" /></Button>
                     </div>
                   ))}
@@ -763,7 +763,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           {step === 4 && (
             <div className="space-y-4">
               <div>
-                <Label>Quick goal templates</Label>
+                <Label>Șabloane rapide de obiective</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {QUICK_GOALS.map((g) => (
                     <button type="button" key={g} onClick={() => addGoal(g)}
@@ -772,7 +772,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                     </button>
                   ))}
                   <button type="button" onClick={() => addGoal("")} className="px-3 py-1.5 rounded-full text-sm border bg-accent/10 hover:bg-accent/20">
-                    <Plus className="h-3 w-3 inline -mt-0.5 mr-1" />Custom goal
+                    <Plus className="h-3 w-3 inline -mt-0.5 mr-1" />Obiectiv personalizat
                   </button>
                 </div>
               </div>
@@ -780,23 +780,23 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                 {form.goals.map((g, i) => (
                   <div key={i} className="border rounded-md p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <Input placeholder="Goal name" value={g.name} onChange={(e) => updateGoal(i, { name: e.target.value })} />
+                      <Input placeholder="Numele obiectivului" value={g.name} onChange={(e) => updateGoal(i, { name: e.target.value })} />
                       <Button type="button" variant="ghost" size="icon" onClick={() => removeGoal(i)}><X className="h-4 w-4" /></Button>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
-                      <Input placeholder="Target metric" value={g.metric} onChange={(e) => updateGoal(i, { metric: e.target.value })} />
-                      <Input type="number" placeholder="Target value" value={g.target} onChange={(e) => updateGoal(i, { target: e.target.value })} />
+                      <Input placeholder="Metrică țintă" value={g.metric} onChange={(e) => updateGoal(i, { metric: e.target.value })} />
+                      <Input type="number" placeholder="Valoare țintă" value={g.target} onChange={(e) => updateGoal(i, { target: e.target.value })} />
                       <Input type="date" value={g.deadline} onChange={(e) => updateGoal(i, { deadline: e.target.value })} />
                       <Select value={g.priority} onValueChange={(v) => updateGoal(i, { priority: v as any })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="low">Scăzută</SelectItem>
+                          <SelectItem value="medium">Medie</SelectItem>
+                          <SelectItem value="high">Înaltă</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <Textarea rows={2} placeholder="Notes" value={g.notes} onChange={(e) => updateGoal(i, { notes: e.target.value })} />
+                    <Textarea rows={2} placeholder="Note" value={g.notes} onChange={(e) => updateGoal(i, { notes: e.target.value })} />
                   </div>
                 ))}
               </div>
@@ -806,34 +806,34 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           {/* STEP 5 */}
           {step === 5 && (
             <div className="space-y-3">
-              <Field label="What does this client sell?" v={form.sells} onChange={(v) => set("sells", v)} area />
-              <Field label="Main services / products" v={form.services} onChange={(v) => set("services", v)} placeholder="Comma separated" />
-              <Field label="Target audience" v={form.target_audience} onChange={(v) => set("target_audience", v)} area />
-              <Field label="Unique selling points" v={form.usp} onChange={(v) => set("usp", v)} area />
-              <Field label="Tone of voice" v={form.tone_of_voice} onChange={(v) => set("tone_of_voice", v)} />
-              <Field label="Competitors" v={form.competitors} onChange={(v) => set("competitors", v)} area />
-              <Field label="Common objections" v={form.objections} onChange={(v) => set("objections", v)} area />
-              <Field label="Offers / promotions" v={form.offers} onChange={(v) => set("offers", v)} area />
-              <Field label="Important notes" v={form.notes} onChange={(v) => set("notes", v)} area />
+              <Field label="Ce vinde acest client?" v={form.sells} onChange={(v) => set("sells", v)} area />
+              <Field label="Servicii / produse principale" v={form.services} onChange={(v) => set("services", v)} placeholder="Separate prin virgulă" />
+              <Field label="Public țintă" v={form.target_audience} onChange={(v) => set("target_audience", v)} area />
+              <Field label="Puncte unice de vânzare" v={form.usp} onChange={(v) => set("usp", v)} area />
+              <Field label="Ton al vocii" v={form.tone_of_voice} onChange={(v) => set("tone_of_voice", v)} />
+              <Field label="Concurenți" v={form.competitors} onChange={(v) => set("competitors", v)} area />
+              <Field label="Obiecții frecvente" v={form.objections} onChange={(v) => set("objections", v)} area />
+              <Field label="Oferte / promoții" v={form.offers} onChange={(v) => set("offers", v)} area />
+              <Field label="Note importante" v={form.notes} onChange={(v) => set("notes", v)} area />
 
               <div className="border rounded-md p-3 bg-muted/40">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="font-medium text-sm flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-accent" /> Generate Client Strategy Base</p>
-                    <p className="text-xs text-muted-foreground">AI uses what you've entered to draft summary, pillars, KPIs, content ideas.</p>
+                    <p className="font-medium text-sm flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-accent" /> Generează baza de strategie</p>
+                    <p className="text-xs text-muted-foreground">AI folosește ce ai introdus pentru a schița rezumat, piloni, KPI, idei de conținut.</p>
                   </div>
                   <Button type="button" onClick={generateStrategy} disabled={aiBusy}>
-                    {aiBusy && <Loader2 className="h-3 w-3 animate-spin mr-1" />}Generate
+                    {aiBusy && <Loader2 className="h-3 w-3 animate-spin mr-1" />}Generează
                   </Button>
                 </div>
                 {form.strategy && (
                   <div className="mt-3 text-sm space-y-2">
-                    <p><b>Summary.</b> {form.strategy.summary}</p>
-                    <StrategyList title="Content pillars" items={form.strategy.content_pillars} />
-                    <StrategyList title="Suggested KPIs" items={form.strategy.suggested_kpis} />
-                    <StrategyList title="Recommended platforms" items={form.strategy.recommended_platforms} />
-                    <StrategyList title="Initial content ideas" items={form.strategy.initial_content_ideas} />
-                    <StrategyList title="Monthly reporting focus" items={form.strategy.monthly_reporting_focus} />
+                    <p><b>Rezumat.</b> {form.strategy.summary}</p>
+                    <StrategyList title="Piloni de conținut" items={form.strategy.content_pillars} />
+                    <StrategyList title="KPI sugerate" items={form.strategy.suggested_kpis} />
+                    <StrategyList title="Platforme recomandate" items={form.strategy.recommended_platforms} />
+                    <StrategyList title="Idei inițiale de conținut" items={form.strategy.initial_content_ideas} />
+                    <StrategyList title="Focus pentru raportarea lunară" items={form.strategy.monthly_reporting_focus} />
                   </div>
                 )}
               </div>
@@ -845,26 +845,26 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
             <div className="space-y-4">
               <div className="flex items-center justify-between border rounded-md p-3">
                 <div>
-                  <p className="font-medium text-sm">Invite client to portal</p>
-                  <p className="text-xs text-muted-foreground">Skip to create the client without an invite — you can send one later.</p>
+                  <p className="font-medium text-sm">Invită clientul în portal</p>
+                  <p className="text-xs text-muted-foreground">Sari peste pentru a crea clientul fără invitație — o poți trimite mai târziu.</p>
                 </div>
                 <Switch checked={form.invite_enabled} onCheckedChange={(v) => set("invite_enabled", v)} />
               </div>
               {form.invite_enabled && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <Input placeholder="Client user name" value={form.invite_name} onChange={(e) => set("invite_name", e.target.value)} />
-                    <Input type="email" placeholder="Client email" value={form.invite_email} onChange={(e) => set("invite_email", e.target.value)} />
+                    <Input placeholder="Numele utilizatorului client" value={form.invite_name} onChange={(e) => set("invite_name", e.target.value)} />
+                    <Input type="email" placeholder="Email client" value={form.invite_email} onChange={(e) => set("invite_email", e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Role</Label>
+                    <Label>Rol</Label>
                     <Select value={form.invite_role} onValueChange={(v) => set("invite_role", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Permissions</Label>
+                    <Label>Permisiuni</Label>
                     {PERMISSION_DEFS.map((p) => (
                       <div key={p.key} className="flex items-center justify-between border rounded-md px-3 py-2">
                         <span className="text-sm">{p.label}</span>
@@ -887,37 +887,37 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                     <p className="text-sm font-medium">{form.name || "—"}</p>
                     <p className="text-xs text-muted-foreground">{nicheLabelText}{form.website ? ` · ${form.website}` : ""}</p>
                   </SummaryCard>
-                  <SummaryCard title="KPIs & impact">
+                  <SummaryCard title="KPI & impact">
                     <div className="flex flex-wrap gap-1">
                       {form.kpi_fields.map((k) => <Badge key={k.key} variant="secondary">{k.label || k.key}</Badge>)}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{form.business_impact_fields.length} business impact fields · {form.monthly_questions.length} monthly questions</p>
+                    <p className="text-xs text-muted-foreground mt-1">{form.business_impact_fields.length} câmpuri de impact · {form.monthly_questions.length} întrebări lunare</p>
                   </SummaryCard>
-                  <SummaryCard title="Platforms">
+                  <SummaryCard title="Platforme">
                     <div className="flex flex-wrap gap-1">
                       {form.platforms.map((p) => <Badge key={p.platform}>{PLATFORMS.find((x) => x.value === p.platform)?.label}</Badge>)}
-                      {form.platforms.length === 0 && <span className="text-xs text-muted-foreground">None</span>}
+                      {form.platforms.length === 0 && <span className="text-xs text-muted-foreground">Niciuna</span>}
                     </div>
                   </SummaryCard>
-                  <SummaryCard title="Goals">
-                    {form.goals.length === 0 && <span className="text-xs text-muted-foreground">None</span>}
+                  <SummaryCard title="Obiective">
+                    {form.goals.length === 0 && <span className="text-xs text-muted-foreground">Niciunul</span>}
                     {form.goals.map((g, i) => (
-                      <p key={i} className="text-sm">{g.name || "(unnamed)"} <span className="text-xs text-muted-foreground">— {g.priority}</span></p>
+                      <p key={i} className="text-sm">{g.name || "(fără nume)"} <span className="text-xs text-muted-foreground">— {g.priority}</span></p>
                     ))}
                   </SummaryCard>
-                  <SummaryCard title="Portal invite">
-                    <p className="text-sm">{form.invite_enabled ? `${form.invite_email} · ${form.invite_role}` : "Not sending now"}</p>
+                  <SummaryCard title="Invitație în portal">
+                    <p className="text-sm">{form.invite_enabled ? `${form.invite_email} · ${form.invite_role}` : "Nu se trimite acum"}</p>
                   </SummaryCard>
                 </>
               )}
               {inviteLink && (
                 <div className="border rounded-md p-3 space-y-2 bg-accent/5">
-                  <p className="font-medium text-sm">Invite link</p>
+                  <p className="font-medium text-sm">Link de invitație</p>
                   <div className="flex gap-2">
                     <Input readOnly value={inviteLink} />
                     <Button type="button" variant="outline" onClick={copyInvite}><Copy className="h-3.5 w-3.5" /></Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Share this with the client; it expires in 7 days.</p>
+                  <p className="text-xs text-muted-foreground">Trimite-l clientului; expiră în 7 zile.</p>
                 </div>
               )}
             </div>
@@ -926,21 +926,21 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
 
         <div className="border-t px-6 py-3 flex items-center justify-between">
           <Button type="button" variant="ghost" onClick={back} disabled={step === 1 || busy}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            <ArrowLeft className="h-4 w-4 mr-1" /> Înapoi
           </Button>
           <div className="flex gap-2">
             {step < 7 && (
               <Button type="button" onClick={next} disabled={busy}>
-                Next <ArrowRight className="h-4 w-4 ml-1" />
+                Înainte <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             )}
             {step === 7 && !inviteLink && (
               <Button type="button" onClick={provision} disabled={busy}>
-                {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />} Create Client Workspace
+                {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />} Creează spațiu client
               </Button>
             )}
             {step === 7 && inviteLink && (
-              <Button type="button" onClick={() => close(false)}>Done</Button>
+              <Button type="button" onClick={() => close(false)}>Gata</Button>
             )}
           </div>
         </div>
