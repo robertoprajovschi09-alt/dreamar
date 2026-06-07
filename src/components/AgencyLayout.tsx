@@ -55,6 +55,22 @@ export default function AgencyLayout() {
   const { profile, agency } = useUser();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const mobilePrimary = [
+    { to: "/agency", icon: LayoutDashboard, label: "Dashboard", end: true },
+    { to: "/agency/clients", icon: Users, label: "Clients" },
+    { to: "/agency/content", icon: FileVideo, label: "Content" },
+    { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
+  ];
+  const mobileMore = [
+    { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
+    { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
+    { to: "/agency/reports", icon: FileText, label: "Reports" },
+    ...secondaryNav,
+    ...remainingNav,
+  ];
+
 
   return (
     <div className="min-h-screen flex w-full bg-background text-foreground">
