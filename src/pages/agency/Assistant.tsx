@@ -154,15 +154,15 @@ export default function Assistant() {
 
   const suggestions = scopeClient !== "none"
     ? [
-        "Summarize this client's last 30 days of performance.",
-        "Suggest 5 hooks for the next reel.",
-        "What are the top recommendations to improve engagement?",
-        "Draft a content calendar for next week.",
+        "Rezumă performanța din ultimele 30 de zile pentru acest client.",
+        "Propune 5 hook-uri pentru următorul reel.",
+        "Care sunt principalele recomandări pentru a crește engagement-ul?",
+        "Schițează un calendar de conținut pentru săptămâna următoare.",
       ]
     : [
-        "Which clients are underperforming this month?",
-        "Give me a weekly priority list across all clients.",
-        "What are common engagement patterns in my portfolio?",
+        "Care clienți performează slab luna aceasta?",
+        "Dă-mi o listă săptămânală de priorități pentru toți clienții.",
+        "Care sunt tiparele comune de engagement din portofoliul meu?",
       ];
 
   return (
@@ -170,11 +170,11 @@ export default function Assistant() {
       <aside className="w-64 border-r border-border hidden lg:flex flex-col">
         <div className="p-3 border-b border-border">
           <Button onClick={newChat} className="w-full" size="sm">
-            <Plus className="h-4 w-4 mr-1.5" /> New chat
+            <Plus className="h-4 w-4 mr-1.5" /> Conversație nouă
           </Button>
         </div>
         <div className="flex-1 overflow-auto p-2 space-y-1">
-          {convs.length === 0 && <div className="text-xs text-muted-foreground px-3 py-6 text-center">No chats yet</div>}
+          {convs.length === 0 && <div className="text-xs text-muted-foreground px-3 py-6 text-center">Nicio conversație încă</div>}
           {convs.map((c) => (
             <button
               key={c.id}
@@ -186,7 +186,7 @@ export default function Assistant() {
             >
               <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <div className="truncate">{c.title || "Untitled"}</div>
+                <div className="truncate">{c.title || "Fără titlu"}</div>
                 {c.client_id && <div className="text-[10px] text-muted-foreground truncate">{clientName(c.client_id)}</div>}
               </div>
             </button>
@@ -198,12 +198,12 @@ export default function Assistant() {
         <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-accent" />
-            <h1 className="text-lg font-semibold">AI Assistant</h1>
+            <h1 className="text-lg font-semibold">Asistent AI</h1>
           </div>
           <Select value={scopeClient} onValueChange={setScopeClient} disabled={!!activeId}>
-            <SelectTrigger className="w-56"><SelectValue placeholder="Scope" /></SelectTrigger>
+            <SelectTrigger className="w-56"><SelectValue placeholder="Context" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Whole agency</SelectItem>
+              <SelectItem value="none">Toată agenția</SelectItem>
               {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -216,8 +216,8 @@ export default function Assistant() {
                 <Sparkles className="h-7 w-7 text-accent" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold">How can I help?</h2>
-                <p className="text-sm text-muted-foreground mt-1">Ask anything about your clients, content, or performance.</p>
+                <h2 className="text-xl font-semibold">Cu ce te pot ajuta?</h2>
+                <p className="text-sm text-muted-foreground mt-1">Întreabă orice despre clienți, conținut sau performanță.</p>
               </div>
               <div className="grid sm:grid-cols-2 gap-2 text-left">
                 {suggestions.map((s) => (
@@ -255,7 +255,7 @@ export default function Assistant() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Ask about performance, plan content, draft hooks…"
+              placeholder="Întreabă despre performanță, planifică conținut, schițează hook-uri…"
               rows={2}
               className="resize-none"
               disabled={streaming}

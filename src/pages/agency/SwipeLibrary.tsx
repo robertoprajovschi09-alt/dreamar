@@ -81,8 +81,8 @@ export default function SwipeLibrary() {
       <div className="p-6 md:p-8 max-w-3xl">
         <Card className="p-8 text-center">
           <Lock className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Swipe File is a premium feature</h2>
-          <p className="text-sm text-muted-foreground mt-1">Upgrade your plan to build a reusable library of hooks, scripts and ideas.</p>
+          <h2 className="text-lg font-semibold">Biblioteca de idei este o funcție premium</h2>
+          <p className="text-sm text-muted-foreground mt-1">Upgrade-ază planul pentru a-ți construi o bibliotecă reutilizabilă de hook-uri, scripturi și idei.</p>
         </Card>
       </div>
     );
@@ -93,39 +93,39 @@ export default function SwipeLibrary() {
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-            <BookmarkPlus className="h-6 w-6 text-accent" /> Swipe File
+            <BookmarkPlus className="h-6 w-6 text-accent" /> Bibliotecă idei
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Save winning ideas, hooks and scripts. Reuse and adapt them across clients with AI.</p>
+          <p className="text-sm text-muted-foreground mt-1">Salvează idei, hook-uri și scripturi câștigătoare. Reutilizează și adaptează cu AI pentru fiecare client.</p>
         </div>
         <Button onClick={() => { setEditing(null); setFormOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Plus className="h-4 w-4 mr-1.5" /> New swipe
+          <Plus className="h-4 w-4 mr-1.5" /> Idee nouă
         </Button>
       </div>
 
       <div className="flex gap-2 flex-wrap items-center">
         <div className="relative flex-1 min-w-[200px] max-w-[300px]">
           <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
+          <Input placeholder="Caută…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
         </div>
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="all">Toate tipurile</SelectItem>
             {SWIPE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={platform} onValueChange={setPlatform}>
           <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All platforms</SelectItem>
+            <SelectItem value="all">Toate platformele</SelectItem>
             {SWIPE_PLATFORMS.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={client} onValueChange={setClient}>
           <SelectTrigger className="h-9 w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
-            <SelectItem value="none">Unassigned</SelectItem>
+            <SelectItem value="all">Toți clienții</SelectItem>
+            <SelectItem value="none">Neasignat</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -133,7 +133,7 @@ export default function SwipeLibrary() {
           <Select value={niche} onValueChange={setNiche}>
             <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All niches</SelectItem>
+              <SelectItem value="all">Toate nișele</SelectItem>
               {niches.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -142,7 +142,7 @@ export default function SwipeLibrary() {
           <Select value={tag} onValueChange={setTag}>
             <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All tags</SelectItem>
+              <SelectItem value="all">Toate etichetele</SelectItem>
               {allTags.map((t) => <SelectItem key={t} value={t}>#{t}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -150,9 +150,9 @@ export default function SwipeLibrary() {
         <Select value={sort} onValueChange={(v) => setSort(v as any)}>
           <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="recent">Most recent</SelectItem>
-            <SelectItem value="most_used">Most used</SelectItem>
-            <SelectItem value="performance">Performance</SelectItem>
+            <SelectItem value="recent">Cele mai recente</SelectItem>
+            <SelectItem value="most_used">Cele mai folosite</SelectItem>
+            <SelectItem value="performance">Performanță</SelectItem>
           </SelectContent>
         </Select>
         <div className="ml-auto flex">
@@ -166,8 +166,8 @@ export default function SwipeLibrary() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center">
           <BookmarkPlus className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No swipes yet. Save your first winning idea.</p>
-          <Button className="mt-3" onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Create swipe</Button>
+          <p className="text-sm text-muted-foreground">Nicio idee încă. Salvează prima idee câștigătoare.</p>
+          <Button className="mt-3" onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Creează idee</Button>
         </Card>
       ) : view === "grid" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -188,12 +188,12 @@ export default function SwipeLibrary() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="text-left px-4 py-3 font-medium">Title</th>
-                <th className="text-left px-4 py-3 font-medium">Type</th>
-                <th className="text-left px-4 py-3 font-medium">Platform</th>
-                <th className="text-left px-4 py-3 font-medium">Niche</th>
-                <th className="text-left px-4 py-3 font-medium">Used</th>
-                <th className="text-left px-4 py-3 font-medium">Created</th>
+                <th className="text-left px-4 py-3 font-medium">Titlu</th>
+                <th className="text-left px-4 py-3 font-medium">Tip</th>
+                <th className="text-left px-4 py-3 font-medium">Platformă</th>
+                <th className="text-left px-4 py-3 font-medium">Nișă</th>
+                <th className="text-left px-4 py-3 font-medium">Folosită</th>
+                <th className="text-left px-4 py-3 font-medium">Creată</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

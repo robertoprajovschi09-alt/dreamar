@@ -144,39 +144,39 @@ export default function AgencyDashboard() {
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Welcome to {agency?.name}.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Panou</h1>
+          <p className="text-sm text-muted-foreground mt-1">Bun venit la {agency?.name}.</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/agency/reports"><Button variant="outline" size="sm"><FileText className="h-4 w-4 mr-1.5" /> Generate report</Button></Link>
-          <Link to="/agency/clients"><Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> Add client</Button></Link>
+          <Link to="/agency/reports"><Button variant="outline" size="sm"><FileText className="h-4 w-4 mr-1.5" /> Generează raport</Button></Link>
+          <Link to="/agency/clients"><Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> Adaugă client</Button></Link>
         </div>
       </div>
 
       {/* Getting started checklist */}
       <GettingStarted
         items={[
-          { label: "Add your first client", done: clientCount > 0, to: "/agency/clients" },
-          { label: "Add platforms & handles", done: hasPlatforms, to: clientCount > 0 ? "/agency/clients" : undefined },
-          { label: "Import your first analytics data", done: hasAnalytics, to: "/agency/analytics" },
-          { label: "Generate your first report", done: hasReports, to: "/agency/reports" },
+          { label: "Adaugă primul client", done: clientCount > 0, to: "/agency/clients" },
+          { label: "Adaugă platforme și conturi", done: hasPlatforms, to: clientCount > 0 ? "/agency/clients" : undefined },
+          { label: "Importă primele date analitice", done: hasAnalytics, to: "/agency/analytics" },
+          { label: "Generează primul raport", done: hasReports, to: "/agency/reports" },
         ]}
       />
 
       {/* KPI strip */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi icon={<Users className="h-4 w-4" />} label="Active clients" value={clientCount} to="/agency/clients" />
-        <Kpi icon={<Heart className="h-4 w-4" />} label="Avg health score" value={avgHealth} accent={avgHealth >= 70} />
-        <Kpi icon={<FileCheck className="h-4 w-4" />} label="Pending approvals" value={pendingApprovals.length} to="/agency/approvals" accent={pendingApprovals.length > 0} />
-        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="Clients at risk" value={atRisk} to="/agency/clients" accent={atRisk > 0} />
+        <Kpi icon={<Users className="h-4 w-4" />} label="Clienți activi" value={clientCount} to="/agency/clients" />
+        <Kpi icon={<Heart className="h-4 w-4" />} label="Scor mediu de sănătate" value={avgHealth} accent={avgHealth >= 70} />
+        <Kpi icon={<FileCheck className="h-4 w-4" />} label="Aprobări în așteptare" value={pendingApprovals.length} to="/agency/approvals" accent={pendingApprovals.length > 0} />
+        <Kpi icon={<AlertTriangle className="h-4 w-4" />} label="Clienți cu risc" value={atRisk} to="/agency/clients" accent={atRisk > 0} />
       </div>
 
       {/* Health overview */}
       {healthScores.length > 0 && (
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base flex items-center gap-2"><Heart className="h-4 w-4 text-accent" /> Client Health</CardTitle>
-            <span className="text-xs text-muted-foreground">{healthy} healthy · {atRisk} at risk · {scoredHealth.length - healthy - atRisk} caution</span>
+            <CardTitle className="text-base flex items-center gap-2"><Heart className="h-4 w-4 text-accent" /> Sănătate clienți</CardTitle>
+            <span className="text-xs text-muted-foreground">{healthy} sănătoși · {atRisk} cu risc · {scoredHealth.length - healthy - atRisk} de urmărit</span>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -191,7 +191,7 @@ export default function AgencyDashboard() {
       {/* Risk */}
       {riskAlerts.length > 0 && (
         <Card className="border-amber-500/30">
-          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Clients at Risk</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Clienți cu risc</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2">
               {riskAlerts.map((a) => (
@@ -205,9 +205,9 @@ export default function AgencyDashboard() {
       {/* Two-column lists */}
       <div className="grid gap-4 md:grid-cols-2">
         <ListCard
-          title="Pending approvals"
+          title="Aprobări în așteptare"
           icon={<FileCheck className="h-4 w-4 text-accent" />}
-          empty="No content waiting for approval."
+          empty="Niciun conținut în așteptare de aprobare."
           items={pendingApprovals}
           render={(p: any) => {
             const overdue = p.due_date && new Date(p.due_date) < new Date();
@@ -217,42 +217,42 @@ export default function AgencyDashboard() {
                   <div className="font-medium text-sm truncate">{p.content_posts?.title || "—"}</div>
                   <div className="text-[11px] text-muted-foreground">{p.clients?.name || "—"}</div>
                 </div>
-                {overdue ? <Badge variant="destructive" className="text-[10px]">Overdue</Badge> : <Link to="/agency/approvals"><Button size="sm" variant="ghost">Review</Button></Link>}
+                {overdue ? <Badge variant="destructive" className="text-[10px]">Întârziat</Badge> : <Link to="/agency/approvals"><Button size="sm" variant="ghost">Vezi</Button></Link>}
               </li>
             );
           }}
         />
 
         <ListCard
-          title="Missing analytics data"
+          title="Date analitice lipsă"
           icon={<BarChart3 className="h-4 w-4 text-accent" />}
-          empty="All clients have analytics for this month."
+          empty="Toți clienții au analitice luna aceasta."
           items={missingAnalytics}
           render={(c: any) => (
             <li key={c.id} className="py-2.5 flex items-center justify-between">
               <Link to={`/agency/clients/${c.id}`} className="font-medium text-sm hover:underline">{c.name}</Link>
-              <Link to={`/agency/clients/${c.id}`}><Button size="sm" variant="ghost">Add data</Button></Link>
+              <Link to={`/agency/clients/${c.id}`}><Button size="sm" variant="ghost">Adaugă date</Button></Link>
             </li>
           )}
         />
 
         <ListCard
-          title="Reports to generate"
+          title="Rapoarte de generat"
           icon={<ClipboardList className="h-4 w-4 text-accent" />}
-          empty="All previous-month reports are done."
+          empty="Toate rapoartele lunii trecute sunt gata."
           items={reportsToGenerate}
           render={(c: any) => (
             <li key={c.id} className="py-2.5 flex items-center justify-between">
               <Link to={`/agency/clients/${c.id}`} className="font-medium text-sm hover:underline">{c.name}</Link>
-              <Link to="/agency/reports"><Button size="sm" variant="ghost">Generate</Button></Link>
+              <Link to="/agency/reports"><Button size="sm" variant="ghost">Generează</Button></Link>
             </li>
           )}
         />
 
         <ListCard
-          title="Top performing content"
+          title="Conținut cu cele mai bune performanțe"
           icon={<TrendingUp className="h-4 w-4 text-accent" />}
-          empty="No content metrics yet this month."
+          empty="Nicio metrică de conținut luna aceasta."
           items={topContent}
           render={(m: any, i: number) => (
             <li key={m.content_item_id} className="py-2.5 flex items-center justify-between gap-2">
@@ -269,9 +269,9 @@ export default function AgencyDashboard() {
         />
 
         <ListCard
-          title="Upcoming content"
+          title="Conținut programat"
           icon={<CalendarClock className="h-4 w-4 text-accent" />}
-          empty="Nothing scheduled."
+          empty="Nimic programat."
           items={upcomingContent}
           render={(p: any) => (
             <li key={p.id} className="py-2.5 flex items-center justify-between gap-2">
@@ -285,9 +285,9 @@ export default function AgencyDashboard() {
         />
 
         <ListCard
-          title="AI recommendations"
+          title="Recomandări AI"
           icon={<Sparkles className="h-4 w-4 text-accent" />}
-          empty="Generate a strategy to see AI recommendations."
+          empty="Generează o strategie pentru a vedea recomandări AI."
           items={aiRecs}
           render={(r: any, i: number) => (
             <li key={i} className="py-2.5">
@@ -309,7 +309,7 @@ function GettingStarted({ items }: { items: { label: string; done: boolean; to?:
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> Getting started</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> Pași de început</CardTitle>
           <span className="text-xs text-muted-foreground font-mono">{done}/{items.length}</span>
         </div>
         <Progress value={pct} className="h-2 mt-3" />

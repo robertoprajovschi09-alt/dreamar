@@ -38,19 +38,19 @@ export default function AiActions() {
       const { error: e2 } = await supabase.functions.invoke("ai-action-execute", { body: { action_id: id } });
       setBusyId(null);
       if (e2) return toast.error(e2.message);
-      toast.success("Action executed");
-    } else toast.success("Rejected");
+      toast.success("Acțiune executată");
+    } else toast.success("Respinsă");
     load();
   }
 
   return (
     <div className="p-6 space-y-4">
-      <PageHeader title="AI Actions" subtitle="Approve or reject actions proposed by AI before they touch your data." />
+      <PageHeader title="Acțiuni AI" subtitle="Aprobă sau respinge acțiunile propuse de AI înainte să modifice datele tale." />
       <div className="flex gap-2">
-        <Button size="sm" variant={filter === "pending" ? "default" : "outline"} onClick={() => setFilter("pending")}>Pending</Button>
-        <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>All</Button>
+        <Button size="sm" variant={filter === "pending" ? "default" : "outline"} onClick={() => setFilter("pending")}>În așteptare</Button>
+        <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>Toate</Button>
       </div>
-      {items.length === 0 && <div className="text-sm text-muted-foreground">No actions.</div>}
+      {items.length === 0 && <div className="text-sm text-muted-foreground">Nicio acțiune.</div>}
       <div className="space-y-3">
         {items.map((a) => (
           <Card key={a.id}>
@@ -64,14 +64,14 @@ export default function AiActions() {
             <CardContent className="space-y-2">
               {a.reasoning && <p className="text-sm">{a.reasoning}</p>}
               <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-48">{JSON.stringify(a.payload, null, 2)}</pre>
-              {a.result && <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-32">Result: {JSON.stringify(a.result, null, 2)}</pre>}
+              {a.result && <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-32">Rezultat: {JSON.stringify(a.result, null, 2)}</pre>}
               {a.status === "pending" && (
                 <div className="flex gap-2">
                   <Button size="sm" disabled={busyId === a.id} onClick={() => decide(a.id, "approved")}>
-                    {busyId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve & execute</>}
+                    {busyId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Aprobă & execută</>}
                   </Button>
                   <Button size="sm" variant="outline" disabled={busyId === a.id} onClick={() => decide(a.id, "rejected")}>
-                    <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+                    <XCircle className="h-3.5 w-3.5 mr-1" /> Respinge
                   </Button>
                 </div>
               )}

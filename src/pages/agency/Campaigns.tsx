@@ -42,16 +42,16 @@ export default function Campaigns() {
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Campaigns</h1>
-          <p className="text-sm text-muted-foreground mt-1">Plan and track campaigns for your clients.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Campanii</h1>
+          <p className="text-sm text-muted-foreground mt-1">Planifică și urmărește campanii pentru clienții tăi.</p>
         </div>
-        <Button onClick={() => { setEditing(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> New campaign</Button>
+        <Button onClick={() => { setEditing(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> Campanie nouă</Button>
       </div>
 
       <Select value={statusFilter} onValueChange={setStatusFilter}>
         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="all">Toate statusurile</SelectItem>
           {CAMPAIGN_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
         </SelectContent>
       </Select>
@@ -59,7 +59,7 @@ export default function Campaigns() {
       {loading ? (
         <div className="py-16 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : filtered.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">No campaigns yet.</CardContent></Card>
+        <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Nicio campanie încă.</CardContent></Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {filtered.map((c) => {

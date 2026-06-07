@@ -74,8 +74,8 @@ export default function ClientProfile() {
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
   if (!client) return (
     <div className="p-8">
-      <p className="text-muted-foreground">Client not found.</p>
-      <Link to="/agency/clients"><Button variant="outline" className="mt-4"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button></Link>
+      <p className="text-muted-foreground">Clientul nu a fost găsit.</p>
+      <Link to="/agency/clients"><Button variant="outline" className="mt-4"><ArrowLeft className="h-4 w-4 mr-2" /> Înapoi</Button></Link>
     </div>
   );
 
@@ -84,7 +84,7 @@ export default function ClientProfile() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <Link to="/agency/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1">
-            <ArrowLeft className="h-3 w-3" /> Clients
+            <ArrowLeft className="h-3 w-3" /> Clienți
           </Link>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{client.name}</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -93,24 +93,24 @@ export default function ClientProfile() {
           </p>
         </div>
         <Button onClick={() => setInviteOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <UserPlus className="h-4 w-4 mr-1.5" /> Invite client
+          <UserPlus className="h-4 w-4 mr-1.5" /> Invită client
         </Button>
       </div>
 
       <Tabs defaultValue="overview">
         <TabsList className="flex flex-wrap h-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="overview">Privire generală</TabsTrigger>
+          <TabsTrigger value="content">Conținut</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="strategy">Strategy</TabsTrigger>
-          <TabsTrigger value="approvals">Approvals</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="competitors">Competitors</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="analytics">Analitice</TabsTrigger>
+          <TabsTrigger value="goals">Obiective ({goals.length})</TabsTrigger>
+          <TabsTrigger value="reports">Rapoarte</TabsTrigger>
+          <TabsTrigger value="strategy">Strategie</TabsTrigger>
+          <TabsTrigger value="approvals">Aprobări</TabsTrigger>
+          <TabsTrigger value="documents">Documente</TabsTrigger>
+          <TabsTrigger value="competitors">Concurenți</TabsTrigger>
+          <TabsTrigger value="tasks">Sarcini</TabsTrigger>
+          <TabsTrigger value="settings">Setări</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">

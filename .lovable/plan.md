@@ -1,24 +1,38 @@
-## Plan
+## Plan: Romanian translation pass for the agency UI
 
-Logos are currently uploaded to the private `agency-files` bucket under `staging/<uid>/...` and the wizard stores a 1-year signed URL in `clients.logo_url`. Both issues need fixing so logos never expire.
+Pure translation — no logic, no layout, no route or identifier changes.
 
-### 1. Create a dedicated public bucket for client logos
-- Call `storage_create_bucket` with `name: "client-logos"`, `public: true`.
-- If the workspace blocks public buckets, surface the error and stop — do not silently fall back.
+### Scope
+**Translate to Romanian:**
+- `src/components/AgencyLayout.tsx` — sidebar labels, header items, dropdown menu entries ("Sign out", "Soon" badge, etc.).
+- `src/components/PageHeader.tsx`, `EmptyState.tsx`, `NavLink.tsx` — any user-visible strings.
+- `src/pages/agency/*.tsx` — page titles, subtitles, buttons, empty states, table headers, toasts shown to the agency user, dialog titles/labels in:
+  - AgencyDashboard, AiActions, AiMemory, Analytics, Approvals, Assistant, Billing, Calendar, Campaigns, ClientProfile, Clients, Competitors, Content, Documents, InviteClientDialog, Reports, Settings, Strategies, StrategyDetail, StrategyPrint, SwipeLibrary, Tasks, Team.
+- Shared agency components under `src/components/`:
+  - `client/AddClientWizard.tsx` — all step titles, labels, placeholders, helper text, buttons, and toasts. Also normalize the existing Romanian draft prompt ("Am găsit un draft salvat. Continui de unde ai rămas?", "Șterge", "Continuă") so it matches the rest (already Romanian, just verify wording consistency with the rest of the wizard).
+  - `ai/`, `analytics/`, `approvals/`, `competitors/`, `content/`, `health/`, `operations/`, `performance/`, `reports/`, `risk/`, `strategies/`, `swipe/` — only the strings used by the agency UI.
 
-### 2. Add RLS policies on `storage.objects` for `client-logos`
-Via a migration:
-- Public `SELECT` for everyone (bucket is public).
-- `INSERT` / `UPDATE` / `DELETE` restricted to authenticated users on objects under `client-logos`. Keep it simple (any authenticated agency user can write); the wizard is already gated behind agency auth.
+**Leave in English (do NOT translate):**
+- `src/pages/admin/*` and `src/pages/AdminLogin.tsx` (saas_admin area).
+- `src/pages/client/*` (client portal — out of scope for this pass).
+- `src/components/ui/*` (shadcn primitives — generally no user-visible copy).
+- Code identifiers, variable names, prop names, file names, routes.
+- Database enum values and column values (e.g. `status: "active"`, `niche: "real_estate"`). Where these values are rendered to the user, translate via the existing label maps (`NICHES`, `STATUSES` in `src/lib/niches.ts`) — update the labels there, not the values.
+- Console logs and developer comments.
+- Third-party brand names ("Instagram", "TikTok", "Google Ads", etc.).
 
-### 3. Update the upload logic in `src/components/client/AddClientWizard.tsx`
-In `onLogoFile`:
-- Upload to bucket `client-logos` at path `<user.id>/<timestamp>.<ext>` (no `staging/` prefix).
-- Replace the `createSignedUrl(..., 1 year)` call with `getPublicUrl(path)`.
-- Save the resulting public URL into `form.logo_url` (which already flows into `clients.logo_url` on create).
-- Keep the rest of the upload UX (file picker, spinner, preview thumbnail) unchanged.
+### Approach
+1. Translate `src/lib/niches.ts` label fields (NICHES labels, STATUSES — note STATUSES is a `string[]`, so either keep raw values in code and add a `STATUS_LABELS` map, or only translate at call sites; will choose the lowest-risk option per file).
+2. Translate shared layout/components first (`AgencyLayout`, `PageHeader`, `EmptyState`) so navigation reads Romanian everywhere.
+3. Translate each agency page top-to-bottom, file by file, replacing only string literals inside JSX, toast calls, dialog titles, button text, placeholders, and aria-labels.
+4. Translate the Add Client wizard end-to-end (Basics, Niche & KPIs, Platforms, Goals, Context, Invite, Review) including KPI/preset helper text and validation toast messages. Confirm the existing Romanian draft prompt phrasing and reuse it as the style baseline.
+5. Spot-check shared components used by agency pages for any remaining English strings.
 
-### Notes
-- `clients.logo_url` is a free-form text column, so no schema change is needed.
-- Existing clients with old signed URLs are left as-is (they will continue to work until expiry); only new uploads use the public bucket.
-- No other component reads logos from `agency-files/staging/`, so nothing else needs to change.
+### Out of scope
+- No new components, no restyling, no copy rewrites beyond translation.
+- No changes to the SaaS admin area, client portal, auth/landing pages, or shadcn primitives.
+- No DB migrations.
+
+### Risks / notes
+- Niche/status values are used both as DB values and as display strings in places. The plan keeps raw values intact and translates only display labels.
+- Some agency pages share components with the client portal; translations will be applied only to strings clearly rendered in the agency context. If a shared component is used in both, I'll either pass a localized prop or leave the shared component untouched and translate at the call site to avoid affecting the client portal.

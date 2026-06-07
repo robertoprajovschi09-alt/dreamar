@@ -36,31 +36,31 @@ export default function Approvals() {
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Approvals</h1>
-        <p className="text-sm text-muted-foreground mt-1">Track every content approval request across all clients.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Aprobări</h1>
+        <p className="text-sm text-muted-foreground mt-1">Urmărește fiecare cerere de aprobare a conținutului pentru toți clienții.</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Kpi icon={Clock} label="Pending" value={kpis?.pending ?? "—"} />
-        <Kpi icon={AlertTriangle} label="Overdue" value={kpis?.overdue ?? "—"} tone="danger" />
-        <Kpi icon={CheckCircle2} label="Approved (7d)" value={kpis?.approvedThisWeek ?? "—"} tone="success" />
-        <Kpi icon={MessageSquareWarning} label="Changes req." value={kpis?.changesRequested ?? "—"} tone="warn" />
-        <Kpi icon={Timer} label="Avg time" value={kpis?.avgHours != null ? `${kpis.avgHours.toFixed(1)}h` : "—"} />
+        <Kpi icon={Clock} label="În așteptare" value={kpis?.pending ?? "—"} />
+        <Kpi icon={AlertTriangle} label="Întârziate" value={kpis?.overdue ?? "—"} tone="danger" />
+        <Kpi icon={CheckCircle2} label="Aprobate (7 zile)" value={kpis?.approvedThisWeek ?? "—"} tone="success" />
+        <Kpi icon={MessageSquareWarning} label="Modificări cerute" value={kpis?.changesRequested ?? "—"} tone="warn" />
+        <Kpi icon={Timer} label="Timp mediu" value={kpis?.avgHours != null ? `${kpis.avgHours.toFixed(1)}h` : "—"} />
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="pending_approval">Pending</TabsTrigger>
-          <TabsTrigger value="changes_requested">Changes requested</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="pending_approval">În așteptare</TabsTrigger>
+          <TabsTrigger value="changes_requested">Modificări cerute</TabsTrigger>
+          <TabsTrigger value="approved">Aprobate</TabsTrigger>
+          <TabsTrigger value="all">Toate</TabsTrigger>
         </TabsList>
         <TabsContent value={tab} className="mt-4">
           <Card>
             {loading ? (
               <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
             ) : rows.length === 0 ? (
-              <div className="p-12 text-center text-sm text-muted-foreground">No approvals here yet.</div>
+              <div className="p-12 text-center text-sm text-muted-foreground">Nicio aprobare aici încă.</div>
             ) : (
               <ul className="divide-y divide-border">
                 {rows.map((r) => {
@@ -74,13 +74,13 @@ export default function Approvals() {
                         <div className="h-12 w-12 rounded bg-muted" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{r.content_posts?.title || "(untitled)"}</div>
+                        <div className="font-medium truncate">{r.content_posts?.title || "(fără titlu)"}</div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {r.clients?.name} · {r.content_posts?.platform || "—"} · requested {new Date(r.requested_at).toLocaleDateString()}
+                          {r.clients?.name} · {r.content_posts?.platform || "—"} · cerută {new Date(r.requested_at).toLocaleDateString()}
                           {r.feedback && ` · "${(r.feedback as string).slice(0, 60)}"`}
                         </div>
                       </div>
-                      {overdue && <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300">Overdue</span>}
+                      {overdue && <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300">Întârziat</span>}
                       <span className={cn("px-2 py-0.5 rounded text-[11px] font-medium", m?.color)}>{m?.label}</span>
                     </li>
                   );

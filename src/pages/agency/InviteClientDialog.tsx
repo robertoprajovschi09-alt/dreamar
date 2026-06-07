@@ -70,14 +70,14 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
     const url = await createInvite(true);
     if (!url) return;
     setLink(url);
-    toast.success("Invite created. Email sending requires an email domain — copy the link to share for now.");
+    toast.success("Invitație creată. Trimiterea pe email necesită un domeniu configurat — copiază linkul pentru a-l împărtăși deocamdată.");
   };
 
   const handleLinkOnly = async () => {
     const url = await createInvite(false);
     if (!url) return;
     setLink(url);
-    toast.success("Invite link ready to share");
+    toast.success("Linkul de invitație este gata");
   };
 
   const copy = async () => {
@@ -90,7 +90,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Invite to client portal</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Invită în portalul clientului</DialogTitle></DialogHeader>
         {!link ? (
           <form onSubmit={handleSendInvite} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -100,33 +100,33 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
                   onChange={(e) => setEmail(e.target.value)} placeholder="client@example.com" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="invite-name">Display name <span className="text-muted-foreground text-xs">(optional)</span></Label>
-                <Input id="invite-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Jane Doe" />
+                <Label htmlFor="invite-name">Nume afișat <span className="text-muted-foreground text-xs">(opțional)</span></Label>
+                <Input id="invite-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ion Popescu" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Portal role</Label>
+              <Label>Rol în portal</Label>
               <RadioGroup value={role} onValueChange={(v) => setRole(v as any)} className="grid grid-cols-2 gap-2">
                 <label className="flex items-start gap-2 border border-border rounded-lg p-3 cursor-pointer has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/5">
                   <RadioGroupItem value="client_owner" className="mt-0.5" />
                   <div>
-                    <div className="text-sm font-medium">Owner</div>
-                    <div className="text-xs text-muted-foreground">Full portal access, can approve content</div>
+                    <div className="text-sm font-medium">Proprietar</div>
+                    <div className="text-xs text-muted-foreground">Acces complet, poate aproba conținut</div>
                   </div>
                 </label>
                 <label className="flex items-start gap-2 border border-border rounded-lg p-3 cursor-pointer has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/5">
                   <RadioGroupItem value="client_viewer" className="mt-0.5" />
                   <div>
-                    <div className="text-sm font-medium">Viewer</div>
-                    <div className="text-xs text-muted-foreground">Read-only by default</div>
+                    <div className="text-sm font-medium">Vizualizator</div>
+                    <div className="text-xs text-muted-foreground">Doar citire în mod implicit</div>
                   </div>
                 </label>
               </RadioGroup>
             </div>
 
             <div className="space-y-2">
-              <Label>Permissions</Label>
+              <Label>Permisiuni</Label>
               <div className="border border-border rounded-lg divide-y divide-border">
                 {PORTAL_PERMISSION_KEYS.map((k) => (
                   <div key={k} className="flex items-center justify-between gap-3 px-3 py-2">
@@ -139,17 +139,17 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
 
             <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
               <Button type="button" variant="outline" onClick={handleLinkOnly} disabled={busy}>
-                Create link only
+                Doar creează link
               </Button>
               <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1.5" /> Send invite</>}
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Mail className="h-4 w-4 mr-1.5" /> Trimite invitația</>}
               </Button>
             </DialogFooter>
           </form>
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Share this link with <span className="font-medium text-foreground">{email}</span>. The link expires in 7 days.
+              Trimite acest link către <span className="font-medium text-foreground">{email}</span>. Linkul expiră în 7 zile.
             </p>
             <div className="flex gap-2">
               <Input readOnly value={link} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
@@ -158,7 +158,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
               </Button>
             </div>
             <DialogFooter>
-              <Button onClick={() => onOpenChange(false)}>Done</Button>
+              <Button onClick={() => onOpenChange(false)}>Gata</Button>
             </DialogFooter>
           </div>
         )}

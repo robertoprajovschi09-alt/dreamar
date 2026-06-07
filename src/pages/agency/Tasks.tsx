@@ -59,26 +59,26 @@ export default function Tasks() {
     <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tasks</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your team's work across all clients.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Sarcini</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gestionează activitatea echipei pentru toți clienții.</p>
         </div>
-        <Button onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> New task</Button>
+        <Button onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> Sarcină nouă</Button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         <Select value={clientFilter} onValueChange={setClientFilter}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
-            <SelectItem value="_none">Internal only</SelectItem>
+            <SelectItem value="all">Toți clienții</SelectItem>
+            <SelectItem value="_none">Doar intern</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All assignees</SelectItem>
-            <SelectItem value="_none">Unassigned</SelectItem>
+            <SelectItem value="all">Toți responsabilii</SelectItem>
+            <SelectItem value="_none">Neasignat</SelectItem>
             {members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name || m.email}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -103,7 +103,7 @@ export default function Tasks() {
                 </div>
                 <div className="space-y-2">
                   {items.length === 0 && (
-                    <div className="text-xs text-muted-foreground border border-dashed border-border rounded-lg p-4 text-center">Drop here</div>
+                    <div className="text-xs text-muted-foreground border border-dashed border-border rounded-lg p-4 text-center">Trage aici</div>
                   )}
                   {items.map((t) => {
                     const pri = statusFor(TASK_PRIORITIES, t.priority);

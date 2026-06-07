@@ -65,7 +65,7 @@ export default function Calendar() {
     const next = new Date(`${newDate}T${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}:00`);
     setItems((prev) => prev.map((i) => i.id === id ? { ...i, scheduled_for: next.toISOString() } : i));
     const { error } = await supabase.from("content_posts").update({ scheduled_for: next.toISOString() }).eq("id", id);
-    if (error) { toast.error(error.message); load(); } else toast.success("Rescheduled");
+    if (error) { toast.error(error.message); load(); } else toast.success("Replanificat");
   };
 
   const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
@@ -75,15 +75,15 @@ export default function Calendar() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-sm text-muted-foreground mt-1">Drag items to reschedule. Click a day to add content.</p>
+          <p className="text-sm text-muted-foreground mt-1">Trage elementele pentru a le replanifica. Clic pe o zi pentru a adăuga conținut.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
           <div className="px-3 py-1.5 text-sm font-medium min-w-[160px] text-center">{monthLabel}</div>
           <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" onClick={() => setMonth(new Date())}>Today</Button>
+          <Button variant="outline" size="sm" onClick={() => setMonth(new Date())}>Astăzi</Button>
           <Button onClick={() => { setEditingId(null); setDefaultDate(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Plus className="h-4 w-4 mr-1.5" /> New
+            <Plus className="h-4 w-4 mr-1.5" /> Nou
           </Button>
         </div>
       </div>
@@ -92,21 +92,21 @@ export default function Calendar() {
         <Select value={filterClient} onValueChange={setFilterClient}>
           <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
+            <SelectItem value="all">Toți clienții</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterPlatform} onValueChange={setFilterPlatform}>
           <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All platforms</SelectItem>
+            <SelectItem value="all">Toate platformele</SelectItem>
             {PLATFORM_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">Toate statusurile</SelectItem>
             {POST_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
           </SelectContent>
         </Select>

@@ -37,20 +37,20 @@ export default function Competitors() {
   return (
     <div className="p-6 md:p-8 max-w-6xl space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Competitors</h1>
-        <p className="text-sm text-muted-foreground mt-1">Track competitor activity across all your clients. Private by default.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Concurenți</h1>
+        <p className="text-sm text-muted-foreground mt-1">Urmărește activitatea concurenților pentru toți clienții tăi. Privat din start.</p>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Target className="h-4 w-4 text-accent" /> By client</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Target className="h-4 w-4 text-accent" /> Per client</CardTitle></CardHeader>
         <CardContent>
           {loading ? <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-            : rows.length === 0 ? <div className="py-10 text-center text-sm text-muted-foreground">No clients yet.</div>
+            : rows.length === 0 ? <div className="py-10 text-center text-sm text-muted-foreground">Niciun client încă.</div>
             : <ul className="divide-y divide-border">
                 {rows.map((r) => (
                   <li key={r.id} className="py-3 flex items-center justify-between">
                     <Link to={`/agency/clients/${r.id}?tab=competitors`} className="font-medium hover:underline">{r.name}</Link>
-                    <div className="text-xs text-muted-foreground">{r.competitor_count} competitors · {r.observation_count} observations</div>
+                    <div className="text-xs text-muted-foreground">{r.competitor_count} concurenți · {r.observation_count} observații</div>
                   </li>
                 ))}
               </ul>}

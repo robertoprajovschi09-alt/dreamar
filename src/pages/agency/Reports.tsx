@@ -44,11 +44,11 @@ export default function Reports() {
   return (
     <div className="p-6 md:p-8 space-y-6">
       <PageHeader
-        title="Reports"
-        subtitle="AI-generated monthly client reports."
+        title="Rapoarte"
+        subtitle="Rapoarte lunare generate cu AI pentru clienți."
         action={
           <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="h-4 w-4 mr-1.5" /> New report
+            <Plus className="h-4 w-4 mr-1.5" /> Raport nou
           </Button>
         }
       />
@@ -57,7 +57,7 @@ export default function Reports() {
         <Select value={filterClient} onValueChange={setFilterClient}>
           <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
+            <SelectItem value="all">Toți clienții</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -68,9 +68,9 @@ export default function Reports() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No reports yet"
-          description="Generate your first AI-powered monthly report for a client."
-          action={<Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1.5" /> New report</Button>}
+          title="Niciun raport încă"
+          description="Generează primul tău raport lunar cu AI pentru un client."
+          action={<Button onClick={() => { setEditing(null); setOpen(true); }}><Plus className="h-4 w-4 mr-1.5" /> Raport nou</Button>}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -87,9 +87,9 @@ export default function Reports() {
               {r.summary && <p className="text-sm mt-2 line-clamp-3 text-muted-foreground">{r.summary}</p>}
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  {r.client_visible ? <><Eye className="h-3 w-3" /> Visible to client</> : <><EyeOff className="h-3 w-3" /> Internal only</>}
+                  {r.client_visible ? <><Eye className="h-3 w-3" /> Vizibil pentru client</> : <><EyeOff className="h-3 w-3" /> Doar intern</>}
                 </div>
-                <div className="text-[11px] text-muted-foreground">{(r.highlights || []).length} highlights</div>
+                <div className="text-[11px] text-muted-foreground">{(r.highlights || []).length} momente cheie</div>
               </div>
             </Card>
           ))}

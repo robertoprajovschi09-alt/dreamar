@@ -77,16 +77,16 @@ export default function Clients() {
       : await supabase.from("clients").insert({ ...payload, agency_id: agency.id });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(editing ? "Client updated" : "Client created");
+    toast.success(editing ? "Client actualizat" : "Client creat");
     setOpen(false);
     load();
   };
 
   const handleDelete = async (c: Client) => {
-    if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
+    if (!confirm(`Ștergi "${c.name}"? Această acțiune nu poate fi anulată.`)) return;
     const { error } = await supabase.from("clients").delete().eq("id", c.id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Client deleted");
+    toast.success("Client șters");
     load();
   };
 
@@ -106,7 +106,7 @@ export default function Clients() {
       .single();
     setQuickBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Client created");
+    toast.success("Client creat");
     setQuickOpen(false);
     setQuickForm({ name: "", niche: "custom" });
     if (data?.id) navigate(`/agency/clients/${data.id}`);
@@ -116,15 +116,15 @@ export default function Clients() {
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage every client in {agency?.name}.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clienți</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gestionează toți clienții din {agency?.name}.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setQuickOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" /> Quick add
+            <Plus className="h-4 w-4 mr-1.5" /> Adăugare rapidă
           </Button>
           <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            <Plus className="h-4 w-4 mr-1.5" /> Add client
+            <Plus className="h-4 w-4 mr-1.5" /> Adaugă client
           </Button>
         </div>
         {agency && (
@@ -137,15 +137,15 @@ export default function Clients() {
         )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Edit client</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Editează client</DialogTitle></DialogHeader>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name">Client name *</Label>
+                <Label htmlFor="name">Nume client *</Label>
                 <Input id="name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Niche</Label>
+                  <Label>Nișă</Label>
                   <Select value={form.niche} onValueChange={(v) => setForm({ ...form, niche: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -164,7 +164,7 @@ export default function Clients() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city">Oraș</Label>
                 <Input id="city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
               </div>
               <div className="space-y-1.5">
@@ -172,9 +172,9 @@ export default function Clients() {
                 <Input id="website" type="url" placeholder="https://" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>Anulează</Button>
                 <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvează"}
                 </Button>
               </DialogFooter>
             </form>
@@ -182,14 +182,14 @@ export default function Clients() {
         </Dialog>
         <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Quick add client</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Adăugare rapidă client</DialogTitle></DialogHeader>
             <form onSubmit={handleQuickCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="quick-name">Client name *</Label>
+                <Label htmlFor="quick-name">Nume client *</Label>
                 <Input id="quick-name" required autoFocus value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>Niche</Label>
+                <Label>Nișă</Label>
                 <Select value={quickForm.niche} onValueChange={(v) => setQuickForm({ ...quickForm, niche: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -198,9 +198,9 @@ export default function Clients() {
                 </Select>
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setQuickOpen(false)}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setQuickOpen(false)}>Anulează</Button>
                 <Button type="submit" disabled={quickBusy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  {quickBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create & open"}
+                  {quickBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Creează & deschide"}
                 </Button>
               </DialogFooter>
             </form>
@@ -214,10 +214,10 @@ export default function Clients() {
         ) : clients.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-            <h3 className="font-semibold">No clients yet</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Add your first client to get started.</p>
+            <h3 className="font-semibold">Niciun client încă</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">Adaugă primul tău client ca să începi.</p>
             <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              <Plus className="h-4 w-4 mr-1.5" /> Add client
+              <Plus className="h-4 w-4 mr-1.5" /> Adaugă client
             </Button>
           </div>
         ) : (
@@ -225,11 +225,11 @@ export default function Clients() {
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 font-medium">Niche</th>
-                  <th className="text-left px-4 py-3 font-medium">City</th>
+                  <th className="text-left px-4 py-3 font-medium">Nume</th>
+                  <th className="text-left px-4 py-3 font-medium">Nișă</th>
+                  <th className="text-left px-4 py-3 font-medium">Oraș</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-right px-4 py-3 font-medium">Actions</th>
+                  <th className="text-right px-4 py-3 font-medium">Acțiuni</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
