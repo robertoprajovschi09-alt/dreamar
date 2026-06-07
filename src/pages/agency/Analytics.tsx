@@ -157,7 +157,24 @@ export default function Analytics() {
           </CardContent>
         </Card>
       )}
+
+      {agency && selectedClientId && (
+        <>
+          <CsvImportDialog
+            open={csvOpen} onOpenChange={setCsvOpen}
+            agencyId={agency.id} clientId={selectedClientId} target="analytics_entries"
+            onImported={load}
+          />
+          <AnalyticsEntryDialog
+            open={entryOpen} onOpenChange={setEntryOpen}
+            agencyId={agency.id} clientId={selectedClientId}
+            defaultMonth={month} defaultYear={year}
+            onSaved={load}
+          />
+        </>
+      )}
     </div>
+
   );
 }
 
