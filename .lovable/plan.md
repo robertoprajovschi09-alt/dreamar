@@ -1,15 +1,24 @@
 ## Plan
 
-### 1. Add optional City input to Add Client wizard
-- In `src/components/client/AddClientWizard.tsx`:
-  - Add `city: string` to the `Form` type and `empty` object.
-  - Insert a "City" input in the Basics (Step 1) UI, near the other contact/location fields.
-  - Include `city: form.city.trim() || null` in the final `clientPayload` so it is saved to `clients.city`.
+Logos are currently uploaded to the private `agency-files` bucket under `staging/<uid>/...` and the wizard stores a 1-year signed URL in `clients.logo_url`. Both issues need fixing so logos never expire.
 
-### 2. Preserve niche_id in the simple Edit dialog
-- In `src/pages/agency/Clients.tsx`:
-  - Add `niche_id: string | null` to the `Client` type.
-  - Add `niche_id` to the Supabase `.select(...)` query so it is fetched.
-  - In `handleSave`, when updating an existing client, include `niche_id: editing.niche_id` in the update payload so the library reference is explicitly preserved and not left mismatched against a plain `niche` value.
+### 1. Create a dedicated public bucket for client logos
+- Call `storage_create_bucket` with `name: "client-logos"`, `public: true`.
+- If the workspace blocks public buckets, surface the error and stop — do not silently fall back.
 
-No other files or dialogs will be changed.
+### 2. Add RLS policies on `storage.objects` for `client-logos`
+Via a migration:
+- Public `SELECT` for everyone (bucket is public).
+- `INSERT` / `UPDATE` / `DELETE` restricted to authenticated users on objects under `client-logos`. Keep it simple (any authenticated agency user can write); the wizard is already gated behind agency auth.
+
+### 3. Update the upload logic in `src/components/client/AddClientWizard.tsx`
+In `onLogoFile`:
+- Upload to bucket `client-logos` at path `<user.id>/<timestamp>.<ext>` (no `staging/` prefix).
+- Replace the `createSignedUrl(..., 1 year)` call with `getPublicUrl(path)`.
+- Save the resulting public URL into `form.logo_url` (which already flows into `clients.logo_url` on create).
+- Keep the rest of the upload UX (file picker, spinner, preview thumbnail) unchanged.
+
+### Notes
+- `clients.logo_url` is a free-form text column, so no schema change is needed.
+- Existing clients with old signed URLs are left as-is (they will continue to work until expiry); only new uploads use the public bucket.
+- No other component reads logos from `agency-files/staging/`, so nothing else needs to change.
