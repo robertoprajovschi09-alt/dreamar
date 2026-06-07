@@ -50,8 +50,14 @@ export default function Analytics() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!selectedClientId && clients.length > 0) setSelectedClientId(clients[0].id);
+  }, [clients, selectedClientId]);
+
   const aggregate = useMemo(() => Object.values(byClientNow).flat(), [byClientNow]);
   const t = totals(aggregate);
+  const isEmpty = aggregate.length === 0 && Object.values(t).every((v) => !v);
+
 
   const ranked = useMemo(() => {
     return clients.map((c) => {
