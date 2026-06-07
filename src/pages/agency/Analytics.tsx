@@ -4,9 +4,14 @@ import { useUser } from "@/contexts/UserContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, AlertTriangle, TrendingUp, TrendingDown, Upload, Plus, Inbox } from "lucide-react";
 import { listAnalyticsEntries, totals, detectMissingData, type AnalyticsEntry } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
+import { CsvImportDialog } from "@/components/analytics/CsvImportDialog";
+import { AnalyticsEntryDialog } from "@/components/analytics/AnalyticsEntryDialog";
+
 
 export default function Analytics() {
   const { agency } = useUser();
