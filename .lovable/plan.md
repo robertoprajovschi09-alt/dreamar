@@ -1,41 +1,31 @@
-## Problemele
+### Goal
+Restructure the desktop sidebar in `AgencyLayout.tsx` into a PRIMARY always-visible section and a collapsible SECONDARY "More" group, while removing two AI nav links and leaving everything else untouched.
 
-1. **Pierderea datelor** — în `AddClientWizard` (și alte formulare lungi) toate câmpurile sunt ținute doar în `useState`. Dacă schimbi tab-ul în browser, navighezi pe alt site sau dialogul se închide accidental, totul dispare.
-2. **Scroll rămas în jos** — când navighezi între paginile din `/agency/*`, conținutul nou apare cu scroll-ul rămas de pe pagina anterioară (fereastra nu urcă în top).
+### Changes
+1. **Split `nav` array** into three arrays:
+   - `primaryNav` (always rendered directly):
+     Dashboard, Clients, Content, Calendar, Approvals, Analytics, Reports
+   - `secondaryNav` (rendered inside collapsible):
+     Campaigns, Strategies, Tasks, Documents, Swipe File, Competitors, AI Assistant
+   - `remainingNav` (rendered directly below the collapsible):
+     Team, Billing, Settings
+   - Remove entries for **AI Actions** and **AI Memory** entirely (routes stay alive, just no nav links).
 
-## Ce voi face
+2. **Add collapsible "More" group**
+   - Import `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`.
+   - Add `ChevronDown` import from `lucide-react`.
+   - Render `primaryNav` as today.
+   - Immediately after, render a `<Collapsible defaultOpen={false}>` wrapper labeled "More".
+   - Inside it, render `secondaryNav` with identical `NavLink` markup and active-state logic.
+   - After the collapsible, render `remainingNav` with identical `NavLink` markup.
+   - Keep the saas_admin block exactly as-is (after everything else).
 
-### 1. Auto-save pentru wizard-ul de client
+3. **Mobile bottom nav**
+   - Build a combined array of `primaryNav + secondaryNav + remainingNav` (no AI Actions / AI Memory) and map it for the mobile nav so the removed items also disappear from the bottom bar.
 
-În `src/components/client/AddClientWizard.tsx`:
-- Adaug un `useEffect` care, la orice schimbare a `form` sau `step`, salvează un draft în `localStorage` sub o cheie per agenție (ex. `addClient.draft.<agencyId>`).
-- La deschiderea wizard-ului (`open === true`) încarc draft-ul existent (dacă e). Dacă există draft, afișez sus un mic banner: „Draft găsit — Continuă / Șterge".
-- La submit reușit (sau la „Șterge draft") curăț cheia din localStorage.
-- Form-ul rămâne montat doar când `open` e true; ca să nu pierdem nimic dacă utilizatorul închide accidental dialogul, salvarea se face live, nu doar la unmount.
-
-### 2. Persistență și pe alte formulare cu draft util
-
-Aplic același pattern minimal (autosave + restore) pe:
-- `src/components/client/BriefWizard.tsx` (form lung)
-- `src/components/client/QuickClientOnboarding.tsx`
-
-Pentru dialoguri mici (edit client, etc.) nu e nevoie — sunt prea scurte ca să justifice complexitate. Dacă vrei și acolo, îmi spui după.
-
-### 3. Scroll-to-top la fiecare schimbare de rută
-
-Adaug un component nou `src/components/ScrollToTop.tsx` care folosește `useLocation` și, la fiecare schimbare de `pathname`, face `window.scrollTo(0, 0)` și (pentru layout-urile cu `main` scrollabil propriu) caută `main` și îl resetează la `scrollTop = 0`.
-
-Îl montez în `src/App.tsx` chiar sub `<BrowserRouter>` ca să afecteze toată aplicația (agency, client portal, admin).
-
-## Ce NU se schimbă
-
-- Nu ating logica de auth, RLS, edge functions sau routing-ul existent.
-- Nu schimb UI-ul wizard-ului — doar adaug un mic banner pentru draft.
-- Draft-urile sunt strict locale (localStorage), nu se trimit în backend.
-
-## Acceptance criteria
-
-1. Începi să completezi un client în wizard, schimbi tab-ul / închizi accidental dialogul / dai refresh — la redeschidere apare „Draft găsit, continuă?" cu toate câmpurile intacte.
-2. După salvare reușită, draft-ul e șters automat.
-3. Navighezi de pe o pagină lungă (ex. Clients scrolat în jos) la altă pagină — pagina nouă apare scrolată sus.
-4. Mobile (bottom nav) și desktop (sidebar) — ambele cazuri scroll la top.
+### Not changing
+- No route definitions or route availability.
+- No icon imports removed (except any only used by the two dropped links).
+- No CSS class or active-state logic changes on individual links.
+- No saas_admin section changes.
+- No other files touched.

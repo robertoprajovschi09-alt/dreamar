@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, BookmarkPlus, ClipboardCheck, Lightbulb, Target, UserCog, CreditCard, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, BookmarkPlus, ClipboardCheck, Lightbulb, Target, UserCog, CreditCard, Settings as SettingsIcon, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -8,30 +8,45 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const nav = [
+const primaryNav = [
   { to: "/agency", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/agency/clients", icon: Users, label: "Clients" },
-  { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
   { to: "/agency/content", icon: FileVideo, label: "Content" },
+  { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
   { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
   { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
-  { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
   { to: "/agency/reports", icon: FileText, label: "Reports" },
+];
+
+const secondaryNav = [
+  { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
   { to: "/agency/strategies", icon: Lightbulb, label: "Strategies" },
-  { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
   { to: "/agency/tasks", icon: ListTodo, label: "Tasks" },
+  { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
   { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
   { to: "/agency/competitors", icon: Target, label: "Competitors" },
   { to: "/agency/assistant", icon: Sparkles, label: "AI Assistant" },
-  { to: "/agency/ai-actions", icon: ClipboardCheck, label: "AI Actions" },
-  { to: "/agency/ai-memory", icon: Lightbulb, label: "AI Memory" },
+];
+
+const remainingNav = [
   { to: "/agency/team", icon: UserCog, label: "Team" },
   { to: "/agency/billing", icon: CreditCard, label: "Billing" },
   { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
 ];
+
+const mobileNav = [...primaryNav, ...secondaryNav, ...remainingNav];
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+    isActive
+      ? "bg-accent/10 text-foreground border-l-2 border-accent"
+      : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+  );
 
 export default function AgencyLayout() {
   const { signOut } = useAuth();
@@ -45,25 +60,36 @@ export default function AgencyLayout() {
         <div className="h-16 flex items-center px-5 border-b border-sidebar-border">
           <Logo />
         </div>
-        <nav className="flex-1 p-3 space-y-0.5">
-          {nav.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-accent/10 text-foreground border-l-2 border-accent"
-                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-                )
-              }
-            >
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+          {primaryNav.map((n) => (
+            <NavLink key={n.to} to={n.to} end={n.end} className={navLinkClass}>
               <n.icon className="h-4 w-4" />
               {n.label}
             </NavLink>
           ))}
+
+          <Collapsible defaultOpen={false} className="pt-1">
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors [&[data-state=open]>svg]:rotate-180">
+              <span>More</span>
+              <ChevronDown className="h-4 w-4 transition-transform" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-0.5 pt-0.5">
+              {secondaryNav.map((n) => (
+                <NavLink key={n.to} to={n.to} className={navLinkClass}>
+                  <n.icon className="h-4 w-4" />
+                  {n.label}
+                </NavLink>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+
+          {remainingNav.map((n) => (
+            <NavLink key={n.to} to={n.to} className={navLinkClass}>
+              <n.icon className="h-4 w-4" />
+              {n.label}
+            </NavLink>
+          ))}
+
           {profile?.is_saas_admin && (
             <>
               <div className="mt-3 pt-3 border-t border-border" />
@@ -134,9 +160,9 @@ export default function AgencyLayout() {
           </div>
         </header>
 
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur flex justify-around py-2">
-          {nav.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-3 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur flex justify-around py-2 overflow-x-auto">
+          {mobileNav.map((n) => (
+            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-3 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
               <n.icon className="h-5 w-5" /> {n.label}
             </NavLink>
           ))}
