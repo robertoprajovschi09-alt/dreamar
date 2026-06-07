@@ -35,9 +35,12 @@ const secondaryNav = [
 ];
 
 const remainingNav = [
+  { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
+];
+
+const soonNav = [
   { to: "/agency/team", icon: UserCog, label: "Team" },
   { to: "/agency/billing", icon: CreditCard, label: "Billing" },
-  { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
 ];
 
 const mobileNav = [...primaryNav, ...secondaryNav, ...remainingNav];
@@ -70,6 +73,7 @@ export default function AgencyLayout() {
     ...secondaryNav,
     ...remainingNav,
   ];
+
 
 
   return (
@@ -169,6 +173,14 @@ export default function AgencyLayout() {
                   <div className="font-semibold truncate">{profile?.full_name || "Account"}</div>
                   <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {soonNav.map((n) => (
+                  <DropdownMenuItem key={n.to} onClick={() => navigate(n.to)}>
+                    <n.icon className="h-4 w-4 mr-2" />
+                    <span className="flex-1">{n.label}</span>
+                    <Badge variant="secondary" className="ml-2 text-[10px] uppercase tracking-wide">Soon</Badge>
+                  </DropdownMenuItem>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={async () => { await signOut(); navigate("/auth"); }}>
                   <LogOut className="h-4 w-4 mr-2" /> Sign out

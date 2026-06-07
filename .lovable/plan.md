@@ -1,26 +1,20 @@
-## Analytics empty state
+## Goal
+Move "Team" and "Billing" navigation items out of the main sidebar and into the user dropdown menu in the header, marking them with a "Soon" badge while keeping their routes and pages intact.
 
-In `src/pages/agency/Analytics.tsx`, when there are no `analytics_entries` for the selected year/month (`aggregate.length === 0` and every value in `totals(aggregate)` is 0), replace the row of KPI cards with an empty-state card. Otherwise show the normal KPI grid.
+## Changes
 
-### Empty-state card content
-- Title: "No data yet for this period"
-- Short helper text
-- Client picker (required, since the existing dialogs need a `clientId`): a `Select` listing the agency's clients, defaulting to the first one
-- Two buttons:
-  - "Import CSV" → opens existing `CsvImportDialog` with `target="analytics_entries"`
-  - "Add manually" → opens existing `AnalyticsEntryDialog`
-- Both pass `defaultYear` / `defaultMonth` from the current filter, and refresh via the existing `load()` callback on `onImported` / `onSaved`
-- If `clients.length === 0`, show a link to `/agency/clients` instead of the buttons
+### 1. `src/components/AgencyLayout.tsx`
+- Remove `UserCog` and `CreditCard` from the `remainingNav` array so they no longer appear in the sidebar.
+- Add a new `soonNav` array (or inline items) for Team and Billing with their icons, labels, and routes.
+- In the header `DropdownMenuContent`, after the "Sign out" item (or before the separator), add two `DropdownMenuItem` entries:
+  - Each navigates to `/agency/team` and `/agency/billing` respectively.
+  - Each shows its icon, label, and a small `Badge` with text "Soon".
+- Keep routes and page files untouched. Do not modify `Team.tsx` or `Billing.tsx`.
 
-### State to add
-`csvOpen`, `entryOpen`, `selectedClientId` (defaults to first client when loaded).
+### 2. Mobile navigation
+- Remove Team and Billing from `mobileNav`, `mobileMore`, or any other mobile nav lists so they only appear in the dropdown.
 
-### Untouched
-- `Kpi`, `ClientList`, missing-data card
-- `CsvImportDialog` and `AnalyticsEntryDialog` components themselves
-- KPI grid rendering when data exists
-- All other dashboard sections
-
-### Files
-- Edit only `src/pages/agency/Analytics.tsx`
-- No new files, no schema changes
+## What stays the same
+- `src/pages/agency/Team.tsx` and `src/pages/agency/Billing.tsx` remain unchanged.
+- Route definitions remain unchanged.
+- All other nav items stay in their current positions.
