@@ -46,19 +46,19 @@ export default function Strategies() {
     <div className="p-6 md:p-8 space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">AI strategy</div>
-          <h1 className="text-3xl font-bold tracking-tight">Monthly strategies</h1>
-          <p className="text-sm text-muted-foreground mt-1">Generate next-month plans grounded in real client data.</p>
+          <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">Strategie AI</div>
+          <h1 className="text-3xl font-bold tracking-tight">Strategii lunare</h1>
+          <p className="text-sm text-muted-foreground mt-1">Generează planuri pentru luna următoare bazate pe date reale ale clientului.</p>
         </div>
-        <Button onClick={() => setGenOpen(true)}><Sparkles className="h-4 w-4 mr-2" /> Generate next month</Button>
+        <Button onClick={() => setGenOpen(true)}><Sparkles className="h-4 w-4 mr-2" /> Generează luna următoare</Button>
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
         {[
           { label: "Total", value: kpis.total },
-          { label: "In progress", value: kpis.drafts },
-          { label: "Approved", value: kpis.approved },
-          { label: "Sent to client", value: kpis.sent },
+          { label: "În lucru", value: kpis.drafts },
+          { label: "Aprobate", value: kpis.approved },
+          { label: "Trimise clientului", value: kpis.sent },
         ].map((k) => (
           <Card key={k.label}>
             <CardContent className="p-4"><div className="text-xs text-muted-foreground">{k.label}</div><div className="text-2xl font-bold mt-1">{k.value}</div></CardContent>
@@ -70,14 +70,14 @@ export default function Strategies() {
         <Select value={clientFilter} onValueChange={setClientFilter}>
           <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
+            <SelectItem value="all">Toți clienții</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">Toate statusurile</SelectItem>
             {Object.entries(STRATEGY_STATUS_META).map(([k, m]) => <SelectItem key={k} value={k}>{m.label}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -88,8 +88,8 @@ export default function Strategies() {
       ) : items.length === 0 ? (
         <Card><CardContent className="p-10 text-center text-muted-foreground space-y-3">
           <Lightbulb className="h-8 w-8 mx-auto text-accent" />
-          <div>No strategies yet. Generate the first one for next month.</div>
-          <Button onClick={() => setGenOpen(true)}><Sparkles className="h-4 w-4 mr-2" /> Generate</Button>
+          <div>Nicio strategie încă. Generează prima pentru luna următoare.</div>
+          <Button onClick={() => setGenOpen(true)}><Sparkles className="h-4 w-4 mr-2" /> Generează</Button>
         </CardContent></Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -107,8 +107,8 @@ export default function Strategies() {
                     <div className="text-xs text-muted-foreground">{c?.name || "—"} · {monthLabel(s.month, s.year)}</div>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground line-clamp-3">
-                    {s.executive_summary || "No summary yet."}
-                    <div className="flex items-center justify-end mt-3 text-accent text-xs"><span className="inline-flex items-center gap-1">Open <ArrowRight className="h-3 w-3" /></span></div>
+                    {s.executive_summary || "Fără rezumat încă."}
+                    <div className="flex items-center justify-end mt-3 text-accent text-xs"><span className="inline-flex items-center gap-1">Deschide <ArrowRight className="h-3 w-3" /></span></div>
                   </CardContent>
                 </Card>
               </Link>

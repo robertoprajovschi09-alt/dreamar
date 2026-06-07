@@ -78,13 +78,13 @@ export default function Analytics() {
   return (
     <div className="p-6 md:p-8 space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-sm text-muted-foreground mt-1">Aggregated performance across all clients.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analitice</h1>
+        <p className="text-sm text-muted-foreground mt-1">Performanță agregată pentru toți clienții.</p>
       </div>
 
       <Card><CardContent className="pt-5 flex flex-wrap items-end gap-3">
-        <div><Label className="text-xs">Year</Label><Input type="number" className="w-24" value={year} onChange={(e) => setYear(Number(e.target.value))} /></div>
-        <div><Label className="text-xs">Month</Label><Input type="number" min={1} max={12} className="w-20" value={month} onChange={(e) => setMonth(Number(e.target.value))} /></div>
+        <div><Label className="text-xs">An</Label><Input type="number" className="w-24" value={year} onChange={(e) => setYear(Number(e.target.value))} /></div>
+        <div><Label className="text-xs">Lună</Label><Input type="number" min={1} max={12} className="w-20" value={month} onChange={(e) => setMonth(Number(e.target.value))} /></div>
       </CardContent></Card>
 
       {isEmpty ? (
@@ -94,16 +94,16 @@ export default function Analytics() {
               <Inbox className="h-6 w-6 text-muted-foreground" />
             </div>
             <div>
-              <div className="font-semibold">No data yet for this period</div>
-              <p className="text-sm text-muted-foreground mt-1">Import a CSV export from your platforms, or add an entry manually to get started.</p>
+              <div className="font-semibold">Nu există date pentru această perioadă</div>
+              <p className="text-sm text-muted-foreground mt-1">Importă un CSV exportat din platformele tale sau adaugă manual o intrare pentru a începe.</p>
             </div>
             {clients.length === 0 ? (
-              <Button asChild variant="outline"><Link to="/agency/clients">Add your first client</Link></Button>
+              <Button asChild variant="outline"><Link to="/agency/clients">Adaugă primul client</Link></Button>
             ) : (
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
                 <div className="w-full sm:w-56">
                   <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                    <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Alege client" /></SelectTrigger>
                     <SelectContent>
                       {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                     </SelectContent>
@@ -111,10 +111,10 @@ export default function Analytics() {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" disabled={!selectedClientId} onClick={() => setCsvOpen(true)}>
-                    <Upload className="h-4 w-4 mr-2" /> Import CSV
+                    <Upload className="h-4 w-4 mr-2" /> Importă CSV
                   </Button>
                   <Button disabled={!selectedClientId} onClick={() => setEntryOpen(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    <Plus className="h-4 w-4 mr-2" /> Add manually
+                    <Plus className="h-4 w-4 mr-2" /> Adaugă manual
                   </Button>
                 </div>
               </div>
@@ -123,29 +123,29 @@ export default function Analytics() {
         </Card>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Kpi label="Total views" value={t.views} />
-          <Kpi label="Total reach" value={t.reach} />
+          <Kpi label="Vizualizări totale" value={t.views} />
+          <Kpi label="Reach total" value={t.reach} />
           <Kpi label="Engagement" value={t.engagement} />
-          <Kpi label="Followers gained" value={t.followers_gained} />
-          <Kpi label="Leads" value={t.leads} />
-          <Kpi label="Sales" value={t.sales} />
-          <Kpi label="Bookings" value={t.bookings} />
-          <Kpi label="Revenue" value={t.revenue} money />
-          <Kpi label="Ad spend" value={t.ad_spend} money />
+          <Kpi label="Followers câștigați" value={t.followers_gained} />
+          <Kpi label="Lead-uri" value={t.leads} />
+          <Kpi label="Vânzări" value={t.sales} />
+          <Kpi label="Rezervări" value={t.bookings} />
+          <Kpi label="Venit" value={t.revenue} money />
+          <Kpi label="Buget ads" value={t.ad_spend} money />
           <Kpi label="ROAS" value={t.ad_spend ? Number((t.revenue / t.ad_spend).toFixed(2)) : 0} />
         </div>
       )}
 
 
       <div className="grid md:grid-cols-2 gap-4">
-        <ClientList title="Top growth" icon={<TrendingUp className="h-4 w-4 text-emerald-500" />} rows={top} />
-        <ClientList title="Biggest drop" icon={<TrendingDown className="h-4 w-4 text-destructive" />} rows={bottom} />
+        <ClientList title="Cea mai mare creștere" icon={<TrendingUp className="h-4 w-4 text-emerald-500" />} rows={top} />
+        <ClientList title="Cea mai mare scădere" icon={<TrendingDown className="h-4 w-4 text-destructive" />} rows={bottom} />
       </div>
 
       {missingClients.length > 0 && (
         <Card className="border-amber-500/40 bg-amber-500/5">
           <CardContent className="pt-5">
-            <div className="flex items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-amber-600" /><div className="font-semibold text-sm">Clients with missing data</div></div>
+            <div className="flex items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-amber-600" /><div className="font-semibold text-sm">Clienți cu date lipsă</div></div>
             <ul className="space-y-1.5 text-sm">
               {missingClients.map((c) => (
                 <li key={c.id} className="flex justify-between">
@@ -189,7 +189,7 @@ function ClientList({ title, icon, rows }: { title: string; icon: React.ReactNod
   return (
     <Card><CardContent className="pt-5">
       <div className="flex items-center gap-2 mb-3">{icon}<div className="font-semibold text-sm">{title}</div></div>
-      {rows.length === 0 ? <p className="text-sm text-muted-foreground">No data.</p> : (
+      {rows.length === 0 ? <p className="text-sm text-muted-foreground">Fără date.</p> : (
         <ul className="space-y-2">
           {rows.map((r) => (
             <li key={r.id} className="flex justify-between items-center text-sm">

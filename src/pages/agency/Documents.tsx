@@ -16,8 +16,8 @@ export default function Documents() {
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Documents</h1>
-        <p className="text-sm text-muted-foreground mt-1">Briefs, contracts, creative assets and reports.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Documente</h1>
+        <p className="text-sm text-muted-foreground mt-1">Brief-uri, contracte, materiale creative și rapoarte.</p>
       </div>
       <DocumentsList agencyId={agency.id} clients={clients} />
     </div>

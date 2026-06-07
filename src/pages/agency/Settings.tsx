@@ -24,22 +24,22 @@ export default function Settings() {
     const { error } = await supabase.from("agencies").update({ name, brand_color: color }).eq("id", agency.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success("Salvat");
   };
 
   return (
     <div className="p-6 md:p-8 max-w-3xl">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Agency profile and branding.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Setări</h1>
+        <p className="text-sm text-muted-foreground mt-1">Profilul agenției și branding.</p>
       </div>
       <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><SettingsIcon className="h-4 w-4 text-accent" /> Agency</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><SettingsIcon className="h-4 w-4 text-accent" /> Agenție</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1.5"><Label>Agency name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div className="space-y-1.5"><Label>Brand color</Label><Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-24 p-1" /></div>
+          <div className="space-y-1.5"><Label>Numele agenției</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div className="space-y-1.5"><Label>Culoare brand</Label><Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-24 p-1" /></div>
           <Button onClick={save} disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvează"}
           </Button>
         </CardContent>
       </Card>

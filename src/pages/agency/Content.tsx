@@ -52,37 +52,37 @@ export default function Content() {
     <div className="p-6 md:p-8 space-y-4 max-w-[1400px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Content</h1>
-          <p className="text-sm text-muted-foreground mt-1">All scheduled and draft content across your clients.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Conținut</h1>
+          <p className="text-sm text-muted-foreground mt-1">Tot conținutul programat și ciornele pentru clienții tăi.</p>
         </div>
         <Button onClick={() => { setEditingId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Plus className="h-4 w-4 mr-1.5" /> New content
+          <Plus className="h-4 w-4 mr-1.5" /> Conținut nou
         </Button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[200px] max-w-[300px]">
           <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input placeholder="Search title..." value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
+          <Input placeholder="Caută titlu..." value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
         </div>
         <Select value={filterClient} onValueChange={setFilterClient}>
           <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All clients</SelectItem>
+            <SelectItem value="all">Toți clienții</SelectItem>
             {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterPlatform} onValueChange={setFilterPlatform}>
           <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All platforms</SelectItem>
+            <SelectItem value="all">Toate platformele</SelectItem>
             {PLATFORM_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">Toate statusurile</SelectItem>
             {POST_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -92,17 +92,17 @@ export default function Content() {
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">No content matches your filters.</div>
+          <div className="p-12 text-center text-sm text-muted-foreground">Niciun conținut nu corespunde filtrelor.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium">Title</th>
+                  <th className="text-left px-4 py-3 font-medium">Titlu</th>
                   <th className="text-left px-4 py-3 font-medium">Client</th>
-                  <th className="text-left px-4 py-3 font-medium">Platform</th>
-                  <th className="text-left px-4 py-3 font-medium">Type</th>
-                  <th className="text-left px-4 py-3 font-medium">Scheduled</th>
+                  <th className="text-left px-4 py-3 font-medium">Platformă</th>
+                  <th className="text-left px-4 py-3 font-medium">Tip</th>
+                  <th className="text-left px-4 py-3 font-medium">Programat</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
                   <th className="text-right px-4 py-3 font-medium"></th>
                 </tr>
@@ -121,7 +121,7 @@ export default function Content() {
                       <td className="px-4 py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
                         {(r.status === "ready_for_client" || r.status === "changes_requested" || r.status === "internal_review") && (
                           <Button size="sm" variant="outline" className="h-8" onClick={() => setSendPost(r)}>
-                            <Send className="h-3.5 w-3.5 mr-1" /> Send
+                            <Send className="h-3.5 w-3.5 mr-1" /> Trimite
                           </Button>
                         )}
                         <SaveToSwipeButton defaults={{
