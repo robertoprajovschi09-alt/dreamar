@@ -1,20 +1,15 @@
-## Goal
-Move "Team" and "Billing" navigation items out of the main sidebar and into the user dropdown menu in the header, marking them with a "Soon" badge while keeping their routes and pages intact.
+## Plan
 
-## Changes
+### 1. Add optional City input to Add Client wizard
+- In `src/components/client/AddClientWizard.tsx`:
+  - Add `city: string` to the `Form` type and `empty` object.
+  - Insert a "City" input in the Basics (Step 1) UI, near the other contact/location fields.
+  - Include `city: form.city.trim() || null` in the final `clientPayload` so it is saved to `clients.city`.
 
-### 1. `src/components/AgencyLayout.tsx`
-- Remove `UserCog` and `CreditCard` from the `remainingNav` array so they no longer appear in the sidebar.
-- Add a new `soonNav` array (or inline items) for Team and Billing with their icons, labels, and routes.
-- In the header `DropdownMenuContent`, after the "Sign out" item (or before the separator), add two `DropdownMenuItem` entries:
-  - Each navigates to `/agency/team` and `/agency/billing` respectively.
-  - Each shows its icon, label, and a small `Badge` with text "Soon".
-- Keep routes and page files untouched. Do not modify `Team.tsx` or `Billing.tsx`.
+### 2. Preserve niche_id in the simple Edit dialog
+- In `src/pages/agency/Clients.tsx`:
+  - Add `niche_id: string | null` to the `Client` type.
+  - Add `niche_id` to the Supabase `.select(...)` query so it is fetched.
+  - In `handleSave`, when updating an existing client, include `niche_id: editing.niche_id` in the update payload so the library reference is explicitly preserved and not left mismatched against a plain `niche` value.
 
-### 2. Mobile navigation
-- Remove Team and Billing from `mobileNav`, `mobileMore`, or any other mobile nav lists so they only appear in the dropdown.
-
-## What stays the same
-- `src/pages/agency/Team.tsx` and `src/pages/agency/Billing.tsx` remain unchanged.
-- Route definitions remain unchanged.
-- All other nav items stay in their current positions.
+No other files or dialogs will be changed.
