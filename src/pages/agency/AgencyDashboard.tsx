@@ -55,6 +55,8 @@ export default function AgencyDashboard() {
         { data: contentMetrics },
         { data: upcomingPosts },
         { data: latestStrategies },
+        { data: platformsAny },
+        { data: reportsAny },
       ] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agency.id),
         supabase.from("clients").select("id,name,created_at").eq("agency_id", agency.id),
@@ -66,7 +68,15 @@ export default function AgencyDashboard() {
         supabase.from("content_metrics").select("content_item_id,client_id,views,platform,content_posts:content_item_id(title)").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()).order("views", { ascending: false }).limit(5),
         supabase.from("content_posts").select("id,title,client_id,scheduled_for,platform,clients:client_id(name)").eq("agency_id", agency.id).gte("scheduled_for", now.toISOString()).order("scheduled_for", { ascending: true }).limit(5),
         supabase.from("monthly_strategies").select("client_id,key_insights,action_items,status,created_at").eq("agency_id", agency.id).order("created_at", { ascending: false }).limit(20),
+        supabase.from("client_platforms").select("id").eq("agency_id", agency.id).limit(1),
+        supabase.from("reports").select("id").eq("agency_id", agency.id).limit(1),
       ]);
+
+      setHasPlatforms((platformsAny || []).length > 0);
+      setHasAnalytics((analyticsAny || []).length > 0);
+      setHasReports((reportsAny || []).length > 0);
+
+
 
       // Compute "Collecting data" client set (lifetime presence of analytics/business-impact)
       const hasAnyAnalytics = new Set((analyticsAny || []).map((a: any) => a.client_id));
