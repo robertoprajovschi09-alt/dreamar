@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, Plus, Loader2, FileCheck, AlertTriangle, TrendingUp, FileText,
-  CalendarClock, Sparkles, Heart, BarChart3, ClipboardList,
+  CalendarClock, Sparkles, Heart, BarChart3, ClipboardList, CheckCircle2, Circle,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
 import { HealthScoreMini } from "@/components/health/HealthScoreMini";
 import { fetchAgencyAlerts, detectForAgency, type RiskAlert } from "@/lib/risk";
