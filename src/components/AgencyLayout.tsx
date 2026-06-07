@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, BookmarkPlus, ClipboardCheck, Lightbulb, Target, UserCog, CreditCard, Settings as SettingsIcon, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, BookmarkPlus, ClipboardCheck, Lightbulb, Target, UserCog, CreditCard, Settings as SettingsIcon, ChevronDown, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -9,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +55,22 @@ export default function AgencyLayout() {
   const { profile, agency } = useUser();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const mobilePrimary = [
+    { to: "/agency", icon: LayoutDashboard, label: "Dashboard", end: true },
+    { to: "/agency/clients", icon: Users, label: "Clients" },
+    { to: "/agency/content", icon: FileVideo, label: "Content" },
+    { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
+  ];
+  const mobileMore = [
+    { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
+    { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
+    { to: "/agency/reports", icon: FileText, label: "Reports" },
+    ...secondaryNav,
+    ...remainingNav,
+  ];
+
 
   return (
     <div className="min-h-screen flex w-full bg-background text-foreground">
@@ -160,13 +178,36 @@ export default function AgencyLayout() {
           </div>
         </header>
 
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur flex justify-around py-2 overflow-x-auto">
-          {mobileNav.map((n) => (
-            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-3 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur grid grid-cols-5 py-2">
+          {mobilePrimary.map((n) => (
+            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-1 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
               <n.icon className="h-5 w-5" /> {n.label}
             </NavLink>
           ))}
+          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+            <SheetTrigger asChild>
+              <button className="flex flex-col items-center gap-0.5 text-[11px] px-1 py-1 text-muted-foreground">
+                <MoreHorizontal className="h-5 w-5" /> More
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>More</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 grid grid-cols-1 gap-1">
+                {mobileMore.map((n) => (
+                  <SheetClose asChild key={n.to}>
+                    <NavLink to={n.to} className={navLinkClass}>
+                      <n.icon className="h-4 w-4" />
+                      {n.label}
+                    </NavLink>
+                  </SheetClose>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </nav>
+
 
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
