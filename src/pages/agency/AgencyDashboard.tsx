@@ -153,6 +153,16 @@ export default function AgencyDashboard() {
         </div>
       </div>
 
+      {/* Getting started checklist */}
+      <GettingStarted
+        items={[
+          { label: "Add your first client", done: clientCount > 0, to: "/agency/clients" },
+          { label: "Add platforms & handles", done: hasPlatforms, to: clientCount > 0 ? "/agency/clients" : undefined },
+          { label: "Import your first analytics data", done: hasAnalytics, to: "/agency/analytics" },
+          { label: "Generate your first report", done: hasReports, to: "/agency/reports" },
+        ]}
+      />
+
       {/* KPI strip */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi icon={<Users className="h-4 w-4" />} label="Active clients" value={clientCount} to="/agency/clients" />
