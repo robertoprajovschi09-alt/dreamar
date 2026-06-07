@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchCollectingClientIds } from "@/lib/clientStatus";
 
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type AlertStatus = "active" | "acknowledged" | "resolved" | "ignored";
@@ -45,9 +46,27 @@ export async function fetchClientActiveAlert(clientId: string): Promise<RiskAler
 }
 
 export async function detectForAgency(agencyId: string) {
-  const { data, error } = await supabase.functions.invoke("detect-client-risk", { body: { agency_id: agencyId } });
+  // Skip clients still in "Collecting data" onboarding state.
+  const collecting = await fetchCollectingClientIds(agencyId);
+  const excludeIds = Array.from(collecting);
+
+  const { data, error } = await supabase.functions.invoke("detect-client-risk", {
+    body: { agency_id: agencyId, exclude_client_ids: excludeIds },
+  });
   if (error) throw error;
   if ((data as any)?.error) throw new Error((data as any).error);
+
+  // Immediately resolve any stale active alerts for collecting-data clients so
+  // they disappear from the UI even if the edge function ignored the exclude list.
+  if (excludeIds.length > 0) {
+    await (supabase as any)
+      .from(TBL)
+      .update({ status: "ignored", resolved_at: new Date().toISOString() })
+      .eq("agency_id", agencyId)
+      .eq("status", "active")
+      .in("client_id", excludeIds);
+  }
+
   return data;
 }
 

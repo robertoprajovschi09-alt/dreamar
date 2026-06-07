@@ -23,6 +23,8 @@ import { NichePanel } from "@/components/performance/NichePanel";
 import { ClientReportsTab } from "@/components/reports/ClientReportsTab";
 import { getClientBrief, BRAND_TONES } from "@/lib/brief";
 import { HealthScoreCard } from "@/components/health/HealthScoreCard";
+import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
+import { isCollectingData } from "@/lib/clientStatus";
 import { CompetitorsTab } from "@/components/competitors/CompetitorsTab";
 import { ClientStrategiesTab } from "@/components/strategies/ClientStrategiesTab";
 import { ClientAnalyticsTab } from "@/components/analytics/ClientAnalyticsTab";
@@ -40,17 +42,20 @@ export default function ClientProfile() {
   const [platforms, setPlatforms] = useState<any[]>([]);
   const [goals, setGoals] = useState<any[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [collecting, setCollecting] = useState(false);
 
   const loadAll = useCallback(async () => {
     if (!id || !agency) return;
     setLoading(true);
-    const [c, cu, ci, cf, cp, gl] = await Promise.all([
+    const [c, cu, ci, cf, cp, gl, ae, bi] = await Promise.all([
       supabase.from("clients").select("*").eq("id", id).maybeSingle(),
       supabase.from("client_users").select("*").eq("client_id", id).order("created_at", { ascending: false }),
       supabase.from("client_invites").select("*").eq("client_id", id).order("created_at", { ascending: false }),
       supabase.from("client_feedback").select("*").eq("client_id", id).order("created_at", { ascending: false }),
       supabase.from("client_platforms").select("*").eq("client_id", id).order("platform"),
       supabase.from("monthly_goals").select("*").eq("client_id", id).order("month", { ascending: false }),
+      supabase.from("analytics_entries").select("id", { count: "exact", head: true }).eq("client_id", id),
+      (supabase as any).from("business_impact_entries").select("id", { count: "exact", head: true }).eq("client_id", id),
     ]);
     setClient(c.data);
     setUsers(cu.data || []);
@@ -58,6 +63,9 @@ export default function ClientProfile() {
     setFeedback(cf.data || []);
     setPlatforms(cp.data || []);
     setGoals(gl.data || []);
+    if (c.data) {
+      setCollecting(isCollectingData(c.data, (ae.count || 0) > 0, ((bi as any).count || 0) > 0));
+    }
     setLoading(false);
   }, [id, agency]);
 
@@ -107,7 +115,18 @@ export default function ClientProfile() {
 
         <TabsContent value="overview">
           <div className="space-y-4">
-            <HealthScoreCard clientId={client.id} />
+            {collecting ? (
+              <Card>
+                <CardContent className="py-6 flex items-start gap-3">
+                  <CollectingDataBadge />
+                  <p className="text-sm text-muted-foreground">
+                    We'll start scoring health and risk after 30 days or once analytics / business-impact data is added.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <HealthScoreCard clientId={client.id} />
+            )}
             <DashboardContextCard agencyId={client.agency_id} clientId={client.id} />
             <LatestCheckInCard clientId={client.id} />
             <OverviewTab client={client} platforms={platforms} goals={goals} feedback={feedback} />

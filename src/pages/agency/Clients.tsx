@@ -12,6 +12,8 @@ import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react
 import { toast } from "sonner";
 import { NICHES, STATUSES, displayNiche } from "@/lib/niches";
 import { AddClientWizard } from "@/components/client/AddClientWizard";
+import { fetchCollectingClientIds } from "@/lib/clientStatus";
+import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
 
 type Client = {
   id: string; name: string; niche: string; custom_niche: string | null; city: string | null;
@@ -23,6 +25,7 @@ const emptyForm = { name: "", niche: "custom", city: "", website: "", status: "a
 export default function Clients() {
   const { agency } = useUser();
   const [clients, setClients] = useState<Client[]>([]);
+  const [collecting, setCollecting] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false); // edit dialog
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -40,6 +43,7 @@ export default function Clients() {
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     setClients((data || []) as Client[]);
+    try { setCollecting(await fetchCollectingClientIds(agency.id)); } catch {}
     setLoading(false);
   };
 
@@ -179,7 +183,7 @@ export default function Clients() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{displayNiche(c.niche, c.custom_niche)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.city || "—"}</td>
-                    <td className="px-4 py-3"><span className="text-xs uppercase tracking-wide">{c.status}</span></td>
+                    <td className="px-4 py-3">{collecting.has(c.id) ? <CollectingDataBadge /> : <span className="text-xs uppercase tracking-wide">{c.status}</span>}</td>
                     <td className="px-4 py-3 text-right">
                       <Link to={`/agency/clients/${c.id}`}>
                         <Button variant="ghost" size="icon" className="h-8 w-8"><ExternalLink className="h-3.5 w-3.5" /></Button>

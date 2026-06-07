@@ -13,6 +13,7 @@ import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
 import { HealthScoreMini } from "@/components/health/HealthScoreMini";
 import { fetchAgencyAlerts, detectForAgency, type RiskAlert } from "@/lib/risk";
 import { RiskAlertCard } from "@/components/risk/RiskAlertCard";
+import { isCollectingData } from "@/lib/clientStatus";
 
 export default function AgencyDashboard() {
   const { agency } = useUser();
@@ -27,6 +28,7 @@ export default function AgencyDashboard() {
   const [topContent, setTopContent] = useState<any[]>([]);
   const [upcomingContent, setUpcomingContent] = useState<any[]>([]);
   const [aiRecs, setAiRecs] = useState<{ client_id: string; text: string }[]>([]);
+  const [collecting, setCollecting] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!agency) return;
@@ -42,20 +44,33 @@ export default function AgencyDashboard() {
         { data: clientsList },
         { data: pendingList },
         { data: analyticsThisMonth },
+        { data: analyticsAny },
+        { data: businessImpactAny },
         { data: prevReports },
         { data: contentMetrics },
         { data: upcomingPosts },
         { data: latestStrategies },
       ] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agency.id),
-        supabase.from("clients").select("id,name").eq("agency_id", agency.id),
+        supabase.from("clients").select("id,name,created_at").eq("agency_id", agency.id),
         supabase.from("content_approvals").select("id,status,due_date,created_at,content_post_id,client_id,content_posts:content_post_id(title),clients:client_id(name)").eq("agency_id", agency.id).eq("status", "pending_approval").order("created_at", { ascending: true }).limit(6),
         supabase.from("analytics_entries").select("client_id").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()),
+        supabase.from("analytics_entries").select("client_id").eq("agency_id", agency.id),
+        (supabase as any).from("business_impact_entries").select("client_id").eq("agency_id", agency.id),
         supabase.from("reports").select("client_id").eq("agency_id", agency.id).gte("period_start", prevMonth.toISOString().slice(0, 10)).lte("period_end", prevMonthEnd.toISOString().slice(0, 10)),
         supabase.from("content_metrics").select("content_item_id,client_id,views,platform,content_posts:content_item_id(title)").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()).order("views", { ascending: false }).limit(5),
         supabase.from("content_posts").select("id,title,client_id,scheduled_for,platform,clients:client_id(name)").eq("agency_id", agency.id).gte("scheduled_for", now.toISOString()).order("scheduled_for", { ascending: true }).limit(5),
         supabase.from("monthly_strategies").select("client_id,key_insights,action_items,status,created_at").eq("agency_id", agency.id).order("created_at", { ascending: false }).limit(20),
       ]);
+
+      // Compute "Collecting data" client set (lifetime presence of analytics/business-impact)
+      const hasAnyAnalytics = new Set((analyticsAny || []).map((a: any) => a.client_id));
+      const hasAnyBI = new Set((businessImpactAny || []).map((a: any) => a.client_id));
+      const collectingSet = new Set<string>();
+      (clientsList || []).forEach((c: any) => {
+        if (isCollectingData(c, hasAnyAnalytics.has(c.id), hasAnyBI.has(c.id))) collectingSet.add(c.id);
+      });
+      setCollecting(collectingSet);
 
       const names: Record<string, string> = {};
       (clientsList || []).forEach((c: any) => { names[c.id] = c.name; });
@@ -97,7 +112,7 @@ export default function AgencyDashboard() {
         try { await detectForAgency(agency.id); localStorage.setItem(lastKey, String(Date.now())); } catch {}
       }
       const ra = await fetchAgencyAlerts(agency.id, "active");
-      setRiskAlerts(ra.slice(0, 4));
+      setRiskAlerts(ra.filter((a) => !collectingSet.has(a.client_id)).slice(0, 4));
 
       setLoading(false);
     })();
@@ -105,9 +120,10 @@ export default function AgencyDashboard() {
 
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 
-  const avgHealth = healthScores.length ? Math.round(healthScores.reduce((s, h) => s + Number(h.total_score), 0) / healthScores.length) : 0;
-  const healthy = healthScores.filter((h) => h.score_status === "healthy").length;
-  const atRisk = healthScores.filter((h) => h.score_status === "at_risk").length;
+  const scoredHealth = healthScores.filter((h) => !collecting.has(h.client_id));
+  const avgHealth = scoredHealth.length ? Math.round(scoredHealth.reduce((s, h) => s + Number(h.total_score), 0) / scoredHealth.length) : 0;
+  const healthy = scoredHealth.filter((h) => h.score_status === "healthy").length;
+  const atRisk = scoredHealth.filter((h) => h.score_status === "at_risk").length;
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
@@ -135,12 +151,12 @@ export default function AgencyDashboard() {
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base flex items-center gap-2"><Heart className="h-4 w-4 text-accent" /> Client Health</CardTitle>
-            <span className="text-xs text-muted-foreground">{healthy} healthy · {atRisk} at risk · {healthScores.length - healthy - atRisk} caution</span>
+            <span className="text-xs text-muted-foreground">{healthy} healthy · {atRisk} at risk · {scoredHealth.length - healthy - atRisk} caution</span>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {healthScores.slice(0, 6).map((s) => (
-                <HealthScoreMini key={s.id} score={s} clientName={clientNames[s.client_id] || "Client"} />
+                <HealthScoreMini key={s.id} score={s} clientName={clientNames[s.client_id] || "Client"} collecting={collecting.has(s.client_id)} />
               ))}
             </div>
           </CardContent>
