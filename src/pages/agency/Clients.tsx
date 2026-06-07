@@ -16,7 +16,7 @@ import { fetchCollectingClientIds } from "@/lib/clientStatus";
 import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
 
 type Client = {
-  id: string; name: string; niche: string; custom_niche: string | null; city: string | null;
+  id: string; name: string; niche: string; custom_niche: string | null; niche_id: string | null; city: string | null;
   website: string | null; status: string; created_at: string;
 };
 
@@ -42,7 +42,7 @@ export default function Clients() {
     setLoading(true);
     const { data, error } = await supabase
       .from("clients")
-      .select("id,name,niche,custom_niche,city,website,status,created_at")
+      .select("id,name,niche,custom_niche,niche_id,city,website,status,created_at")
       .eq("agency_id", agency.id)
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
@@ -73,7 +73,7 @@ export default function Clients() {
       status: form.status as any,
     };
     const { error } = editing
-      ? await supabase.from("clients").update(payload).eq("id", editing.id)
+      ? await supabase.from("clients").update({ ...payload, niche_id: editing.niche_id }).eq("id", editing.id)
       : await supabase.from("clients").insert({ ...payload, agency_id: agency.id });
     setBusy(false);
     if (error) { toast.error(error.message); return; }

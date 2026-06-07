@@ -80,6 +80,7 @@ type Form = {
 const empty: Form = {
   name: "", website: "", logo_url: "", brand_color: "#E11D2E",
   contact_person: "", contact_email: "", contact_phone: "", status: "active",
+  city: "",
   niche: "real_estate", custom_niche: "", niche_id: null, creating_custom_niche: false,
   kpi_fields: getNichePreset("real_estate").kpi_fields,
   business_impact_fields: getNichePreset("real_estate").business_impact_fields,
@@ -395,6 +396,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
         custom_niche: isCustom ? (form.custom_niche.trim() || selectedNiche?.label || null) : null,
         niche_id: nicheId,
         website: form.website.trim() || null,
+        city: form.city.trim() || null,
         logo_url: form.logo_url || null,
         brand_color: form.brand_color || null,
         contact_person: form.contact_person.trim() || null,
@@ -603,6 +605,10 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>City</Label>
+                <Input placeholder="Optional" value={form.city} onChange={(e) => set("city", e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
