@@ -301,6 +301,42 @@ export default function AgencyDashboard() {
   );
 }
 
+function GettingStarted({ items }: { items: { label: string; done: boolean; to?: string }[] }) {
+  const done = items.filter((i) => i.done).length;
+  if (done === items.length) return null;
+  const pct = Math.round((done / items.length) * 100);
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> Getting started</CardTitle>
+          <span className="text-xs text-muted-foreground font-mono">{done}/{items.length}</span>
+        </div>
+        <Progress value={pct} className="h-2 mt-3" />
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {items.map((it, i) => {
+            const inner = (
+              <div className="flex items-center gap-2.5 text-sm">
+                {it.done
+                  ? <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                  : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+                <span className={it.done ? "text-muted-foreground line-through" : ""}>{it.label}</span>
+              </div>
+            );
+            return (
+              <li key={i}>
+                {!it.done && it.to ? <Link to={it.to} className="hover:underline">{inner}</Link> : inner}
+              </li>
+            );
+          })}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
 function Kpi({ icon, label, value, to, accent }: { icon: React.ReactNode; label: string; value: number; to?: string; accent?: boolean }) {
   const card = (
     <Card className="hover:border-accent transition">
