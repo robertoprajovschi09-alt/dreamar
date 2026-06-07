@@ -30,6 +30,10 @@ export default function AgencyDashboard() {
   const [upcomingContent, setUpcomingContent] = useState<any[]>([]);
   const [aiRecs, setAiRecs] = useState<{ client_id: string; text: string }[]>([]);
   const [collecting, setCollecting] = useState<Set<string>>(new Set());
+  const [hasPlatforms, setHasPlatforms] = useState(false);
+  const [hasAnalytics, setHasAnalytics] = useState(false);
+  const [hasReports, setHasReports] = useState(false);
+
 
   useEffect(() => {
     if (!agency) return;
