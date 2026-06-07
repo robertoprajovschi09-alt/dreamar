@@ -180,6 +180,32 @@ export default function Clients() {
             </form>
           </DialogContent>
         </Dialog>
+        <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Quick add client</DialogTitle></DialogHeader>
+            <form onSubmit={handleQuickCreate} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="quick-name">Client name *</Label>
+                <Input id="quick-name" required autoFocus value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Niche</Label>
+                <Select value={quickForm.niche} onValueChange={(v) => setQuickForm({ ...quickForm, niche: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {NICHES.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setQuickOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={quickBusy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                  {quickBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create & open"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
