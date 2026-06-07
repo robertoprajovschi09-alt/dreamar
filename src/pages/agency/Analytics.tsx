@@ -87,18 +87,55 @@ export default function Analytics() {
         <div><Label className="text-xs">Month</Label><Input type="number" min={1} max={12} className="w-20" value={month} onChange={(e) => setMonth(Number(e.target.value))} /></div>
       </CardContent></Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Kpi label="Total views" value={t.views} />
-        <Kpi label="Total reach" value={t.reach} />
-        <Kpi label="Engagement" value={t.engagement} />
-        <Kpi label="Followers gained" value={t.followers_gained} />
-        <Kpi label="Leads" value={t.leads} />
-        <Kpi label="Sales" value={t.sales} />
-        <Kpi label="Bookings" value={t.bookings} />
-        <Kpi label="Revenue" value={t.revenue} money />
-        <Kpi label="Ad spend" value={t.ad_spend} money />
-        <Kpi label="ROAS" value={t.ad_spend ? Number((t.revenue / t.ad_spend).toFixed(2)) : 0} />
-      </div>
+      {isEmpty ? (
+        <Card>
+          <CardContent className="pt-8 pb-8 flex flex-col items-center text-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+              <Inbox className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div>
+              <div className="font-semibold">No data yet for this period</div>
+              <p className="text-sm text-muted-foreground mt-1">Import a CSV export from your platforms, or add an entry manually to get started.</p>
+            </div>
+            {clients.length === 0 ? (
+              <Button asChild variant="outline"><Link to="/agency/clients">Add your first client</Link></Button>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
+                <div className="w-full sm:w-56">
+                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                    <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                    <SelectContent>
+                      {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" disabled={!selectedClientId} onClick={() => setCsvOpen(true)}>
+                    <Upload className="h-4 w-4 mr-2" /> Import CSV
+                  </Button>
+                  <Button disabled={!selectedClientId} onClick={() => setEntryOpen(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                    <Plus className="h-4 w-4 mr-2" /> Add manually
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Kpi label="Total views" value={t.views} />
+          <Kpi label="Total reach" value={t.reach} />
+          <Kpi label="Engagement" value={t.engagement} />
+          <Kpi label="Followers gained" value={t.followers_gained} />
+          <Kpi label="Leads" value={t.leads} />
+          <Kpi label="Sales" value={t.sales} />
+          <Kpi label="Bookings" value={t.bookings} />
+          <Kpi label="Revenue" value={t.revenue} money />
+          <Kpi label="Ad spend" value={t.ad_spend} money />
+          <Kpi label="ROAS" value={t.ad_spend ? Number((t.revenue / t.ad_spend).toFixed(2)) : 0} />
+        </div>
+      )}
+
 
       <div className="grid md:grid-cols-2 gap-4">
         <ClientList title="Top growth" icon={<TrendingUp className="h-4 w-4 text-emerald-500" />} rows={top} />
