@@ -178,13 +178,36 @@ export default function AgencyLayout() {
           </div>
         </header>
 
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur flex justify-around py-2 overflow-x-auto">
-          {mobileNav.map((n) => (
-            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-3 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur grid grid-cols-5 py-2">
+          {mobilePrimary.map((n) => (
+            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-1 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
               <n.icon className="h-5 w-5" /> {n.label}
             </NavLink>
           ))}
+          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+            <SheetTrigger asChild>
+              <button className="flex flex-col items-center gap-0.5 text-[11px] px-1 py-1 text-muted-foreground">
+                <MoreHorizontal className="h-5 w-5" /> More
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>More</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 grid grid-cols-1 gap-1">
+                {mobileMore.map((n) => (
+                  <SheetClose asChild key={n.to}>
+                    <NavLink to={n.to} className={navLinkClass}>
+                      <n.icon className="h-4 w-4" />
+                      {n.label}
+                    </NavLink>
+                  </SheetClose>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
         </nav>
+
 
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
