@@ -22,6 +22,10 @@ export default function Analytics() {
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [byClientNow, setByClientNow] = useState<Record<string, AnalyticsEntry[]>>({});
   const [byClientPrev, setByClientPrev] = useState<Record<string, AnalyticsEntry[]>>({});
+  const [csvOpen, setCsvOpen] = useState(false);
+  const [entryOpen, setEntryOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+
 
   const load = useCallback(async () => {
     if (!agency) return;
