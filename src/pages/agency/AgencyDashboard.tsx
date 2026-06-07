@@ -44,20 +44,33 @@ export default function AgencyDashboard() {
         { data: clientsList },
         { data: pendingList },
         { data: analyticsThisMonth },
+        { data: analyticsAny },
+        { data: businessImpactAny },
         { data: prevReports },
         { data: contentMetrics },
         { data: upcomingPosts },
         { data: latestStrategies },
       ] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agency.id),
-        supabase.from("clients").select("id,name").eq("agency_id", agency.id),
+        supabase.from("clients").select("id,name,created_at").eq("agency_id", agency.id),
         supabase.from("content_approvals").select("id,status,due_date,created_at,content_post_id,client_id,content_posts:content_post_id(title),clients:client_id(name)").eq("agency_id", agency.id).eq("status", "pending_approval").order("created_at", { ascending: true }).limit(6),
         supabase.from("analytics_entries").select("client_id").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()),
+        supabase.from("analytics_entries").select("client_id").eq("agency_id", agency.id),
+        (supabase as any).from("business_impact_entries").select("client_id").eq("agency_id", agency.id),
         supabase.from("reports").select("client_id").eq("agency_id", agency.id).gte("period_start", prevMonth.toISOString().slice(0, 10)).lte("period_end", prevMonthEnd.toISOString().slice(0, 10)),
         supabase.from("content_metrics").select("content_item_id,client_id,views,platform,content_posts:content_item_id(title)").eq("agency_id", agency.id).gte("created_at", monthStart.toISOString()).order("views", { ascending: false }).limit(5),
         supabase.from("content_posts").select("id,title,client_id,scheduled_for,platform,clients:client_id(name)").eq("agency_id", agency.id).gte("scheduled_for", now.toISOString()).order("scheduled_for", { ascending: true }).limit(5),
         supabase.from("monthly_strategies").select("client_id,key_insights,action_items,status,created_at").eq("agency_id", agency.id).order("created_at", { ascending: false }).limit(20),
       ]);
+
+      // Compute "Collecting data" client set (lifetime presence of analytics/business-impact)
+      const hasAnyAnalytics = new Set((analyticsAny || []).map((a: any) => a.client_id));
+      const hasAnyBI = new Set((businessImpactAny || []).map((a: any) => a.client_id));
+      const collectingSet = new Set<string>();
+      (clientsList || []).forEach((c: any) => {
+        if (isCollectingData(c, hasAnyAnalytics.has(c.id), hasAnyBI.has(c.id))) collectingSet.add(c.id);
+      });
+      setCollecting(collectingSet);
 
       const names: Record<string, string> = {};
       (clientsList || []).forEach((c: any) => { names[c.id] = c.name; });
