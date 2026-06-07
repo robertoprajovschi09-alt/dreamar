@@ -127,17 +127,6 @@ export default function Clients() {
             <Plus className="h-4 w-4 mr-1.5" /> Add client
           </Button>
         </div>
-
-  return (
-    <div className="p-6 md:p-8 space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage every client in {agency?.name}.</p>
-        </div>
-        <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Plus className="h-4 w-4 mr-1.5" /> Add client
-        </Button>
         {agency && (
           <AddClientWizard
             open={wizardOpen}
