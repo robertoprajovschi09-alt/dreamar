@@ -1,22 +1,35 @@
 export const NICHES = [
-  { value: "real_estate", label: "Real Estate" },
-  { value: "restaurant", label: "Restaurants" },
-  { value: "beauty", label: "Beauty / Aesthetics" },
+  { value: "real_estate", label: "Imobiliare" },
+  { value: "restaurant", label: "Restaurante" },
+  { value: "beauty", label: "Frumusețe / Estetică" },
   { value: "ecommerce", label: "E-commerce" },
-  { value: "fitness", label: "Fitness / Coaches" },
-  { value: "medical", label: "Medical / Clinics" },
-  { value: "dental", label: "Dental" },
-  { value: "education", label: "Education" },
-  { value: "auto", label: "Automotive" },
-  { value: "legal", label: "Legal" },
-  { value: "finance", label: "Finance" },
-  { value: "hospitality", label: "Hotels / Hospitality / Tourism" },
-  { value: "custom", label: "Custom" },
+  { value: "fitness", label: "Fitness / Coaching" },
+  { value: "medical", label: "Medical / Clinici" },
+  { value: "dental", label: "Stomatologie" },
+  { value: "education", label: "Educație" },
+  { value: "auto", label: "Auto" },
+  { value: "legal", label: "Juridic" },
+  { value: "finance", label: "Financiar" },
+  { value: "hospitality", label: "Hoteluri / Ospitalitate / Turism" },
+  { value: "custom", label: "Personalizat" },
 ] as const;
 
 export type NicheValue = typeof NICHES[number]["value"];
 
 export const STATUSES = ["active", "onboarding", "paused", "churned", "prospect"] as const;
+
+export const STATUS_LABELS: Record<string, string> = {
+  active: "activ",
+  onboarding: "onboarding",
+  paused: "pe pauză",
+  churned: "pierdut",
+  prospect: "prospect",
+};
+
+export function statusLabel(s: string | null | undefined) {
+  if (!s) return "—";
+  return STATUS_LABELS[s] ?? s;
+}
 
 export const PLATFORMS = [
   { value: "instagram", label: "Instagram" },
@@ -27,14 +40,14 @@ export const PLATFORMS = [
   { value: "google_ads", label: "Google Ads" },
   { value: "meta_ads", label: "Meta Ads" },
   { value: "website", label: "Website" },
-  { value: "other", label: "Other" },
+  { value: "other", label: "Altele" },
 ] as const;
 
 export const GOAL_STATUSES = [
-  { value: "in_progress", label: "In progress" },
-  { value: "at_risk", label: "At risk" },
-  { value: "achieved", label: "Achieved" },
-  { value: "missed", label: "Missed" },
+  { value: "in_progress", label: "În desfășurare" },
+  { value: "at_risk", label: "Cu risc" },
+  { value: "achieved", label: "Atins" },
+  { value: "missed", label: "Ratat" },
 ] as const;
 
 export function nicheLabel(v: string | null | undefined) {

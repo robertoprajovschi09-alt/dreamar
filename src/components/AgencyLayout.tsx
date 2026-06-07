@@ -15,32 +15,32 @@ import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const primaryNav = [
-  { to: "/agency", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/agency/clients", icon: Users, label: "Clients" },
-  { to: "/agency/content", icon: FileVideo, label: "Content" },
+  { to: "/agency", icon: LayoutDashboard, label: "Panou", end: true },
+  { to: "/agency/clients", icon: Users, label: "Clienți" },
+  { to: "/agency/content", icon: FileVideo, label: "Conținut" },
   { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
-  { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
-  { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
-  { to: "/agency/reports", icon: FileText, label: "Reports" },
+  { to: "/agency/approvals", icon: ClipboardCheck, label: "Aprobări" },
+  { to: "/agency/analytics", icon: BarChart3, label: "Analitice" },
+  { to: "/agency/reports", icon: FileText, label: "Rapoarte" },
 ];
 
 const secondaryNav = [
-  { to: "/agency/campaigns", icon: Megaphone, label: "Campaigns" },
-  { to: "/agency/strategies", icon: Lightbulb, label: "Strategies" },
-  { to: "/agency/tasks", icon: ListTodo, label: "Tasks" },
-  { to: "/agency/documents", icon: FolderOpen, label: "Documents" },
-  { to: "/agency/swipe", icon: BookmarkPlus, label: "Swipe File" },
-  { to: "/agency/competitors", icon: Target, label: "Competitors" },
-  { to: "/agency/assistant", icon: Sparkles, label: "AI Assistant" },
+  { to: "/agency/campaigns", icon: Megaphone, label: "Campanii" },
+  { to: "/agency/strategies", icon: Lightbulb, label: "Strategii" },
+  { to: "/agency/tasks", icon: ListTodo, label: "Sarcini" },
+  { to: "/agency/documents", icon: FolderOpen, label: "Documente" },
+  { to: "/agency/swipe", icon: BookmarkPlus, label: "Bibliotecă idei" },
+  { to: "/agency/competitors", icon: Target, label: "Concurenți" },
+  { to: "/agency/assistant", icon: Sparkles, label: "Asistent AI" },
 ];
 
 const remainingNav = [
-  { to: "/agency/settings", icon: SettingsIcon, label: "Settings" },
+  { to: "/agency/settings", icon: SettingsIcon, label: "Setări" },
 ];
 
 const soonNav = [
-  { to: "/agency/team", icon: UserCog, label: "Team" },
-  { to: "/agency/billing", icon: CreditCard, label: "Billing" },
+  { to: "/agency/team", icon: UserCog, label: "Echipă" },
+  { to: "/agency/billing", icon: CreditCard, label: "Facturare" },
 ];
 
 const mobileNav = [...primaryNav, ...secondaryNav, ...remainingNav];
@@ -61,15 +61,15 @@ export default function AgencyLayout() {
   const [moreOpen, setMoreOpen] = useState(false);
 
   const mobilePrimary = [
-    { to: "/agency", icon: LayoutDashboard, label: "Dashboard", end: true },
-    { to: "/agency/clients", icon: Users, label: "Clients" },
-    { to: "/agency/content", icon: FileVideo, label: "Content" },
-    { to: "/agency/approvals", icon: ClipboardCheck, label: "Approvals" },
+    { to: "/agency", icon: LayoutDashboard, label: "Panou", end: true },
+    { to: "/agency/clients", icon: Users, label: "Clienți" },
+    { to: "/agency/content", icon: FileVideo, label: "Conținut" },
+    { to: "/agency/approvals", icon: ClipboardCheck, label: "Aprobări" },
   ];
   const mobileMore = [
     { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
-    { to: "/agency/analytics", icon: BarChart3, label: "Analytics" },
-    { to: "/agency/reports", icon: FileText, label: "Reports" },
+    { to: "/agency/analytics", icon: BarChart3, label: "Analitice" },
+    { to: "/agency/reports", icon: FileText, label: "Rapoarte" },
     ...secondaryNav,
     ...remainingNav,
   ];
@@ -92,7 +92,7 @@ export default function AgencyLayout() {
 
           <Collapsible defaultOpen={false} className="pt-1">
             <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors [&[data-state=open]>svg]:rotate-180">
-              <span>More</span>
+              <span>Mai multe</span>
               <ChevronDown className="h-4 w-4 transition-transform" />
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-0.5 pt-0.5">
@@ -149,7 +149,7 @@ export default function AgencyLayout() {
         <header className="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 gap-3 bg-background/80 backdrop-blur sticky top-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
             <span className="h-2 w-2 rounded-full bg-accent" />
-            <span className="truncate text-sm font-medium">{agency?.name || "Agency"}</span>
+            <span className="truncate text-sm font-medium">{agency?.name || "Agenție"}</span>
             {profile?.role && <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">{profile.role.replace("_", " ")}</Badge>}
           </div>
 
@@ -170,7 +170,7 @@ export default function AgencyLayout() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="text-xs">
-                  <div className="font-semibold truncate">{profile?.full_name || "Account"}</div>
+                  <div className="font-semibold truncate">{profile?.full_name || "Cont"}</div>
                   <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -178,12 +178,12 @@ export default function AgencyLayout() {
                   <DropdownMenuItem key={n.to} onClick={() => navigate(n.to)}>
                     <n.icon className="h-4 w-4 mr-2" />
                     <span className="flex-1">{n.label}</span>
-                    <Badge variant="secondary" className="ml-2 text-[10px] uppercase tracking-wide">Soon</Badge>
+                    <Badge variant="secondary" className="ml-2 text-[10px] uppercase tracking-wide">În curând</Badge>
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={async () => { await signOut(); navigate("/auth"); }}>
-                  <LogOut className="h-4 w-4 mr-2" /> Sign out
+                  <LogOut className="h-4 w-4 mr-2" /> Deconectare
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -199,12 +199,12 @@ export default function AgencyLayout() {
           <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
             <SheetTrigger asChild>
               <button className="flex flex-col items-center gap-0.5 text-[11px] px-1 py-1 text-muted-foreground">
-                <MoreHorizontal className="h-5 w-5" /> More
+                <MoreHorizontal className="h-5 w-5" /> Mai multe
               </button>
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
               <SheetHeader>
-                <SheetTitle>More</SheetTitle>
+                <SheetTitle>Mai multe</SheetTitle>
               </SheetHeader>
               <div className="mt-4 grid grid-cols-1 gap-1">
                 {mobileMore.map((n) => (
