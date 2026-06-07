@@ -1,27 +1,25 @@
-Add a "Getting started" checklist card to AgencyDashboard that appears only while setup is incomplete, placed above the KPI strip.
+Add a secondary "Quick add" button beside the existing "Add client" button in `src/pages/agency/Clients.tsx`.
 
-## Changes
+### What will change
+- In the header row of `Clients.tsx`, render a second button next to the primary "Add client" button:
+  - Label: "Quick add"
+  - Style: `variant="outline"` (secondary, does not compete with the primary CTA)
+- Clicking "Quick add" opens a small Dialog (reuse `components/ui/dialog`) containing only:
+  - Client name — required text input (`components/ui/input`)
+  - Niche — required select dropdown (`components/ui/select`) populated from the existing `NICHES` constant in `src/lib/niches.ts`
+- On submit:
+  1. Insert a row into the `clients` table with:
+     - `name`: provided name
+     - `niche`: selected niche value
+     - `status`: "onboarding"
+     - `agency_id`: current agency id
+  2. Show a success toast
+  3. Navigate to `/agency/clients/{newClientId}`
+  4. Refresh the client list
+- The existing `AddClientWizard` component and the primary "Add client" button remain completely untouched.
+- No new files are created; all changes are confined to `src/pages/agency/Clients.tsx`.
 
-### 1. `src/pages/agency/AgencyDashboard.tsx`
-- Add a query for `client_platforms` (select `"id"`, `eq("agency_id", agency.id)`, `limit(1)`) to the existing `Promise.all` batch.
-- Track `hasPlatforms` (boolean) from the result.
-- Track `hasAnalytics` (boolean) — reuse the existing `analyticsAny` query result (already fetched).
-- Track `hasReports` (boolean) — check if any `reports` rows exist agency-wide (add a head-only count query or reuse if available).
-- Define four checklist items:
-  1. **Add your first client** — done when `clientCount > 0`, link to `/agency/clients`
-  2. **Add platforms & handles** — done when `hasPlatforms`, no link specified
-  3. **Import your first analytics data** — done when `hasAnalytics`, link to `/agency/analytics`
-  4. **Generate your first report** — done when `hasReports`, link to `/agency/reports`
-- Compute `completedCount` and `totalCount`. If `completedCount === totalCount`, render nothing.
-- Otherwise render a `<Card>` above the KPI strip containing:
-  - CardHeader with title "Getting started" and a `<Progress value={(completedCount/totalCount)*100} />`
-  - CardContent with a vertical list of items. Each item shows:
-    - A checkmark (green, `text-accent`) or empty circle (`text-muted-foreground`)
-    - The item label
-    - If undone and a link exists, wrap the label in a `<Link>`; otherwise plain text
-- Use existing Tailwind tokens and shadcn Card/Progress components. No new UI dependencies.
-
-## Out of scope
-- No changes to other dashboard sections (KPIs, health, risk, lists).
-- No new files or components needed beyond the single page edit.
-- No database or backend changes.
+### What will NOT change
+- The full `AddClientWizard` flow, its button, or its component.
+- Any other dashboard or client-list UI or logic.
+- Database schema.
