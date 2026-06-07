@@ -24,11 +24,15 @@ const emptyForm = { name: "", niche: "custom", city: "", website: "", status: "a
 
 export default function Clients() {
   const { agency } = useUser();
+  const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [collecting, setCollecting] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false); // edit dialog
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickForm, setQuickForm] = useState({ name: "", niche: "custom" });
+  const [quickBusy, setQuickBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
