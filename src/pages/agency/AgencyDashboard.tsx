@@ -112,7 +112,7 @@ export default function AgencyDashboard() {
         try { await detectForAgency(agency.id); localStorage.setItem(lastKey, String(Date.now())); } catch {}
       }
       const ra = await fetchAgencyAlerts(agency.id, "active");
-      setRiskAlerts(ra.slice(0, 4));
+      setRiskAlerts(ra.filter((a) => !collectingSet.has(a.client_id)).slice(0, 4));
 
       setLoading(false);
     })();
@@ -120,9 +120,10 @@ export default function AgencyDashboard() {
 
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 
-  const avgHealth = healthScores.length ? Math.round(healthScores.reduce((s, h) => s + Number(h.total_score), 0) / healthScores.length) : 0;
-  const healthy = healthScores.filter((h) => h.score_status === "healthy").length;
-  const atRisk = healthScores.filter((h) => h.score_status === "at_risk").length;
+  const scoredHealth = healthScores.filter((h) => !collecting.has(h.client_id));
+  const avgHealth = scoredHealth.length ? Math.round(scoredHealth.reduce((s, h) => s + Number(h.total_score), 0) / scoredHealth.length) : 0;
+  const healthy = scoredHealth.filter((h) => h.score_status === "healthy").length;
+  const atRisk = scoredHealth.filter((h) => h.score_status === "at_risk").length;
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl">
@@ -150,12 +151,12 @@ export default function AgencyDashboard() {
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base flex items-center gap-2"><Heart className="h-4 w-4 text-accent" /> Client Health</CardTitle>
-            <span className="text-xs text-muted-foreground">{healthy} healthy · {atRisk} at risk · {healthScores.length - healthy - atRisk} caution</span>
+            <span className="text-xs text-muted-foreground">{healthy} healthy · {atRisk} at risk · {scoredHealth.length - healthy - atRisk} caution</span>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {healthScores.slice(0, 6).map((s) => (
-                <HealthScoreMini key={s.id} score={s} clientName={clientNames[s.client_id] || "Client"} />
+                <HealthScoreMini key={s.id} score={s} clientName={clientNames[s.client_id] || "Client"} collecting={collecting.has(s.client_id)} />
               ))}
             </div>
           </CardContent>
