@@ -13,6 +13,7 @@ import { fetchAgencyLatest, type HealthScore } from "@/lib/healthScore";
 import { HealthScoreMini } from "@/components/health/HealthScoreMini";
 import { fetchAgencyAlerts, detectForAgency, type RiskAlert } from "@/lib/risk";
 import { RiskAlertCard } from "@/components/risk/RiskAlertCard";
+import { isCollectingData } from "@/lib/clientStatus";
 
 export default function AgencyDashboard() {
   const { agency } = useUser();
@@ -27,6 +28,7 @@ export default function AgencyDashboard() {
   const [topContent, setTopContent] = useState<any[]>([]);
   const [upcomingContent, setUpcomingContent] = useState<any[]>([]);
   const [aiRecs, setAiRecs] = useState<{ client_id: string; text: string }[]>([]);
+  const [collecting, setCollecting] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!agency) return;
