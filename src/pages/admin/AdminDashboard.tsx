@@ -74,7 +74,7 @@ export default function AdminDashboard() {
     load();
   };
 
-  const changePlan = async (a: AgencyRow, plan: string) => {
+  const changePlan = async (a: AgencyRow, plan: typeof PLANS[number]) => {
     if (plan === a.plan) return;
     setBusy(a.id);
     const { error } = await supabase.from("agencies").update({ plan }).eq("id", a.id);
