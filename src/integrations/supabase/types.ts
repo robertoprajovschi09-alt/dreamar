@@ -3844,6 +3844,7 @@ export type Database = {
     }
     Functions: {
       accept_client_invite: { Args: { _token: string }; Returns: string }
+      admin_delete_agency: { Args: { _agency_id: string }; Returns: undefined }
       cie_fanout: {
         Args: { _run_type: string; _since_days: number }
         Returns: undefined
