@@ -28,7 +28,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<"client_owner" | "client_viewer">("client_viewer");
+  const role: "client_viewer" = "client_viewer";
   const [perms, setPerms] = useState<PortalPermissions>(defaultPermissions("client_viewer"));
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(null);
