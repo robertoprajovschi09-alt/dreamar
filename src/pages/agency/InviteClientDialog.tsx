@@ -37,7 +37,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
   useEffect(() => { setPerms(defaultPermissions(role)); }, [role]);
 
   const reset = () => {
-    setEmail(""); setDisplayName(""); setRole("client_viewer");
+    setEmail(""); setDisplayName("");
     setPerms(defaultPermissions("client_viewer"));
     setLink(null); setCopied(false);
   };
