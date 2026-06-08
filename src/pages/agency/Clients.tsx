@@ -89,27 +89,6 @@ export default function Clients() {
     load();
   };
 
-  const handleQuickCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!agency || !quickForm.name.trim()) return;
-    setQuickBusy(true);
-    const { data, error } = await supabase
-      .from("clients")
-      .insert({
-        agency_id: agency.id,
-        name: quickForm.name.trim(),
-        niche: quickForm.niche as any,
-        status: "onboarding" as any,
-      })
-      .select("id")
-      .single();
-    setQuickBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Client creat");
-    setQuickOpen(false);
-    setQuickForm({ name: "", niche: "custom" });
-    if (data?.id) navigate(`/agency/clients/${data.id}`);
-  };
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
