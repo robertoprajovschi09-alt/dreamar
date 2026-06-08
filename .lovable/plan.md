@@ -1,57 +1,65 @@
-# Content Calendar UX upgrade
+# Tasks page UX upgrade
 
-No schema changes. Touches `Calendar.tsx`, `MonthCalendar.tsx`, and adds 3 small components.
+No schema changes. Edits `src/pages/agency/Tasks.tsx` and adds one tiny component.
 
-## 1. Quick-add popover on day click
+## 1. Inline quick-add at top of each column
 
-New `src/components/content/QuickAddPopover.tsx`:
-- `Popover` anchored to the clicked day cell.
-- Fields: Client (Select), Title (Input, autofocused), Platform (Select), Status (Select, default `idea`).
-- `Create` button → `INSERT` into `content_posts` with `scheduled_for = <day>T10:00`, `content_type` defaulting to `Reel`, agency_id + filter defaults.
-- "More details" link → closes popover, opens the existing `ContentEditor` sheet prefilled with the same values (or, once created, in edit mode for the new row).
-- Esc / outside click closes.
+New `src/components/operations/QuickAddTaskInput.tsx`:
+- Single `Input` with placeholder "Adaugă o sarcină…", subtle (dashed border, ghost).
+- On Enter (non-empty): `INSERT` into `tasks` with
+  `{ agency_id, title, status: <column.value>, priority: "medium", client_id: <filter or null>, assigned_to: <filter or null> }`.
+- Optimistic local push, clear input, re-focus; refresh on error.
 
-`MonthCalendar` change: `onDayClick(date, anchorEl)` — pass the cell element so the popover can anchor. Calendar.tsx owns popover open state + selected day.
+Mounted at the top of every kanban column (above the cards), so each column can seed any status (todo / in_progress / blocked / done).
 
-## 2. Compact status-colored chips with platform icon
+## 2. Click card → quick-edit side panel
 
-New `src/lib/platformIcons.tsx` mapping `instagram|tiktok|facebook|youtube|linkedin` to Lucide icons (Instagram, Music2 for TikTok, Facebook, Youtube, Linkedin).
+A new lightweight panel `QuickEditTaskSheet` (separate from the full `TaskEditor`, but in the same file or a new one — new one is cleaner). Fields only:
+- Title (Input, inline)
+- Status (Select — `TASK_STATUSES`)
+- Priority (Select — `TASK_PRIORITIES`)
+- Assignee (Select — members)
+- Due date (shadcn date picker, single)
+- "Editare completă" link button → opens existing `TaskEditor` (description, type, etc.)
+- Delete button
 
-`MonthCalendar` day cell rewrite:
-- Each item rendered as a chip: `[icon] title` truncated, height ~20px, status background via `statusMeta(...).color`, left-border 2px in same color for clarity.
-- Show first 3, then `+N more` button → clicking opens a small popover listing all items for that day (chips, click → ContentEditor).
-- Drag-to-reschedule preserved (chip is the draggable element).
+Auto-save on change (debounced 400ms) OR a single "Salvează" button — I'll go with auto-save per field to feel fast (each Select change triggers an immediate `update`). Toast on error only.
 
-## 3. View toggle: Month / Week / List
+Card `onClick` opens this panel instead of the full editor. Drag-and-drop between columns preserved (drag handlers stay on the Card; click + drag distinguished by `onDragStart`).
 
-Top toolbar: `ToggleGroup` with Month/Week/List. Stored in URL `?view=month|week|list` so refresh keeps state.
+## 3. Denser cards
 
-- **Month**: existing `MonthCalendar`.
-- **Week**: new `WeekCalendar.tsx`. 7 columns × full week of `month` (uses current `month` state as cursor). Same chip rendering, same drag/drop, same quick-add on day click. Prev/Next arrows shift by 7 days instead of 1 month.
-- **List**: new `UpcomingList.tsx`. Sortable table with columns: Date, Client, Title, Platform, Status. Sortable by Date asc/desc (default), Client, Status. Click row → ContentEditor. Range: from today, 60 days forward (same filters apply).
+Card layout:
+- Left vertical priority bar (2px, color from `TASK_PRIORITIES`).
+- Title (medium, 2-line clamp).
+- Row: client name pill (muted), task_type badge.
+- Bottom row (only when present): due-date pill + small avatar.
+  - Due date: `MMM d`. Overdue (`deadline < now()` AND status !== done) → red text + `AlertCircle` icon. Today → accent color. Else muted.
+  - Assignee: shadcn `Avatar` 20px with initials, tooltip = full name.
 
-Cursor label adapts: month name for Month, "Week of …" for Week; List ignores cursor.
+Border hover keeps `border-accent`. Padding reduced to `p-2.5`.
 
-## 4. Filters + drag/drop + mobile
+## 4. Quick filters
 
-- Existing Client/Platform/Status filters unchanged, apply across all three views.
-- Drag-to-reschedule kept in Month and Week (List skips it — not meaningful).
-- Mobile: toolbar wraps; toggle group full width on `<sm`; day cells already responsive; Week view becomes vertical scroll on narrow screens (`grid-cols-7` with `min-w` per column inside an `overflow-x-auto`); chips remain readable; quick-add Popover already mobile-friendly via Radix.
+Add a row of toggle pills (using `ToggleGroup multiple` or plain `Button` toggles):
+- **My tasks** — `assigned_to === auth user.id`
+- **Overdue** — `deadline < now()` AND `status !== done`
+- **Priority**: `Select` (All / Urgent / High / Medium / Low) — or 4 chips; I'll use a single `Select` to save space.
+
+Existing Client and Assignee selects stay. Layout wraps; on mobile filters collapse to 1 per row naturally with `flex-wrap`. Kanban already responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-4`).
 
 ## Files
 
-- edit `src/pages/agency/Calendar.tsx` — view state, toolbar toggle, popover plumbing
-- edit `src/components/content/MonthCalendar.tsx` — chips + icons + +N more popover, onDayClick signature
-- new `src/components/content/WeekCalendar.tsx`
-- new `src/components/content/UpcomingList.tsx`
-- new `src/components/content/QuickAddPopover.tsx`
-- new `src/lib/platformIcons.tsx`
+- new `src/components/operations/QuickAddTaskInput.tsx`
+- new `src/components/operations/QuickEditTaskSheet.tsx`
+- edit `src/pages/agency/Tasks.tsx` — filters, quick-add at top of each column, click → quick edit, denser card, "Sarcină nouă" button still opens the full `TaskEditor`.
 
 ## Verification
 
-- Click an empty day → quick-add popover, 4 fields, Create makes the row appear instantly as a chip.
-- "More details" opens full editor with values prefilled.
-- Day with 5 items shows 3 chips + "+2 more"; clicking expands list popover.
-- Toggle Week → 7-day grid, drag a chip across days reschedules.
-- Toggle List → table of upcoming, click header re-sorts, click row opens editor.
-- Mobile (375px): toolbar wraps, calendar/list scroll, popovers fit screen.
+- Type a title in the "To do" column input + Enter → card appears instantly under that column.
+- Click any card → small panel slides in with the 5 quick fields; change Status → card moves columns; close.
+- "Mai multe detalii" link in the quick panel opens the full editor with the same task.
+- Overdue task shows red date + icon; done tasks never marked overdue.
+- "My tasks" toggle filters to current user only; "Overdue" toggles overdue-only; Priority select narrows further (filters AND together).
+- Drag a card from To do → Done, status updates server-side.
+- 375px width: filters wrap, columns stack, quick-add input full width.
