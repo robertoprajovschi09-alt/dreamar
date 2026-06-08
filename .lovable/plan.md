@@ -1,65 +1,50 @@
-# Tasks page UX upgrade
+# Team Invites & Member Management
 
-No schema changes. Edits `src/pages/agency/Tasks.tsx` and adds one tiny component.
+Build the team workflow so an agency owner can invite teammates that get access to the agency dashboard, mirroring the existing client-invite UX.
 
-## 1. Inline quick-add at top of each column
+## 1. Database (one migration)
 
-New `src/components/operations/QuickAddTaskInput.tsx`:
-- Single `Input` with placeholder "Adaugă o sarcină…", subtle (dashed border, ghost).
-- On Enter (non-empty): `INSERT` into `tasks` with
-  `{ agency_id, title, status: <column.value>, priority: "medium", client_id: <filter or null>, assigned_to: <filter or null> }`.
-- Optimistic local push, clear input, re-focus; refresh on error.
+**`team_invites` table** (modeled after `client_invites`, agency-scoped only):
+- `id, agency_id, email, token (auto random), role (agency_owner|agency_team, default agency_team), invited_by, status (pending|sent|opened|accepted|expired|revoked), created_at, expires_at (now()+7d), accepted_at, opened_at, revoked_at, last_sent_at, send_count`
+- GRANTs: `SELECT/INSERT/UPDATE/DELETE` to `authenticated`; `ALL` to `service_role`
+- RLS: members of the agency can read/insert/update/delete (insert requires `invited_by = auth.uid()`)
+- Unique `(agency_id, lower(email))` where status not in revoked/expired/accepted (partial index) to prevent dupes
 
-Mounted at the top of every kanban column (above the cards), so each column can seed any status (todo / in_progress / blocked / done).
+**RPCs (SECURITY DEFINER, search_path=public):**
+- `get_team_invite_preview(_token)` → agency_name, email, role, status, expires_at (open to anon)
+- `mark_team_invite_opened(_token)` — same pattern as `mark_invite_opened`
+- `accept_team_invite(_token)` — validates invite; inserts into `agency_members(agency_id, user_id, role)`; upserts profile with `role` + `agency_id` using the existing `app.bypass_profile_lock` pattern; marks invite accepted; respects `enforce_seat_limit` trigger (which already exists)
+- `resend_team_invite(_invite_id)` / `revoke_team_invite(_invite_id)` — owner-only via `is_owner_of`
 
-## 2. Click card → quick-edit side panel
+**Update `handle_new_user` trigger** — recognise `team_invite_token` in `raw_user_meta_data` and skip auto-agency creation (same branch as the existing client `invite_token`).
 
-A new lightweight panel `QuickEditTaskSheet` (separate from the full `TaskEditor`, but in the same file or a new one — new one is cleaner). Fields only:
-- Title (Input, inline)
-- Status (Select — `TASK_STATUSES`)
-- Priority (Select — `TASK_PRIORITIES`)
-- Assignee (Select — members)
-- Due date (shadcn date picker, single)
-- "Editare completă" link button → opens existing `TaskEditor` (description, type, etc.)
-- Delete button
+## 2. Edge Function `send-team-invite`
 
-Auto-save on change (debounced 400ms) OR a single "Salvează" button — I'll go with auto-save per field to feel fast (each Select change triggers an immediate `update`). Toast on error only.
+Clone of `send-client-invite`. Reads `team_invites` + `agencies`, sends a Resend email with subject "{agency} te-a invitat în echipă" and a link `https://<host>/accept-team-invite?token=...`. Updates `status` to `sent` and `last_sent_at`.
 
-Card `onClick` opens this panel instead of the full editor. Drag-and-drop between columns preserved (drag handlers stay on the Card; click + drag distinguished by `onDragStart`).
+## 3. UI
 
-## 3. Denser cards
+**`src/pages/agency/Team.tsx`** (replace placeholder):
+- Header with "Invite member" button (owner only).
+- **Members card**: lists `agency_members` joined to `profiles` (name, email, role badge). Owner can change role via Select (`agency_owner`/`agency_team`) and Remove (with confirm). Hide controls for the current user / cannot remove last owner.
+- **Pending invites card**: lists `team_invites` with status ≠ accepted/revoked; Resend, Copy link, Revoke buttons — mirroring client invite UI.
+- Seat usage indicator: `<members + pending> / plans.max_seats` for the agency's plan (show "Plan limit reached" disabled state on Invite button when exceeded).
 
-Card layout:
-- Left vertical priority bar (2px, color from `TASK_PRIORITIES`).
-- Title (medium, 2-line clamp).
-- Row: client name pill (muted), task_type badge.
-- Bottom row (only when present): due-date pill + small avatar.
-  - Due date: `MMM d`. Overdue (`deadline < now()` AND status !== done) → red text + `AlertCircle` icon. Today → accent color. Else muted.
-  - Assignee: shadcn `Avatar` 20px with initials, tooltip = full name.
+**`src/components/team/InviteTeamMemberDialog.tsx`** (new): email, role select (owner/team), submits insert into `team_invites`, then invokes `send-team-invite`; offers "Just create link" fallback like the client dialog.
 
-Border hover keeps `border-accent`. Padding reduced to `p-2.5`.
+**`src/pages/AcceptTeamInvite.tsx`** (new): mirrors `AcceptInvite.tsx` — preview via `get_team_invite_preview`, sign-up/sign-in tabs (passes `team_invite_token` in user metadata), auto-calls `accept_team_invite` once signed in, refreshes `UserContext`, navigates to `/agency`.
 
-## 4. Quick filters
+**Route**: add `/accept-team-invite` in `src/App.tsx`.
 
-Add a row of toggle pills (using `ToggleGroup multiple` or plain `Button` toggles):
-- **My tasks** — `assigned_to === auth user.id`
-- **Overdue** — `deadline < now()` AND `status !== done`
-- **Priority**: `Select` (All / Urgent / High / Medium / Low) — or 4 chips; I'll use a single `Select` to save space.
+## 4. Verification
 
-Existing Client and Assignee selects stay. Layout wraps; on mobile filters collapse to 1 per row naturally with `flex-wrap`. Kanban already responsive (`grid-cols-1 md:grid-cols-2 lg:grid-cols-4`).
+- Owner can invite, see pending status, resend & revoke.
+- Invitee receives email, signs up, lands on `/agency` with `agency_team` role and sees agency data (RoleRoute already allows it).
+- Seat limit blocks invite/accept once `plans.max_seats` is exceeded (existing `enforce_seat_limit` trigger handles accept).
+- Members list reflects role changes & removals immediately.
 
-## Files
+## Out of scope
 
-- new `src/components/operations/QuickAddTaskInput.tsx`
-- new `src/components/operations/QuickEditTaskSheet.tsx`
-- edit `src/pages/agency/Tasks.tsx` — filters, quick-add at top of each column, click → quick edit, denser card, "Sarcină nouă" button still opens the full `TaskEditor`.
-
-## Verification
-
-- Type a title in the "To do" column input + Enter → card appears instantly under that column.
-- Click any card → small panel slides in with the 5 quick fields; change Status → card moves columns; close.
-- "Mai multe detalii" link in the quick panel opens the full editor with the same task.
-- Overdue task shows red date + icon; done tasks never marked overdue.
-- "My tasks" toggle filters to current user only; "Overdue" toggles overdue-only; Priority select narrows further (filters AND together).
-- Drag a card from To do → Done, status updates server-side.
-- 375px width: filters wrap, columns stack, quick-add input full width.
+- No changes to client invite flow.
+- No new email templates beyond the team-specific copy.
+- No bulk invite.

@@ -3697,6 +3697,65 @@ export type Database = {
           },
         ]
       }
+      team_invites: {
+        Row: {
+          accepted_at: string | null
+          agency_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          last_sent_at: string | null
+          opened_at: string | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          send_count: number
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          agency_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          last_sent_at?: string | null
+          opened_at?: string | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          send_count?: number
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          agency_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          last_sent_at?: string | null
+          opened_at?: string | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          send_count?: number
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invites_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           agency_id: string
@@ -3844,6 +3903,7 @@ export type Database = {
     }
     Functions: {
       accept_client_invite: { Args: { _token: string }; Returns: string }
+      accept_team_invite: { Args: { _token: string }; Returns: string }
       admin_delete_agency: { Args: { _agency_id: string }; Returns: undefined }
       cie_fanout: {
         Args: { _run_type: string; _since_days: number }
@@ -3860,6 +3920,16 @@ export type Database = {
           client_name: string
           email: string
           expires_at: string
+          status: string
+        }[]
+      }
+      get_team_invite_preview: {
+        Args: { _token: string }
+        Returns: {
+          agency_name: string
+          email: string
+          expires_at: string
+          role: Database["public"]["Enums"]["app_role"]
           status: string
         }[]
       }
@@ -3885,8 +3955,11 @@ export type Database = {
       }
       is_saas_admin: { Args: { _user_id: string }; Returns: boolean }
       mark_invite_opened: { Args: { _token: string }; Returns: undefined }
+      mark_team_invite_opened: { Args: { _token: string }; Returns: undefined }
       resend_client_invite: { Args: { _invite_id: string }; Returns: undefined }
+      resend_team_invite: { Args: { _invite_id: string }; Returns: undefined }
       revoke_client_invite: { Args: { _invite_id: string }; Returns: undefined }
+      revoke_team_invite: { Args: { _invite_id: string }; Returns: undefined }
       touch_client_login: { Args: never; Returns: undefined }
     }
     Enums: {
