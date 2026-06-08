@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react
 import { toast } from "sonner";
 import { NICHES, STATUSES, displayNiche } from "@/lib/niches";
 import { AddClientWizard } from "@/components/client/AddClientWizard";
+import { QuickAddClientDialog } from "@/components/client/QuickAddClientDialog";
 import { fetchCollectingClientIds } from "@/lib/clientStatus";
 import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
 
@@ -30,9 +31,7 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false); // edit dialog
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [quickOpen, setQuickOpen] = useState(false);
-  const [quickForm, setQuickForm] = useState({ name: "", niche: "custom" });
-  const [quickBusy, setQuickBusy] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
@@ -90,27 +89,6 @@ export default function Clients() {
     load();
   };
 
-  const handleQuickCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!agency || !quickForm.name.trim()) return;
-    setQuickBusy(true);
-    const { data, error } = await supabase
-      .from("clients")
-      .insert({
-        agency_id: agency.id,
-        name: quickForm.name.trim(),
-        niche: quickForm.niche as any,
-        status: "onboarding" as any,
-      })
-      .select("id")
-      .single();
-    setQuickBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Client creat");
-    setQuickOpen(false);
-    setQuickForm({ name: "", niche: "custom" });
-    if (data?.id) navigate(`/agency/clients/${data.id}`);
-  };
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
@@ -120,20 +98,26 @@ export default function Clients() {
           <p className="text-sm text-muted-foreground mt-1">Gestionează toți clienții din {agency?.name}.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setQuickOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" /> Adăugare rapidă
-          </Button>
-          <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Button onClick={() => setQuickAddOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             <Plus className="h-4 w-4 mr-1.5" /> Adaugă client
           </Button>
         </div>
         {agency && (
-          <AddClientWizard
-            open={wizardOpen}
-            onOpenChange={setWizardOpen}
-            agencyId={agency.id}
-            onCreated={() => load()}
-          />
+          <>
+            <QuickAddClientDialog
+              open={quickAddOpen}
+              onOpenChange={setQuickAddOpen}
+              agencyId={agency.id}
+              onCreated={() => load()}
+              onOpenManual={() => setWizardOpen(true)}
+            />
+            <AddClientWizard
+              open={wizardOpen}
+              onOpenChange={setWizardOpen}
+              agencyId={agency.id}
+              onCreated={() => load()}
+            />
+          </>
         )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
@@ -175,32 +159,6 @@ export default function Clients() {
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>Anulează</Button>
                 <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvează"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={quickOpen} onOpenChange={setQuickOpen}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Adăugare rapidă client</DialogTitle></DialogHeader>
-            <form onSubmit={handleQuickCreate} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="quick-name">Nume client *</Label>
-                <Input id="quick-name" required autoFocus value={quickForm.name} onChange={(e) => setQuickForm({ ...quickForm, name: e.target.value })} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Nișă</Label>
-                <Select value={quickForm.niche} onValueChange={(v) => setQuickForm({ ...quickForm, niche: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {NICHES.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setQuickOpen(false)}>Anulează</Button>
-                <Button type="submit" disabled={quickBusy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  {quickBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Creează & deschide"}
                 </Button>
               </DialogFooter>
             </form>
