@@ -98,20 +98,26 @@ export default function Clients() {
           <p className="text-sm text-muted-foreground mt-1">Gestionează toți clienții din {agency?.name}.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setQuickOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" /> Adăugare rapidă
-          </Button>
-          <Button onClick={openCreate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+          <Button onClick={() => setQuickAddOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             <Plus className="h-4 w-4 mr-1.5" /> Adaugă client
           </Button>
         </div>
         {agency && (
-          <AddClientWizard
-            open={wizardOpen}
-            onOpenChange={setWizardOpen}
-            agencyId={agency.id}
-            onCreated={() => load()}
-          />
+          <>
+            <QuickAddClientDialog
+              open={quickAddOpen}
+              onOpenChange={setQuickAddOpen}
+              agencyId={agency.id}
+              onCreated={() => load()}
+              onOpenManual={() => setWizardOpen(true)}
+            />
+            <AddClientWizard
+              open={wizardOpen}
+              onOpenChange={setWizardOpen}
+              agencyId={agency.id}
+              onCreated={() => load()}
+            />
+          </>
         )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
