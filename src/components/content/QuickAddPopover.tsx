@@ -53,9 +53,10 @@ export function QuickAddPopover({
       title: title.trim(),
       platform,
       content_type: "Reel",
-      status,
+      status: status as any,
       scheduled_for: new Date(`${date}T10:00`).toISOString(),
-    }]);
+    }] as any);
+
 
     setSaving(false);
     if (error) return toast.error(error.message);
