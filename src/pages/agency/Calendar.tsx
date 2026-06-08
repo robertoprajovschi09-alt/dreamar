@@ -1,33 +1,61 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ChevronLeft, ChevronRight, Plus, Loader2 } from "lucide-react";
 import { MonthCalendar, type CalendarItem } from "@/components/content/MonthCalendar";
+import { WeekCalendar } from "@/components/content/WeekCalendar";
+import { UpcomingList } from "@/components/content/UpcomingList";
 import { ContentEditor } from "@/components/content/ContentEditor";
+import { QuickAddPopover } from "@/components/content/QuickAddPopover";
 import { POST_STATUSES, PLATFORM_OPTIONS } from "@/lib/content";
 import { toast } from "sonner";
 
+type View = "month" | "week" | "list";
+
 export default function Calendar() {
   const { agency } = useUser();
-  const [month, setMonth] = useState(new Date());
+  const [params, setParams] = useSearchParams();
+  const view = (params.get("view") as View) || "month";
+  const setView = (v: View) => { params.set("view", v); setParams(params, { replace: true }); };
+
+  const [cursor, setCursor] = useState(new Date());
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterClient, setFilterClient] = useState("all");
   const [filterPlatform, setFilterPlatform] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | null>(null);
 
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [quickDate, setQuickDate] = useState<string | null>(null);
+  const [quickAnchor, setQuickAnchor] = useState<{ x: number; y: number } | null>(null);
+
   const range = useMemo(() => {
-    const s = new Date(month.getFullYear(), month.getMonth(), 1);
-    const e = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    if (view === "list") {
+      const s = new Date(); s.setHours(0, 0, 0, 0);
+      const e = new Date(s); e.setDate(s.getDate() + 60);
+      return { start: s.toISOString(), end: e.toISOString() };
+    }
+    if (view === "week") {
+      const s = new Date(cursor);
+      const day = (s.getDay() + 6) % 7;
+      s.setDate(s.getDate() - day - 1); s.setHours(0, 0, 0, 0);
+      const e = new Date(s); e.setDate(s.getDate() + 9);
+      return { start: s.toISOString(), end: e.toISOString() };
+    }
+    const s = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    const e = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
     s.setDate(s.getDate() - 7); e.setDate(e.getDate() + 7);
     return { start: s.toISOString(), end: e.toISOString() };
-  }, [month]);
+  }, [cursor, view]);
 
   const load = async () => {
     if (!agency) return;
@@ -68,20 +96,56 @@ export default function Calendar() {
     if (error) { toast.error(error.message); load(); } else toast.success("Replanificat");
   };
 
-  const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const handleDayClick = (date: string, anchor: { x: number; y: number }) => {
+    setQuickDate(date); setQuickAnchor(anchor); setQuickOpen(true);
+  };
+
+  const openItem = (it: CalendarItem) => {
+    setEditingId(it.id); setDefaultDate(null); setEditorOpen(true);
+  };
+
+  const label = useMemo(() => {
+    if (view === "list") return "Următoarele 60 de zile";
+    if (view === "week") {
+      const s = new Date(cursor);
+      const day = (s.getDay() + 6) % 7;
+      s.setDate(s.getDate() - day);
+      const e = new Date(s); e.setDate(s.getDate() + 6);
+      return `${s.toLocaleDateString(undefined, { day: "2-digit", month: "short" })} – ${e.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}`;
+    }
+    return cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  }, [cursor, view]);
+
+  const shift = (dir: -1 | 1) => {
+    if (view === "list") return;
+    if (view === "week") {
+      const d = new Date(cursor); d.setDate(d.getDate() + 7 * dir); setCursor(d);
+    } else {
+      setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1));
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-4 max-w-[1400px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-sm text-muted-foreground mt-1">Trage elementele pentru a le replanifica. Clic pe o zi pentru a adăuga conținut.</p>
+          <p className="text-sm text-muted-foreground mt-1">Trage elementele pentru a le replanifica. Clic pe o zi pentru a adăuga rapid.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <div className="px-3 py-1.5 text-sm font-medium min-w-[160px] text-center">{monthLabel}</div>
-          <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" onClick={() => setMonth(new Date())}>Astăzi</Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as View)} size="sm" variant="outline">
+            <ToggleGroupItem value="month" className="text-xs">Lună</ToggleGroupItem>
+            <ToggleGroupItem value="week" className="text-xs">Săptămână</ToggleGroupItem>
+            <ToggleGroupItem value="list" className="text-xs">Listă</ToggleGroupItem>
+          </ToggleGroup>
+          {view !== "list" && (
+            <>
+              <Button variant="outline" size="icon" onClick={() => shift(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+              <div className="px-3 py-1.5 text-sm font-medium min-w-[180px] text-center">{label}</div>
+              <Button variant="outline" size="icon" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>Astăzi</Button>
+            </>
+          )}
           <Button onClick={() => { setEditingId(null); setDefaultDate(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             <Plus className="h-4 w-4 mr-1.5" /> Nou
           </Button>
@@ -114,15 +178,41 @@ export default function Calendar() {
 
       {loading ? (
         <div className="py-20 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : (
+      ) : view === "month" ? (
         <MonthCalendar
-          month={month}
+          month={cursor}
           items={filtered}
-          onDayClick={(date) => { setEditingId(null); setDefaultDate(date); setEditorOpen(true); }}
-          onItemClick={(it) => { setEditingId(it.id); setEditorOpen(true); }}
+          onDayClick={handleDayClick}
+          onItemClick={openItem}
           onItemDrop={handleDrop}
         />
+      ) : view === "week" ? (
+        <WeekCalendar
+          cursor={cursor}
+          items={filtered}
+          onDayClick={handleDayClick}
+          onItemClick={openItem}
+          onItemDrop={handleDrop}
+        />
+      ) : (
+        <UpcomingList items={filtered} onItemClick={openItem} />
       )}
+
+      <QuickAddPopover
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+        anchor={quickAnchor}
+        date={quickDate}
+        clients={clients}
+        defaultClientId={filterClient !== "all" ? filterClient : null}
+        onCreated={load}
+        onOpenFull={({ date }) => {
+          setQuickOpen(false);
+          setEditingId(null);
+          setDefaultDate(date);
+          setEditorOpen(true);
+        }}
+      />
 
       <ContentEditor
         open={editorOpen}

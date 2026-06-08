@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { statusMeta } from "@/lib/content";
+import { platformIcon } from "@/lib/platformIcons";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type CalendarItem = {
   id: string;
@@ -13,9 +15,9 @@ export type CalendarItem = {
 };
 
 type Props = {
-  month: Date; // any date in target month
+  month: Date;
   items: CalendarItem[];
-  onDayClick?: (date: string) => void;
+  onDayClick?: (date: string, anchor: { x: number; y: number }) => void;
   onItemClick?: (item: CalendarItem) => void;
   onItemDrop?: (itemId: string, newDate: string) => void;
 };
@@ -23,12 +25,58 @@ type Props = {
 function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function startOfGrid(d: Date) {
   const s = startOfMonth(d);
-  const day = (s.getDay() + 6) % 7; // monday-first
+  const day = (s.getDay() + 6) % 7;
   s.setDate(s.getDate() - day);
   return s;
 }
 function fmtDay(d: Date) { return d.toISOString().slice(0, 10); }
 function isSameMonth(a: Date, b: Date) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth(); }
+
+export function ItemChip({
+  item, onClick,
+}: { item: CalendarItem; onClick?: (it: CalendarItem) => void }) {
+  const meta = statusMeta(item.status);
+  const Icon = platformIcon(item.platform);
+  return (
+    <button
+      draggable
+      onDragStart={(e) => e.dataTransfer.setData("text/plain", item.id)}
+      onClick={(e) => { e.stopPropagation(); onClick?.(item); }}
+      className={cn(
+        "w-full text-left flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] leading-tight border-l-2 border-current/40 overflow-hidden",
+        meta.color
+      )}
+      title={`${item.title} · ${meta.label}${item.client_name ? " · " + item.client_name : ""}`}
+    >
+      <Icon className="h-3 w-3 shrink-0 opacity-80" />
+      <span className="truncate font-medium">{item.title}</span>
+    </button>
+  );
+}
+
+function MoreChipsPopover({
+  items, onItemClick,
+}: { items: CalendarItem[]; onItemClick?: (it: CalendarItem) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => { e.stopPropagation(); setOpen(true); }}
+          className="text-[10px] text-muted-foreground hover:text-foreground px-1 text-left"
+        >
+          +{items.length} more
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-2 space-y-1" align="start">
+        <div className="text-[11px] text-muted-foreground px-1 pb-1">{items.length} elemente</div>
+        {items.map((it) => (
+          <ItemChip key={it.id} item={it} onClick={(i) => { setOpen(false); onItemClick?.(i); }} />
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function MonthCalendar({ month, items, onDayClick, onItemClick, onItemDrop }: Props) {
   const days = useMemo(() => {
@@ -64,6 +112,8 @@ export function MonthCalendar({ month, items, onDayClick, onItemClick, onItemDro
           const key = fmtDay(d);
           const inMonth = isSameMonth(d, month);
           const list = byDay.get(key) || [];
+          const visible = list.slice(0, 3);
+          const overflow = list.slice(3);
           return (
             <div
               key={key}
@@ -79,29 +129,21 @@ export function MonthCalendar({ month, items, onDayClick, onItemClick, onItemDro
                 !inMonth && "bg-muted/30 text-muted-foreground",
                 key === today && "bg-accent/5"
               )}
-              onClick={() => onDayClick?.(key)}
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                onDayClick?.(key, { x: r.left + 8, y: r.top + 8 });
+              }}
             >
               <div className={cn("text-[11px] font-mono", key === today && "text-accent font-bold")}>
                 {d.getDate()}
               </div>
-              <div className="flex flex-col gap-1 overflow-hidden">
-                {list.slice(0, 4).map((it) => {
-                  const meta = statusMeta(it.status);
-                  return (
-                    <button
-                      key={it.id}
-                      draggable
-                      onDragStart={(e) => e.dataTransfer.setData("text/plain", it.id)}
-                      onClick={(e) => { e.stopPropagation(); onItemClick?.(it); }}
-                      className={cn("text-left truncate px-1.5 py-1 rounded text-[11px] leading-tight", meta.color)}
-                      title={`${it.title} · ${meta.label}`}
-                    >
-                      <div className="truncate font-medium">{it.title}</div>
-                      {it.client_name && <div className="truncate opacity-70 text-[10px]">{it.client_name}</div>}
-                    </button>
-                  );
-                })}
-                {list.length > 4 && <div className="text-[10px] text-muted-foreground px-1">+{list.length - 4} more</div>}
+              <div className="flex flex-col gap-0.5 overflow-hidden">
+                {visible.map((it) => (
+                  <ItemChip key={it.id} item={it} onClick={onItemClick} />
+                ))}
+                {overflow.length > 0 && (
+                  <MoreChipsPopover items={list} onItemClick={onItemClick} />
+                )}
               </div>
             </div>
           );

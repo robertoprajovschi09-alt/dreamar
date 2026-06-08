@@ -1,79 +1,57 @@
-# Fix: Agency Settings save doesn't take effect
+# Content Calendar UX upgrade
 
-Three root causes; one migration + two small frontend edits.
+No schema changes. Touches `Calendar.tsx`, `MonthCalendar.tsx`, and adds 3 small components.
 
-## 1. RLS — allow owner/member to UPDATE agency
+## 1. Quick-add popover on day click
 
-Current `agencies_owner_update` policy only checks `is_owner_of(...) OR is_saas_admin(...)`, has a USING clause but **no WITH CHECK**, so updates by non-owner members (and even owners in some flows) silently fail.
+New `src/components/content/QuickAddPopover.tsx`:
+- `Popover` anchored to the clicked day cell.
+- Fields: Client (Select), Title (Input, autofocused), Platform (Select), Status (Select, default `idea`).
+- `Create` button → `INSERT` into `content_posts` with `scheduled_for = <day>T10:00`, `content_type` defaulting to `Reel`, agency_id + filter defaults.
+- "More details" link → closes popover, opens the existing `ContentEditor` sheet prefilled with the same values (or, once created, in edit mode for the new row).
+- Esc / outside click closes.
 
-New migration replaces it with:
+`MonthCalendar` change: `onDayClick(date, anchorEl)` — pass the cell element so the popover can anchor. Calendar.tsx owns popover open state + selected day.
 
-```sql
-DROP POLICY IF EXISTS agencies_owner_update ON public.agencies;
+## 2. Compact status-colored chips with platform icon
 
-CREATE POLICY agencies_owner_update ON public.agencies
-FOR UPDATE TO authenticated
-USING (
-  is_member_of(auth.uid(), id)
-  OR created_by = auth.uid()
-  OR is_saas_admin(auth.uid())
-)
-WITH CHECK (
-  is_member_of(auth.uid(), id)
-  OR created_by = auth.uid()
-  OR is_saas_admin(auth.uid())
-);
-```
+New `src/lib/platformIcons.tsx` mapping `instagram|tiktok|facebook|youtube|linkedin` to Lucide icons (Instagram, Music2 for TikTok, Facebook, Youtube, Linkedin).
 
-(Keeps existing read/create/delete policies as-is.)
+`MonthCalendar` day cell rewrite:
+- Each item rendered as a chip: `[icon] title` truncated, height ~20px, status background via `statusMeta(...).color`, left-border 2px in same color for clarity.
+- Show first 3, then `+N more` button → clicking opens a small popover listing all items for that day (chips, click → ContentEditor).
+- Drag-to-reschedule preserved (chip is the draggable element).
 
-## 2. Refresh UserContext after save
+## 3. View toggle: Month / Week / List
 
-In `src/pages/agency/Settings.tsx`:
+Top toolbar: `ToggleGroup` with Month/Week/List. Stored in URL `?view=month|week|list` so refresh keeps state.
 
-- Pull `refresh` from `useUser()`.
-- After successful `supabase.from("agencies").update(...)`, `await refresh()` before showing the success toast.
+- **Month**: existing `MonthCalendar`.
+- **Week**: new `WeekCalendar.tsx`. 7 columns × full week of `month` (uses current `month` state as cursor). Same chip rendering, same drag/drop, same quick-add on day click. Prev/Next arrows shift by 7 days instead of 1 month.
+- **List**: new `UpcomingList.tsx`. Sortable table with columns: Date, Client, Title, Platform, Status. Sortable by Date asc/desc (default), Client, Status. Click row → ContentEditor. Range: from today, 60 days forward (same filters apply).
 
-This makes the new name appear instantly in the header (`AgencyLayout` reads `agency?.name` from context) and triggers the color effect below.
+Cursor label adapts: month name for Month, "Week of …" for Week; List ignores cursor.
 
-## 3. Apply `agency.brand_color` to the `--accent` CSS token
+## 4. Filters + drag/drop + mobile
 
-The design system reads `--accent` (and `--accent-glow`, `--accent-foreground`, `--ring`) as HSL triplets (e.g. `354 85% 56%`). The stored `brand_color` is a hex string like `#E11D2E`.
+- Existing Client/Platform/Status filters unchanged, apply across all three views.
+- Drag-to-reschedule kept in Month and Week (List skips it — not meaningful).
+- Mobile: toolbar wraps; toggle group full width on `<sm`; day cells already responsive; Week view becomes vertical scroll on narrow screens (`grid-cols-7` with `min-w` per column inside an `overflow-x-auto`); chips remain readable; quick-add Popover already mobile-friendly via Radix.
 
-Add a small effect in `src/components/AgencyLayout.tsx` (the only place wrapping all agency pages):
+## Files
 
-```tsx
-useEffect(() => {
-  const root = document.documentElement;
-  const hex = agency?.brand_color?.trim();
-  if (!hex) {
-    root.style.removeProperty("--accent");
-    root.style.removeProperty("--accent-glow");
-    root.style.removeProperty("--ring");
-    return;
-  }
-  const hsl = hexToHslTriplet(hex);            // "354 85% 56%"
-  const glow = adjustLightness(hsl, +8);       // brighter variant
-  root.style.setProperty("--accent", hsl);
-  root.style.setProperty("--accent-glow", glow);
-  root.style.setProperty("--ring", hsl);
-}, [agency?.brand_color]);
-```
-
-Helpers `hexToHslTriplet` and `adjustLightness` go in a new tiny module `src/lib/color.ts` (pure functions, no deps). On unmount / no agency, properties are removed so the default red from `index.css` takes over (fallback).
-
-Result: changing the color picker + Save → context refreshes → effect re-runs → entire UI accent recolors immediately, no reload.
-
-## Files touched
-
-- `supabase/migrations/<new>.sql` — RLS policy replacement
-- `src/lib/color.ts` — new (hex → HSL triplet helpers)
-- `src/pages/agency/Settings.tsx` — call `refresh()` after save
-- `src/components/AgencyLayout.tsx` — `useEffect` applying `brand_color` to CSS vars
+- edit `src/pages/agency/Calendar.tsx` — view state, toolbar toggle, popover plumbing
+- edit `src/components/content/MonthCalendar.tsx` — chips + icons + +N more popover, onDayClick signature
+- new `src/components/content/WeekCalendar.tsx`
+- new `src/components/content/UpcomingList.tsx`
+- new `src/components/content/QuickAddPopover.tsx`
+- new `src/lib/platformIcons.tsx`
 
 ## Verification
 
-1. Edit agency name → Save → header label updates without reload.
-2. Pick a new brand color → Save → sidebar active border, accent dot, buttons, focus rings recolor instantly.
-3. Clear color (or set back to `#E11D2E`) → defaults restored.
-4. Non-owner agency member can also save (RLS no longer blocks).
+- Click an empty day → quick-add popover, 4 fields, Create makes the row appear instantly as a chip.
+- "More details" opens full editor with values prefilled.
+- Day with 5 items shows 3 chips + "+2 more"; clicking expands list popover.
+- Toggle Week → 7-day grid, drag a chip across days reschedules.
+- Toggle List → table of upcoming, click header re-sorts, click row opens editor.
+- Mobile (375px): toolbar wraps, calendar/list scroll, popovers fit screen.
