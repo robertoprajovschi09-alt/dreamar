@@ -1,6 +1,8 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, LogOut, Moon, Sun, Calendar as CalendarIcon, FileVideo, BarChart3, ListTodo, Megaphone, FolderOpen, FileText, Sparkles, ShieldCheck, BookmarkPlus, ClipboardCheck, Lightbulb, Target, UserCog, CreditCard, Settings as SettingsIcon, ChevronDown, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { hexToHslTriplet, adjustLightness } from "@/lib/color";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -59,6 +61,27 @@ export default function AgencyLayout() {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const hex = agency?.brand_color?.trim();
+    const hsl = hex ? hexToHslTriplet(hex) : null;
+    if (!hsl) {
+      root.style.removeProperty("--accent");
+      root.style.removeProperty("--accent-glow");
+      root.style.removeProperty("--ring");
+      root.style.removeProperty("--sidebar-primary");
+      root.style.removeProperty("--sidebar-ring");
+      return;
+    }
+    const glow = adjustLightness(hsl, 8);
+    root.style.setProperty("--accent", hsl);
+    root.style.setProperty("--accent-glow", glow);
+    root.style.setProperty("--ring", hsl);
+    root.style.setProperty("--sidebar-primary", hsl);
+    root.style.setProperty("--sidebar-ring", hsl);
+  }, [agency?.brand_color]);
+
 
   const mobilePrimary = [
     { to: "/agency", icon: LayoutDashboard, label: "Panou", end: true },

@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function Settings() {
-  const { agency } = useUser();
+  const { agency, refresh } = useUser();
   const [name, setName] = useState("");
   const [color, setColor] = useState("#E11D2E");
   const [busy, setBusy] = useState(false);
@@ -22,10 +22,12 @@ export default function Settings() {
     if (!agency) return;
     setBusy(true);
     const { error } = await supabase.from("agencies").update({ name, brand_color: color }).eq("id", agency.id);
+    if (error) { setBusy(false); return toast.error(error.message); }
+    await refresh();
     setBusy(false);
-    if (error) return toast.error(error.message);
     toast.success("Salvat");
   };
+
 
   return (
     <div className="p-6 md:p-8 max-w-3xl">
