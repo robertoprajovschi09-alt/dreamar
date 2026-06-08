@@ -47,7 +47,7 @@ export function QuickAddPopover({
     if (!clientId) return toast.error("Selectează un client");
     if (!title.trim()) return toast.error("Adaugă un titlu");
     setSaving(true);
-    const { error } = await supabase.from("content_posts").insert({
+    const { error } = await supabase.from("content_posts").insert([{
       agency_id: agency.id,
       client_id: clientId,
       title: title.trim(),
@@ -55,7 +55,8 @@ export function QuickAddPopover({
       content_type: "Reel",
       status,
       scheduled_for: new Date(`${date}T10:00`).toISOString(),
-    });
+    }]);
+
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Adăugat");
