@@ -5,3 +5,7 @@ verify_jwt = false
 
 [functions.bootstrap-super-admin]
 verify_jwt = false
+
+[functions.send-client-invite]
+verify_jwt = false
+
