@@ -1,60 +1,79 @@
-## Admin actions on agency rows
+# Fix: Agency Settings save doesn't take effect
 
-### 1. Migration — `admin_delete_agency` RPC
+Three root causes; one migration + two small frontend edits.
+
+## 1. RLS — allow owner/member to UPDATE agency
+
+Current `agencies_owner_update` policy only checks `is_owner_of(...) OR is_saas_admin(...)`, has a USING clause but **no WITH CHECK**, so updates by non-owner members (and even owners in some flows) silently fail.
+
+New migration replaces it with:
 
 ```sql
-CREATE OR REPLACE FUNCTION public.admin_delete_agency(_agency_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  IF NOT public.is_saas_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Not authorized';
-  END IF;
+DROP POLICY IF EXISTS agencies_owner_update ON public.agencies;
 
-  -- Detach client-portal users so their profiles aren't orphan-locked
-  UPDATE public.profiles
-    SET client_id = NULL, agency_id = NULL, role = NULL
-    WHERE client_id IN (SELECT id FROM public.clients WHERE agency_id = _agency_id);
-  UPDATE public.profiles
-    SET agency_id = NULL, role = NULL
-    WHERE agency_id = _agency_id;
-
-  -- Delete agency-scoped data. Most child tables already FK-cascade from
-  -- agencies/clients, but we delete explicitly to be safe across tables
-  -- that may use ON DELETE RESTRICT.
-  DELETE FROM public.client_invites      WHERE agency_id = _agency_id;
-  DELETE FROM public.client_users        WHERE agency_id = _agency_id;
-  DELETE FROM public.clients             WHERE agency_id = _agency_id;
-  DELETE FROM public.agency_members      WHERE agency_id = _agency_id;
-  DELETE FROM public.subscriptions       WHERE agency_id = _agency_id;
-  DELETE FROM public.agencies            WHERE id = _agency_id;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.admin_delete_agency(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.admin_delete_agency(uuid) TO authenticated;
+CREATE POLICY agencies_owner_update ON public.agencies
+FOR UPDATE TO authenticated
+USING (
+  is_member_of(auth.uid(), id)
+  OR created_by = auth.uid()
+  OR is_saas_admin(auth.uid())
+)
+WITH CHECK (
+  is_member_of(auth.uid(), id)
+  OR created_by = auth.uid()
+  OR is_saas_admin(auth.uid())
+);
 ```
 
-Relies on existing ON DELETE CASCADE foreign keys from `clients` / `agencies` to clean up content, tasks, campaigns, briefs, kpi schemas, etc. The internal `is_saas_admin` check is the security boundary.
+(Keeps existing read/create/delete policies as-is.)
 
-### 2. `src/pages/admin/AdminDashboard.tsx`
+## 2. Refresh UserContext after save
 
-Replace the lone Suspend button in the Actions cell with a `DropdownMenu` containing:
+In `src/pages/agency/Settings.tsx`:
 
-- **Open agency** — `navigate(\`/agency/clients?agency=${a.id}\`)` (just routes the admin into the existing agency UI; admin role is allowed by `RoleRoute` already).
-- **Rename** — opens a `Dialog` with an `Input` prefilled with current name. On save: `supabase.from("agencies").update({ name }).eq("id", a.id)` → toast → `load()`.
-- **Change plan** — submenu / inline `Select` with `starter | growth | unlimited | white_label`. On change: `update({ plan }).eq("id", a.id)` → `load()`.
-- **Suspend / Reactivate** — existing `toggleSuspend`, moved into the menu.
-- **Delete agency** — destructive item that opens an `AlertDialog`; user must type the agency name into an `Input`. Delete button stays disabled until `typed === a.name`. On confirm: `supabase.rpc("admin_delete_agency", { _agency_id: a.id })` → toast → `load()`.
+- Pull `refresh` from `useUser()`.
+- After successful `supabase.from("agencies").update(...)`, `await refresh()` before showing the success toast.
 
-State additions: `renameTarget`, `deleteTarget`, `deleteConfirmText`. All actions guard with the existing `busy` per-row spinner and call `load()` on success.
+This makes the new name appear instantly in the header (`AgencyLayout` reads `agency?.name` from context) and triggers the color effect below.
 
-UI uses existing shadcn primitives: `dropdown-menu`, `dialog`, `alert-dialog`, `select`, `input`. No design-token changes.
+## 3. Apply `agency.brand_color` to the `--accent` CSS token
 
-### Out of scope
+The design system reads `--accent` (and `--accent-glow`, `--accent-foreground`, `--ring`) as HSL triplets (e.g. `354 85% 56%`). The stored `brand_color` is a hex string like `#E11D2E`.
 
-- Server-side RLS for plan/name updates: the existing agencies RLS already allows owners/admins to update; the page is already gated by `profile.is_saas_admin`, matching the current Suspend pattern.
-- Audit log of admin actions.
+Add a small effect in `src/components/AgencyLayout.tsx` (the only place wrapping all agency pages):
+
+```tsx
+useEffect(() => {
+  const root = document.documentElement;
+  const hex = agency?.brand_color?.trim();
+  if (!hex) {
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-glow");
+    root.style.removeProperty("--ring");
+    return;
+  }
+  const hsl = hexToHslTriplet(hex);            // "354 85% 56%"
+  const glow = adjustLightness(hsl, +8);       // brighter variant
+  root.style.setProperty("--accent", hsl);
+  root.style.setProperty("--accent-glow", glow);
+  root.style.setProperty("--ring", hsl);
+}, [agency?.brand_color]);
+```
+
+Helpers `hexToHslTriplet` and `adjustLightness` go in a new tiny module `src/lib/color.ts` (pure functions, no deps). On unmount / no agency, properties are removed so the default red from `index.css` takes over (fallback).
+
+Result: changing the color picker + Save → context refreshes → effect re-runs → entire UI accent recolors immediately, no reload.
+
+## Files touched
+
+- `supabase/migrations/<new>.sql` — RLS policy replacement
+- `src/lib/color.ts` — new (hex → HSL triplet helpers)
+- `src/pages/agency/Settings.tsx` — call `refresh()` after save
+- `src/components/AgencyLayout.tsx` — `useEffect` applying `brand_color` to CSS vars
+
+## Verification
+
+1. Edit agency name → Save → header label updates without reload.
+2. Pick a new brand color → Save → sidebar active border, accent dot, buttons, focus rings recolor instantly.
+3. Clear color (or set back to `#E11D2E`) → defaults restored.
+4. Non-owner agency member can also save (RLS no longer blocks).
