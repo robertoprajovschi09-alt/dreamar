@@ -13,6 +13,7 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AcceptInvite from "./pages/AcceptInvite";
+import AcceptTeamInvite from "./pages/AcceptTeamInvite";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import Clients from "./pages/agency/Clients";
 import ClientProfile from "./pages/agency/ClientProfile";
