@@ -15,12 +15,29 @@ import { Loader2 } from "lucide-react";
 
 export default function Auth() {
   const { user, loading } = useAuth();
-  const { profile, loading: userLoading } = useUser();
+  const { profile, loading: userLoading, refresh } = useUser();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const bootstrappingRef = useRef(false);
+
+  // Self-heal: if a signed-in user lands here with no agency and no client, create one.
+  useEffect(() => {
+    if (loading || userLoading) return;
+    if (!user || !profile) return;
+    if (profile.agency_id || profile.client_id) return;
+    if (bootstrappingRef.current) return;
+    bootstrappingRef.current = true;
+    const name =
+      (profile.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "My") +
+      "'s Agency";
+    supabase.rpc("create_agency_for_current_user", { _name: name }).then(async ({ error }) => {
+      if (error) { toast.error(error.message); bootstrappingRef.current = false; return; }
+      await refresh();
+    });
+  }, [loading, userLoading, user, profile, refresh]);
 
   if (loading || (user && userLoading)) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
@@ -39,13 +56,25 @@ export default function Auth() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email, password,
       options: { emailRedirectTo: window.location.origin + "/agency", data: { full_name: fullName } },
     });
+    if (error) { setBusy(false); toast.error(error.message); return; }
+
+    // If email confirmation is off, we already have a session — provision agency now.
+    if (data.session) {
+      const { error: rpcErr } = await supabase.rpc("create_agency_for_current_user", {
+        _name: `${fullName || "My"}'s Agency`,
+      });
+      if (rpcErr) { setBusy(false); toast.error(rpcErr.message); return; }
+      await refresh();
+      setBusy(false);
+      navigate("/agency");
+      return;
+    }
     setBusy(false);
-    if (error) toast.error(error.message);
-    else toast.success("Account created. Welcome!");
+    toast.success("Account created. Check your email to confirm.");
   };
 
   const handleGoogle = async () => {
