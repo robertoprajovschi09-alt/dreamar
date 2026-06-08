@@ -164,7 +164,7 @@ export function QuickAddClientDialog({ open, onOpenChange, agencyId, onCreated, 
       const { data: inv, error: iErr } = await supabase.from("client_invites").insert({
         agency_id: agencyId, client_id: clientId,
         email: email.trim().toLowerCase(),
-        portal_role: "client_owner",
+        portal_role: "client_viewer",
         permissions: DEFAULT_PERMISSIONS as any,
         invited_by: user.id,
       }).select("token").single();

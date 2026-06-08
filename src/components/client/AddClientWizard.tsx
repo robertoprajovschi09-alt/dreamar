@@ -27,7 +27,6 @@ type Props = {
 
 const STATUSES = ["active", "onboarding", "paused"] as const;
 const ROLES = [
-  { value: "client_owner", label: "Client Owner" },
   { value: "client_viewer", label: "Client Viewer" },
 ];
 const PERMISSION_DEFS = [

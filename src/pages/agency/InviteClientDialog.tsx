@@ -28,7 +28,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<"client_owner" | "client_viewer">("client_viewer");
+  const role: "client_viewer" = "client_viewer";
   const [perms, setPerms] = useState<PortalPermissions>(defaultPermissions("client_viewer"));
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
   useEffect(() => { setPerms(defaultPermissions(role)); }, [role]);
 
   const reset = () => {
-    setEmail(""); setDisplayName(""); setRole("client_viewer");
+    setEmail(""); setDisplayName("");
     setPerms(defaultPermissions("client_viewer"));
     setLink(null); setCopied(false);
   };
@@ -115,25 +115,6 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Rol în portal</Label>
-              <RadioGroup value={role} onValueChange={(v) => setRole(v as any)} className="grid grid-cols-2 gap-2">
-                <label className="flex items-start gap-2 border border-border rounded-lg p-3 cursor-pointer has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/5">
-                  <RadioGroupItem value="client_owner" className="mt-0.5" />
-                  <div>
-                    <div className="text-sm font-medium">Proprietar</div>
-                    <div className="text-xs text-muted-foreground">Acces complet, poate aproba conținut</div>
-                  </div>
-                </label>
-                <label className="flex items-start gap-2 border border-border rounded-lg p-3 cursor-pointer has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/5">
-                  <RadioGroupItem value="client_viewer" className="mt-0.5" />
-                  <div>
-                    <div className="text-sm font-medium">Vizualizator</div>
-                    <div className="text-xs text-muted-foreground">Doar citire în mod implicit</div>
-                  </div>
-                </label>
-              </RadioGroup>
-            </div>
 
             <div className="space-y-2">
               <Label>Permisiuni</Label>
