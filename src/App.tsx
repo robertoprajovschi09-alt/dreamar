@@ -64,6 +64,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
+                <Route path="/accept-team-invite" element={<AcceptTeamInvite />} />
 
                 <Route
                   path="/agency"
