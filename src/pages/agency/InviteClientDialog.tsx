@@ -42,7 +42,7 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
     setLink(null); setCopied(false);
   };
 
-  const createInvite = async (markSent: boolean): Promise<string | null> => {
+  const createInvite = async (markSent: boolean): Promise<{ url: string; token: string } | null> => {
     if (!email.trim() || !user) return null;
     setBusy(true);
     const { data, error } = await supabase
@@ -62,23 +62,33 @@ export function InviteClientDialog({ open, onOpenChange, agencyId, clientId, onC
     setBusy(false);
     if (error) { toast.error(error.message); return null; }
     onCreated?.();
-    return `${window.location.origin}/accept-invite?token=${data.token}`;
+    return { url: `${window.location.origin}/accept-invite?token=${data.token}`, token: data.token };
   };
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    const url = await createInvite(true);
-    if (!url) return;
-    setLink(url);
-    toast.success("Invitație creată. Trimiterea pe email necesită un domeniu configurat — copiază linkul pentru a-l împărtăși deocamdată.");
+    const res = await createInvite(true);
+    if (!res) return;
+    setLink(res.url);
+    try {
+      const { data: sendRes } = await supabase.functions.invoke("send-client-invite", {
+        body: { token: res.token },
+      });
+      if (sendRes?.ok) toast.success(`Invitație trimisă pe email către ${email.trim()}`);
+      else toast.warning("Emailul nu a putut fi trimis — copiază linkul manual.");
+    } catch {
+      toast.warning("Emailul nu a putut fi trimis — copiază linkul manual.");
+    }
   };
 
+
   const handleLinkOnly = async () => {
-    const url = await createInvite(false);
-    if (!url) return;
-    setLink(url);
+    const res = await createInvite(false);
+    if (!res) return;
+    setLink(res.url);
     toast.success("Linkul de invitație este gata");
   };
+
 
   const copy = async () => {
     if (!link) return;

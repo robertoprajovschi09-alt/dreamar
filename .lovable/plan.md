@@ -1,38 +1,38 @@
-## Plan: Romanian translation pass for the agency UI
+## Goal
+Send a branded Resend email to clients whenever an invite is created, so they get a working accept-link in their inbox instead of relying on the agency copy-pasting it.
 
-Pure translation — no logic, no layout, no route or identifier changes.
+## 1. New edge function: `supabase/functions/send-client-invite/index.ts`
+- CORS preflight + headers on every response.
+- Body: `{ token: string }` (validate with zod or manual check).
+- Use service-role Supabase client to query `client_invites` by token → get `email`, `client_id`, `agency_id`, `status`. Reject if not found / revoked / expired.
+- Join lookups: `clients.name` and `agencies.name`.
+- Build accept URL: `https://dreamar.lovable.app/accept-invite?token=<token>`.
+- Read `RESEND_API_KEY` from `Deno.env`. If missing → return `{ ok:false, error:"RESEND_API_KEY not configured" }` (no hardcoding).
+- Optional env: `INVITE_FROM_EMAIL` (fallback `onboarding@resend.dev`).
+- POST to `https://api.resend.com/emails` with `Authorization: Bearer <key>`, body `{ from, to:[email], subject:"<Agency> invited you to your client portal", html }`.
+- HTML body: clean branded layout (inline styles, neutral palette matching app — dark text on white card, accent button), greeting, sentence "<AgencyName> has set up your client portal for <ClientName>.", one prominent CTA button linking to accept URL, plain-text fallback link below, small footer.
+- On Resend non-2xx → return `{ ok:false, error }` with details.
+- On success → return `{ ok:true }`. Also call `resend_client_invite` style update? No — just leave it; the existing `InviteClientDialog` already sets `status:"sent"` when chosen. Optionally `update client_invites set last_sent_at=now(), send_count=send_count+1` on success.
+- Register in `supabase/config.toml` with `verify_jwt = false` so it can be called right after invite creation without extra friction (token itself is the secret).
 
-### Scope
-**Translate to Romanian:**
-- `src/components/AgencyLayout.tsx` — sidebar labels, header items, dropdown menu entries ("Sign out", "Soon" badge, etc.).
-- `src/components/PageHeader.tsx`, `EmptyState.tsx`, `NavLink.tsx` — any user-visible strings.
-- `src/pages/agency/*.tsx` — page titles, subtitles, buttons, empty states, table headers, toasts shown to the agency user, dialog titles/labels in:
-  - AgencyDashboard, AiActions, AiMemory, Analytics, Approvals, Assistant, Billing, Calendar, Campaigns, ClientProfile, Clients, Competitors, Content, Documents, InviteClientDialog, Reports, Settings, Strategies, StrategyDetail, StrategyPrint, SwipeLibrary, Tasks, Team.
-- Shared agency components under `src/components/`:
-  - `client/AddClientWizard.tsx` — all step titles, labels, placeholders, helper text, buttons, and toasts. Also normalize the existing Romanian draft prompt ("Am găsit un draft salvat. Continui de unde ai rămas?", "Șterge", "Continuă") so it matches the rest (already Romanian, just verify wording consistency with the rest of the wizard).
-  - `ai/`, `analytics/`, `approvals/`, `competitors/`, `content/`, `health/`, `operations/`, `performance/`, `reports/`, `risk/`, `strategies/`, `swipe/` — only the strings used by the agency UI.
+## 2. Wire into invite flows
+Two places create invites today:
 
-**Leave in English (do NOT translate):**
-- `src/pages/admin/*` and `src/pages/AdminLogin.tsx` (saas_admin area).
-- `src/pages/client/*` (client portal — out of scope for this pass).
-- `src/components/ui/*` (shadcn primitives — generally no user-visible copy).
-- Code identifiers, variable names, prop names, file names, routes.
-- Database enum values and column values (e.g. `status: "active"`, `niche: "real_estate"`). Where these values are rendered to the user, translate via the existing label maps (`NICHES`, `STATUSES` in `src/lib/niches.ts`) — update the labels there, not the values.
-- Console logs and developer comments.
-- Third-party brand names ("Instagram", "TikTok", "Google Ads", etc.).
+**a) `src/pages/agency/InviteClientDialog.tsx`** — already the explicit invite UI.
+- After `createInvite()` succeeds and returns the URL, call `supabase.functions.invoke("send-client-invite", { body: { token }})`.
+- On `{ ok:true }`: toast `Invitation emailed to <email>` and close (or keep link view as fallback option).
+- On failure: keep current behavior (show copy-link view) and toast a soft warning "Email couldn't be sent — share the link manually."
+- Need to surface `token` from `createInvite` (currently only returns URL) — extend it to return `{ url, token }`.
 
-### Approach
-1. Translate `src/lib/niches.ts` label fields (NICHES labels, STATUSES — note STATUSES is a `string[]`, so either keep raw values in code and add a `STATUS_LABELS` map, or only translate at call sites; will choose the lowest-risk option per file).
-2. Translate shared layout/components first (`AgencyLayout`, `PageHeader`, `EmptyState`) so navigation reads Romanian everywhere.
-3. Translate each agency page top-to-bottom, file by file, replacing only string literals inside JSX, toast calls, dialog titles, button text, placeholders, and aria-labels.
-4. Translate the Add Client wizard end-to-end (Basics, Niche & KPIs, Platforms, Goals, Context, Invite, Review) including KPI/preset helper text and validation toast messages. Confirm the existing Romanian draft prompt phrasing and reuse it as the style baseline.
-5. Spot-check shared components used by agency pages for any remaining English strings.
+**b) `src/components/client/AddClientWizard.tsx`** — the "Add Client" wizard's portal-invite step (if it creates a `client_invites` row inline).
+- Locate the insert into `client_invites` in the wizard's finalize step, then immediately invoke `send-client-invite` with the returned token.
+- Same toast behavior; if email fails, fall back to showing the copy link the wizard already produces.
 
-### Out of scope
-- No new components, no restyling, no copy rewrites beyond translation.
-- No changes to the SaaS admin area, client portal, auth/landing pages, or shadcn primitives.
-- No DB migrations.
+## 3. Notes / non-changes
+- `RESEND_API_KEY` already exists in secrets — no add_secret call needed.
+- No DB migration required.
+- No template scaffolding via email_domain tools (user explicitly asked for direct Resend POST).
+- Strings user-facing in Romanian to match the rest of agency UI: toast `Invitație trimisă pe email către <email>`, fallback `Emailul nu a putut fi trimis — copiază linkul manual.` Subject + email body stay English per the prompt's wording, unless you want them Romanian (open question below).
 
-### Risks / notes
-- Niche/status values are used both as DB values and as display strings in places. The plan keeps raw values intact and translates only display labels.
-- Some agency pages share components with the client portal; translations will be applied only to strings clearly rendered in the agency context. If a shared component is used in both, I'll either pass a localized prop or leave the shared component untouched and translate at the call site to avoid affecting the client portal.
+## Open question
+Email subject/body language: keep English ("<Agency> invited you to your client portal") as written in the request, or translate to Romanian to match the rest of the agency UI?

@@ -516,7 +516,17 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
         else {
           const link = `${window.location.origin}/accept-invite?token=${inv!.token}`;
           setInviteLink(link);
+          try {
+            const { data: sendRes } = await supabase.functions.invoke("send-client-invite", {
+              body: { token: inv!.token },
+            });
+            if (sendRes?.ok) toast.success(`Invitație trimisă pe email către ${form.invite_email.trim()}`);
+            else toast.warning("Emailul nu a putut fi trimis — copiază linkul manual.");
+          } catch {
+            toast.warning("Emailul nu a putut fi trimis — copiază linkul manual.");
+          }
         }
+
       }
 
       toast.success("Spațiul de lucru al clientului a fost creat");
