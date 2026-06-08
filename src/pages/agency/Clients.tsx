@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2, Loader2, Users, ExternalLink } from "lucide-react
 import { toast } from "sonner";
 import { NICHES, STATUSES, displayNiche } from "@/lib/niches";
 import { AddClientWizard } from "@/components/client/AddClientWizard";
+import { QuickAddClientDialog } from "@/components/client/QuickAddClientDialog";
 import { fetchCollectingClientIds } from "@/lib/clientStatus";
 import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
 
