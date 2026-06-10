@@ -90,20 +90,20 @@ export default function ClientPortal() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 sticky top-0 bg-background/80 backdrop-blur z-30">
+      <header className="h-20 flex items-center justify-between px-4 md:px-8 gap-3 bg-background/80 backdrop-blur sticky top-0 z-30">
         <Logo />
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9">
+          <Button variant="ghost" size="icon" onClick={toggle} className="h-10 w-10 rounded-full bg-card shadow-soft border border-border/60">
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 gap-2 px-2">
-                <Avatar className="h-7 w-7"><AvatarFallback className="text-[11px] bg-accent text-accent-foreground">{initials(profile?.full_name || profile?.email || "?")}</AvatarFallback></Avatar>
-                <span className="hidden sm:block text-sm font-medium max-w-[140px] truncate">{profile?.full_name || profile?.email}</span>
-              </Button>
+              <button className="h-11 flex items-center gap-2 pl-1.5 pr-4 rounded-full bg-card shadow-soft border border-border/60 hover:bg-surface-1 transition-colors">
+                <Avatar className="h-8 w-8"><AvatarFallback className="text-[11px] bg-gradient-accent text-accent-foreground font-bold">{initials(profile?.full_name || profile?.email || "?")}</AvatarFallback></Avatar>
+                <span className="hidden sm:block text-xs font-semibold max-w-[140px] truncate">{profile?.full_name || profile?.email}</span>
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 rounded-2xl">
               <DropdownMenuLabel className="text-xs">
                 <div className="font-semibold truncate">{profile?.full_name || "Account"}</div>
                 <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
