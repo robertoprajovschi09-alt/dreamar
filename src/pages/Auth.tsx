@@ -21,7 +21,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const bootstrappingRef = useRef(false);
+  
 
   // No auto-bootstrap of an agency here. Agency creation happens only when the user
   // explicitly signs up via the "Creează agenție" tab. Client-invite signups must NEVER
