@@ -129,7 +129,7 @@ export default function Calendar() {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-4 max-w-[1400px]">
+    <div className="p-4 md:p-8 space-y-4 max-w-[1400px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Calendar</h1>
