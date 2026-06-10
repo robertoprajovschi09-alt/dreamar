@@ -107,6 +107,24 @@ export default function AcceptInvite() {
     );
   }
 
+  if (user && acceptError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <AlertCircle className="h-10 w-10 mx-auto text-destructive" />
+            <h1 className="text-xl font-bold">Nu putem accepta invitația</h1>
+            <p className="text-sm text-muted-foreground">{acceptError}</p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={signOutAndStay} variant="outline">Deconectează-te și acceptă cu alt cont</Button>
+              <Link to="/"><Button variant="ghost" className="w-full">Mergi la contul meu</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (user && accepting) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
