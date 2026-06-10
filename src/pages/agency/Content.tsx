@@ -105,9 +105,9 @@ export default function Content() {
       </div>
 
       {view === "board" ? (
-        <ContentBoard clientId={clientId || null} search={search} platform={platform} showNewButton />
+        <ContentBoard key={`b-${reloadKey}`} clientId={clientId || null} search={search} platform={platform} showNewButton />
       ) : (
-        <ContentList clientId={clientId || null} search={search} platform={platform} statusFilter={statusFilter} />
+        <ContentList key={`l-${reloadKey}`} clientId={clientId || null} search={search} platform={platform} statusFilter={statusFilter} />
       )}
 
       <ContentEditor
@@ -115,7 +115,7 @@ export default function Content() {
         onOpenChange={setEditorOpen}
         postId={null}
         defaultClientId={clientId || null}
-        onSaved={() => { /* board/list reload via key not needed; they auto-reload on agency/client change */ }}
+        onSaved={() => setReloadKey((k) => k + 1)}
       />
     </div>
   );
