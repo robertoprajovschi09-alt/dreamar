@@ -17,10 +17,13 @@ export type ContentRow = {
   deadline: string | null;
   content_type: string | null;
   hook: string | null;
+  script?: string | null;
+  video_url?: string | null;
   thumbnail_url: string | null;
   assets: any;
   assigned_to: string | null;
   client_id: string;
+  agency_id?: string;
   clients?: { name: string } | null;
   assignee?: { full_name: string | null; email: string | null } | null;
 };
