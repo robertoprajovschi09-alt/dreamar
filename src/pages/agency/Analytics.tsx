@@ -10,6 +10,7 @@ import { Loader2, AlertTriangle, TrendingUp, TrendingDown, Upload, Plus, Inbox }
 import { listAnalyticsEntries, totals, detectMissingData, type AnalyticsEntry } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { CsvImportDialog } from "@/components/analytics/CsvImportDialog";
+import { ErrorState } from "@/components/ui/error-state";
 import { AnalyticsEntryDialog } from "@/components/analytics/AnalyticsEntryDialog";
 
 
@@ -25,11 +26,13 @@ export default function Analytics() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [entryOpen, setEntryOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
 
   const load = useCallback(async () => {
     if (!agency) return;
     setLoading(true);
+    setError(null);
     try {
       const { data: cs } = await supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name");
       setClients((cs || []).map((c: any) => ({ id: c.id, name: c.name })));
@@ -45,6 +48,8 @@ export default function Analytics() {
       }, {});
       setByClientNow(groupBy(now));
       setByClientPrev(groupBy(prev));
+    } catch (e: any) {
+      setError(e?.message || "Nu am putut încărca datele. Încearcă din nou.");
     } finally { setLoading(false); }
   }, [agency, year, month]);
 
@@ -74,6 +79,17 @@ export default function Analytics() {
   const missingClients = ranked.filter((r) => r.missing.some((m) => m.importance === "high"));
 
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
+  if (error) return (
+    <div className="p-6 md:p-8 space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analitice</h1>
+        <p className="text-sm text-muted-foreground mt-1">Performanță agregată pentru toți clienții.</p>
+      </div>
+      <Card>
+        <ErrorState message={error} onRetry={load} />
+      </Card>
+    </div>
+  );
 
   return (
     <div className="p-6 md:p-8 space-y-6">
