@@ -87,6 +87,14 @@ export default function ClientPortal() {
       .catch(() => setBriefStatus("missing"));
   }, [client?.id]);
 
+  // Auto-scroll active tab pill into view on mobile
+  useEffect(() => {
+    const el = document.querySelector(`[data-tab-trigger][data-state="active"]`) as HTMLElement | null;
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, [tab]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!client || !agency) {
     return (
@@ -140,7 +148,7 @@ export default function ClientPortal() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 md:p-8 space-y-6">
+      <main className="max-w-5xl mx-auto p-4 md:p-8 space-y-6 pb-[calc(2rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-3">
           <ClientLogoImg path={client.logo_url} name={client.name} />
           <div>
