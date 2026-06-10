@@ -771,6 +771,19 @@ function ClientContentTab({ client }: any) {
   );
 }
 
+function ClientLogo({ logoPath, name }: { logoPath: string | null; name: string }) {
+  const url = useSignedUrl(logoPath);
+  if (logoPath) {
+    return <img src={url ?? undefined} alt={name} className="h-12 w-12 rounded-full object-cover border border-border shrink-0 bg-muted" />;
+  }
+  return (
+    <div className="h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border border-border shrink-0"
+         style={{ background: "hsl(var(--brand) / 0.12)", color: "hsl(var(--brand))" }}>
+      {brandInitials(name)}
+    </div>
+  );
+}
+
 function ClientCalendarLink({ client }: any) {
   return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground space-y-3">
     <div>The full calendar lives in the global content calendar, filtered to this client.</div>
