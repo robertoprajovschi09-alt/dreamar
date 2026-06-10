@@ -26,6 +26,7 @@ export default function Analytics() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [entryOpen, setEntryOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
 
   const load = useCallback(async () => {
