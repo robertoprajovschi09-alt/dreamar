@@ -203,9 +203,7 @@ export function ClientDashboard({
   // Derive Main Result KPI
   const mainResultKey = personalization?.priority_metrics?.[0] || copy.primary_kpi_keys?.[0];
   const mainResultValue = mainResultKey ? (impactTotals[mainResultKey] ?? null) : null;
-  const mainResultLabel = mainResultKey
-    ? mainResultKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : "Rezultat principal";
+  const mainResultLabel = mainResultKey ? metricLabel(mainResultKey) : "Rezultat principal";
 
   // Business impact total
   const totalLeads = (impactTotals.calls || 0) + (impactTotals.dms || 0) + (impactTotals.bookings || 0)
@@ -249,11 +247,11 @@ export function ClientDashboard({
               {health && (
                 <div className="flex items-center gap-2">
                   <div className="text-right leading-tight">
-                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Health</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sănătate</div>
                     <div className="text-lg font-semibold tabular-nums">{Math.round(Number(health.total_score) || 0)}</div>
                   </div>
                   <Badge className={STATUS_COLORS[health.score_status] || ""} variant="outline">
-                    {health.score_status?.replace("_", " ")}
+                    {healthStatusLabel(health.score_status)}
                   </Badge>
                 </div>
               )}
