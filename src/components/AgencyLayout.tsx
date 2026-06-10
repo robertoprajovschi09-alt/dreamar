@@ -219,19 +219,19 @@ export default function AgencyLayout() {
           </div>
         </header>
 
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur grid grid-cols-5 py-2">
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur grid grid-cols-5 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
           {mobilePrimary.map((n) => (
-            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center gap-0.5 text-[11px] px-1 py-1", isActive ? "text-accent" : "text-muted-foreground")}>
+            <NavLink key={n.to} to={n.to} end={(n as any).end} className={({ isActive }) => cn("flex flex-col items-center justify-center gap-0.5 text-[11px] px-1 min-h-[44px]", isActive ? "text-accent" : "text-muted-foreground")}>
               <n.icon className="h-5 w-5" /> {n.label}
             </NavLink>
           ))}
           <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
             <SheetTrigger asChild>
-              <button className="flex flex-col items-center gap-0.5 text-[11px] px-1 py-1 text-muted-foreground">
+              <button className="flex flex-col items-center justify-center gap-0.5 text-[11px] px-1 min-h-[44px] text-muted-foreground">
                 <MoreHorizontal className="h-5 w-5" /> Mai multe
               </button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+            <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <SheetHeader>
                 <SheetTitle>Mai multe</SheetTitle>
               </SheetHeader>
@@ -250,7 +250,7 @@ export default function AgencyLayout() {
         </nav>
 
 
-        <main className="flex-1 overflow-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </main>
       </div>
