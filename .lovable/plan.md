@@ -1,131 +1,43 @@
-# Plan: Optimizare mobile iPhone-first (țintă 390px)
 
-Aplic schimbări doar la `md` și sub (mobil); desktop rămâne identic. Păstrăm dark mode, brand roșu, logica și DB neschimbate.
+## Problemă
 
-## 1. Fundație globală
+Userii invitați ca clienți nu pot finaliza signup pentru că aplicația le creează o agenție automat la signup, iar apoi garda din `accept_client_invite` îi blochează (corect) ca "cont de agenție".
 
-**`index.html`**
-- Viewport: `width=device-width, initial-scale=1, viewport-fit=cover`.
-- Meta `theme-color` aliniat cu fundalul.
+Două surse de auto-creare a agenției:
 
-**`src/index.css`**
-- Reguli globale anti-zoom: `input, select, textarea { font-size: 16px; }` doar sub `md`.
-- Utility classes noi:
-  - `.safe-bottom` → `padding-bottom: env(safe-area-inset-bottom)`
-  - `.safe-top` → `padding-top: env(safe-area-inset-top)`
-  - `.no-scrollbar` → ascunde scrollbar pe x-scroll
-  - `.h-touch` → `min-h-[44px] min-w-[44px]`
-  - `.scroll-snap-x` → scroll orizontal cu snap
-- `html, body { overflow-x: hidden; }` ca plasă de siguranță.
-- Heading helper `.h-fluid` cu `clamp()` pentru titluri mari.
+1. **Trigger DB `handle_new_user`** — verifică `raw_user_meta_data.invite_token`. `AcceptInvite` îl trimite deja, deci aici e OK în majoritatea cazurilor, dar lipsește un safety net pe email.
+2. **`src/pages/Auth.tsx`** — un `useEffect` cu `bootstrappingRef` cheamă `create_agency_for_current_user` pentru ORICE user logat fără `agency_id`/`client_id`. Dacă userul ajunge pe `/auth` în orice fereastră scurtă după signup prin invitație (înainte ca `accept_client_invite` să ruleze, sau dacă confirmarea de email îl trimite altundeva), se creează o agenție și flow-ul de client e definitiv stricat.
 
-**`tailwind.config.ts`**
-- Adaug `spacing: { 'safe-b': 'env(safe-area-inset-bottom)' }` și `minHeight.touch: '44px'`.
+## Fix
 
-## 2. Client Portal — tab navigation (`src/pages/client/ClientPortal.tsx`)
+### 1. `src/pages/AcceptInvite.tsx`
+- Câmpul Email pe ambele taburi (Sign up / Sign in) devine `readOnly`, pre-completat cu `preview.email`, cu hint vizual ("Această invitație este pentru `email`").
+- La `signUp`, păstrează `invite_token` în metadata și adaugă `signup_type: 'client_invite'` (folosit ca semnal de către Auth.tsx).
+- Fără alte schimbări de logică pe acceptare.
 
-Tab-urile (Sumar, Check-in, Calendar, Aprobări, Rapoarte, Rezultate, Obiective, Documente, Feedback) se rup pe 3 rânduri pe mobil.
+### 2. `src/pages/Auth.tsx`
+- Elimină auto-bootstrap-ul de agenție din `useEffect`. Crearea agenției rămâne DOAR în `handleSignUp` (tabul "Creează agenție") și pentru OAuth Google din tabul de signup.
+- Înainte de a redirecta un user logat fără rol către `roleHome`, dacă user-ul are `user_metadata.signup_type === 'client_invite'` sau `user_metadata.invite_token`, sau dacă există o invitație de client `pending/sent/opened` pentru email-ul lui, redirectează spre `/accept-invite?token=...` (folosind tokenul din metadata) în loc să creeze agenție.
+- Pentru Google OAuth declanșat din tabul "Intră în cont", nu mai forța crearea de agenție; lasă `RoleRoute` să decidă.
 
-- Sub `md`: segmented control orizontal — `flex overflow-x-auto no-scrollbar snap-x` cu `whitespace-nowrap`, fiecare tab `min-h-[44px] px-4`, indicator activ, `scrollIntoView({inline:'center'})` la schimbarea tab-ului.
-- Peste `md`: layout actual neschimbat.
-- Container sticky top sub header, fără wrap.
+### 3. Migrare nouă în `supabase/migrations/<timestamp>_protect_client_invite_signup.sql`
+Defense-in-depth la nivel DB, fără să slăbească garda existentă:
 
-## 3. Calendar — agenție și client
+- `handle_new_user` — pe lângă verificarea `invite_token`/`team_invite_token` din metadata, verifică și `signup_type='client_invite'`, ȘI dacă există o invitație de client validă (status în `pending/sent/opened`, `expires_at > now()`) pentru `NEW.email`. Dacă da: setează `profiles.role = NULL`, NU crea agenție, NU crea agency_member, NU crea subscription.
+- `create_agency_for_current_user` — la început, dacă există invitație de client validă pentru email-ul user-ului curent, RAISE EXCEPTION cu mesaj clar ("Există o invitație de client activă pentru acest email. Acceptă invitația în loc să creezi agenție."). Asta blochează orice cale accidentală de upgrade.
+- Garda existentă din `accept_client_invite` rămâne neatinsă.
 
-**`src/components/content/MonthCalendar.tsx`** + **`src/pages/agency/Calendar.tsx`** + locuri unde apare în client portal:
-- Sub `md`, forțat view = `list` (agendă): postări grupate pe zi (zi+dată RO via `Intl.DateTimeFormat('ro-RO')`), titlu, platformă (iconiță), badge status colorat.
-- Empty state prietenos „Nicio postare planificată".
-- Pe agenție: `ToggleGroup` Lună/Săpt/Listă rămâne, dar pe mobil ascund Lună/Săpt (doar Listă vizibil). Pe desktop neschimbat.
-- `UpcomingList` reutilizat / extins pentru ambele.
+### 4. Verificare
 
-## 4. Tabele → carduri pe mobil
+- Email curat invitat ca client → deschide link → signup (email blocat) → trigger NU creează agenție → `accept_client_invite` rulează → ajunge în `/client`.
+- Email existent de agency_owner deschide invitație → garda îl blochează cu mesajul actual.
+- Signup normal din `/auth` "Creează agenție" → funcționează nemodificat.
+- Dacă cineva accesează `/auth` după un signup de invitație nelivrat încă (race), nu se mai creează agenție; e redirectat înapoi spre acceptare.
 
-Pattern: wrapper `<div className="hidden md:block">` pentru `<Table>`, `<div className="md:hidden space-y-2">` pentru carduri.
+## Fișiere atinse
 
-Fișiere afectate:
-- `src/pages/agency/Clients.tsx`
-- `src/pages/agency/Content.tsx` + `src/components/content/ContentList.tsx`
-- `src/pages/agency/Tasks.tsx` (vezi #6 pentru kanban)
-- `src/pages/agency/Approvals.tsx` + `ClientApprovalsTab.tsx`
-- `src/pages/agency/Reports.tsx` + `ClientReportsTab.tsx`
-- `src/pages/agency/Team.tsx`
-- `src/components/competitors/CompetitorsTab.tsx`
-- `src/components/operations/DocumentsList.tsx`
-- `src/components/performance/VideosTable.tsx`
-- `src/components/analytics/ContentRankingTable.tsx`
+- `src/pages/AcceptInvite.tsx` (UI + metadata)
+- `src/pages/Auth.tsx` (scoate auto-bootstrap, adaugă redirect spre accept-invite)
+- `supabase/migrations/<timestamp>_protect_client_invite_signup.sql` (nou)
 
-Cardul: titlu/nume bold, 2-3 câmpuri cheie pe linii, badge status, meniu „…" (`DropdownMenu`) pentru acțiuni. Click pe card = acțiunea principală.
-
-## 5. Dialoguri/Wizard-uri → bottom sheet pe mobil
-
-Strategie: creez un wrapper `<ResponsiveDialog>` care randează `Sheet` (side="bottom", `h-[95vh]`) sub `md` și `Dialog` peste. Conținut scrollabil, bara de acțiuni `sticky bottom-0 safe-bottom` cu butoane full-width.
-
-Aplic la:
-- `AddClientWizard`, `QuickAddClientDialog`, `QuickClientOnboarding`
-- `BriefWizard`
-- `ApprovalDetailDialog`, `SendForApprovalDialog`
-- `AnalyticsEntryDialog`, `ContentMetricDialog`, `CsvImportDialog`
-- `InviteClientDialog`, `InviteTeamMemberDialog`
-- `EditPortalPermissionsDialog`, `PortalSettingsCard` modaluri
-- `ContentEditor`, `QuickAddPopover`
-- `CompetitorFormDialog`, `CompetitorInsightsDialog`, `ObservationFormDialog`, `ObservationDetailDialog`, `CompareDialog`
-- `SwipeFormDialog`, `SwipeDetailDialog`, `UseInCalendarDialog`
-- `GenerateStrategyDialog`, `RiskAnalysisDialog`, `ReportEditor`
-- `TaskEditor`, `QuickEditTaskSheet` (deja sheet — doar verific safe area)
-- `VideoEditor`
-
-Wizard-urile: stepper compact sus, butoane „Înapoi/Înainte" sticky jos.
-
-## 6. Kanban Sarcini (`src/pages/agency/Tasks.tsx`)
-
-- Sub `md`: coloane în row cu `overflow-x-auto snap-x snap-mandatory`, fiecare coloană `w-[85vw] shrink-0 snap-center`. Indicator de paginare deasupra (puncte sau nume coloane scrollabile). Alternativ comutator listă pe status (preferă scroll-snap pentru parity cu desktop).
-- Peste `md`: grid actual.
-
-## 7. Grafice (`src/components/analytics/*`, `health/*`)
-
-- `ResponsiveContainer` cu `height={220}` pe mobil, `300` pe desktop.
-- Legendă sub grafic pe mobil.
-- Axă X: `interval="preserveStartEnd"`, font 11, fără rotație extremă.
-- Wrappers `overflow-hidden` ca să nu împingă layout-ul.
-
-## 8. Formulare
-
-- Toate `Input`/`Select`/`Textarea`: full-width pe mobil, label deasupra, `gap-4` între câmpuri.
-- Adaug `inputMode`/`type` corecte unde lipsesc (numerice în Analytics, brief, business impact, KPI; email în invitații; tel unde aplicabil).
-- Butoane formular `min-h-[44px]`, principalul full-width pe mobil.
-
-## 9. Stat cards & carduri (`MetricCard`, `PriorityKpiCard`, `HealthScoreCard`, dashboards)
-
-- Grid `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`.
-- Numere mari cu `truncate` + `clamp()` font.
-- Padding `p-4 md:p-6`.
-
-## 10. Layout & headere
-
-**`AgencyLayout.tsx`**
-- Sidebar deja drawer pe mobil — verific `safe-top` și că nu apare scroll-x.
-- Header pagini (`PageHeader`): titlu mai mic pe mobil, acțiuni se mută într-un meniu `…` dacă sunt >1.
-- Container principal: `px-4 md:px-8 pb-[calc(env(safe-area-inset-bottom)+1rem)]`.
-
-**Client Portal**: header sticky compact, dacă alegem bottom-nav (alternativ tab-urilor) → fixed jos cu `safe-bottom`, conținut cu `padding-bottom` corespunzător.
-
-## 11. Media
-
-- Toate `<img>`/thumbnails: `max-w-full h-auto object-cover`.
-- Carduri swipe / competitor / approval video: aspect-ratio fix.
-
-## Decizie cerută (un singur punct)
-
-Pentru tab-urile din client portal, prefer **segmented control orizontal cu scroll-snap** (păstrează pattern-ul existent, doar îl face scrollabil). Alternativa bottom-nav adaugă complexitate (icoane noi, decid ce intră în „Mai mult"). Merg pe segmented control cu scroll dacă nu spui altceva.
-
-## QA (la 390px, dark mode)
-
-Pentru fiecare rută verific în preview mobile:
-- `/`, `/auth`, `/agency` (toate sub-paginile), `/client`, `/admin`.
-- Checklist: zero overflow-x, taburi pe un rând, calendar = listă, tabelele = carduri, dialogurile = bottom sheet cu acțiuni sticky, butoane ≥44px, fără zoom la focus input, bottom nav respectă safe area.
-
-## Ce NU se atinge
-
-- Logica, RPC-uri, RLS, tipurile DB, AI/Gemini, rute, valori enum.
-- Layout-ul desktop (peste `md`).
-- Brand: roșu și dark mode rămân.
+Nu se modifică: `accept_client_invite` (garda), `RoleRoute`, `UserContext`, RPC-uri de team invite, sau alte rute.

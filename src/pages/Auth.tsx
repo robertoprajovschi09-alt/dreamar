@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -21,22 +21,22 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const bootstrappingRef = useRef(false);
+  
 
+  // No auto-bootstrap of an agency here. Agency creation happens only when the user
+  // explicitly signs up via the "Creează agenție" tab. Client-invite signups must NEVER
+  // get an agency provisioned for them.
   useEffect(() => {
     if (loading || userLoading) return;
     if (!user || !profile) return;
-    if (profile.agency_id || profile.client_id) return;
-    if (bootstrappingRef.current) return;
-    bootstrappingRef.current = true;
-    const name =
-      (profile.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Agenția mea") +
-      " · Agenție";
-    supabase.rpc("create_agency_for_current_user", { _name: name }).then(async ({ error }) => {
-      if (error) { toast.error(error.message); bootstrappingRef.current = false; return; }
-      await refresh();
-    });
-  }, [loading, userLoading, user, profile, refresh]);
+    if (profile.role) return;
+    // Logged in with no role yet — likely a pending client invite. Send them to accept it.
+    const inviteToken = (user.user_metadata as any)?.invite_token;
+    const signupType = (user.user_metadata as any)?.signup_type;
+    if (inviteToken && signupType === 'client_invite') {
+      navigate(`/accept-invite?token=${inviteToken}`, { replace: true });
+    }
+  }, [loading, userLoading, user, profile, navigate]);
 
   if (loading || (user && userLoading)) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
