@@ -27,22 +27,22 @@ export type PostStatusV2 =
   | "analyzed";
 
 export const POST_STATUS_META: Record<string, { label: string; color: string }> = {
-  idea: { label: "Idea", color: "bg-muted text-foreground" },
-  draft: { label: "Draft", color: "bg-muted text-foreground" },
-  script: { label: "Script", color: "bg-muted text-foreground" },
-  filming: { label: "Filming", color: "bg-secondary text-secondary-foreground" },
-  editing: { label: "Editing", color: "bg-secondary text-secondary-foreground" },
-  internal_review: { label: "Internal review", color: "bg-secondary text-secondary-foreground" },
-  ready_for_client: { label: "Ready for client", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
-  sent_for_approval: { label: "Awaiting approval", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
-  pending_approval: { label: "Awaiting approval", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
-  approved: { label: "Approved", color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" },
-  changes_requested: { label: "Changes requested", color: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
-  rejected: { label: "Rejected", color: "bg-red-500/20 text-red-700 dark:text-red-300" },
-  scheduled: { label: "Scheduled", color: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
-  published: { label: "Published", color: "bg-accent/20 text-foreground" },
-  posted: { label: "Posted", color: "bg-accent/20 text-foreground" },
-  analyzed: { label: "Analyzed", color: "bg-accent/30 text-foreground" },
+  idea: { label: "Idee", color: "bg-muted text-foreground" },
+  draft: { label: "Ciornă", color: "bg-muted text-foreground" },
+  script: { label: "Scenariu", color: "bg-muted text-foreground" },
+  filming: { label: "Filmare", color: "bg-secondary text-secondary-foreground" },
+  editing: { label: "Editare", color: "bg-secondary text-secondary-foreground" },
+  internal_review: { label: "Verificare internă", color: "bg-secondary text-secondary-foreground" },
+  ready_for_client: { label: "Gata pentru client", color: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+  sent_for_approval: { label: "În așteptarea aprobării", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
+  pending_approval: { label: "În așteptarea aprobării", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
+  approved: { label: "Aprobat", color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" },
+  changes_requested: { label: "Modificări cerute", color: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
+  rejected: { label: "Respins", color: "bg-red-500/20 text-red-700 dark:text-red-300" },
+  scheduled: { label: "Programat", color: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  published: { label: "Publicat", color: "bg-accent/20 text-foreground" },
+  posted: { label: "Postat", color: "bg-accent/20 text-foreground" },
+  analyzed: { label: "Analizat", color: "bg-accent/30 text-foreground" },
 };
 
 export function postStatusMeta(v: string) {
@@ -50,12 +50,12 @@ export function postStatusMeta(v: string) {
 }
 
 export const APPROVAL_STATUS_META: Record<ApprovalStatus, { label: string; color: string }> = {
-  not_sent: { label: "Not sent", color: "bg-muted text-foreground" },
-  pending_approval: { label: "Pending", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
-  approved: { label: "Approved", color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" },
-  changes_requested: { label: "Changes requested", color: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
-  rejected: { label: "Rejected", color: "bg-red-500/20 text-red-700 dark:text-red-300" },
-  expired: { label: "Expired", color: "bg-muted text-muted-foreground" },
+  not_sent: { label: "Netrimis", color: "bg-muted text-foreground" },
+  pending_approval: { label: "În așteptare", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
+  approved: { label: "Aprobat", color: "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" },
+  changes_requested: { label: "Modificări cerute", color: "bg-orange-500/20 text-orange-700 dark:text-orange-300" },
+  rejected: { label: "Respins", color: "bg-red-500/20 text-red-700 dark:text-red-300" },
+  expired: { label: "Expirat", color: "bg-muted text-muted-foreground" },
 };
 
 export const PENDING_POST_STATUSES = ["pending_approval", "sent_for_approval"];

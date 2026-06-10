@@ -54,31 +54,31 @@ export function DashboardContextCard({ clientId }: Props) {
       <Card>
         <CardContent className="p-5 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <div className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> AI dashboard context</div>
-            <div className="text-xs text-muted-foreground mt-0.5">No AI context yet for this client.</div>
+            <div className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> Context AI dashboard</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Niciun context AI încă pentru acest client.</div>
           </div>
           <Button size="sm" onClick={regenerate} disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate"}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generează"}
           </Button>
         </CardContent>
       </Card>
     );
   }
 
-  const period = new Date(ctx.year, (ctx.month || 1) - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const period = new Date(ctx.year, (ctx.month || 1) - 1, 1).toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> AI dashboard context</CardTitle>
+          <CardTitle className="text-base flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> Context AI dashboard</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px] capitalize">{period}</Badge>
             {ctx.confidence_score != null && (
-              <Badge variant="secondary" className="text-[10px] font-mono">{Math.round(ctx.confidence_score * 100)}% confidence</Badge>
+              <Badge variant="secondary" className="text-[10px] font-mono">{Math.round(ctx.confidence_score * 100)}% încredere</Badge>
             )}
             <Button size="sm" variant="ghost" onClick={regenerate} disabled={busy}>
-              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${busy ? "animate-spin" : ""}`} /> Regenerate
+              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${busy ? "animate-spin" : ""}`} /> Regenerează
             </Button>
           </div>
         </div>
@@ -87,7 +87,7 @@ export function DashboardContextCard({ clientId }: Props) {
         {ctx.generated_summary && <p className="text-sm">{ctx.generated_summary}</p>}
 
         {Array.isArray(ctx.ai_priorities) && ctx.ai_priorities.length > 0 && (
-          <Section title="Priorities">
+          <Section title="Priorități">
             <ul className="space-y-1.5">
               {ctx.ai_priorities.map((p: any, i: number) => (
                 <li key={i} className="text-sm">
@@ -103,7 +103,7 @@ export function DashboardContextCard({ clientId }: Props) {
         )}
 
         {Array.isArray(ctx.missing_data) && ctx.missing_data.length > 0 && (
-          <Section title="Missing data">
+          <Section title="Date lipsă">
             <div className="flex flex-wrap gap-1.5">
               {ctx.missing_data.map((m: any, i: number) => (
                 <Badge key={i} variant="outline" className="text-[10px] gap-1">
@@ -115,7 +115,7 @@ export function DashboardContextCard({ clientId }: Props) {
         )}
 
         {ctx.agency_internal_notes && (
-          <Section title="Internal notes">
+          <Section title="Note interne">
             <p className="text-xs text-muted-foreground whitespace-pre-wrap flex gap-1.5">
               <Lightbulb className="h-3.5 w-3.5 text-accent shrink-0 mt-0.5" />
               <span>{ctx.agency_internal_notes}</span>

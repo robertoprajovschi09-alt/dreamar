@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
+import { PENDING_POST_STATUSES } from "@/lib/approvals";
 import {
   fmtMonthYearRO, healthStatusLabel, goalStatusLabel,
   metricLabel, NICHE_RO,
@@ -91,10 +92,10 @@ export function ClientDashboard({
         supabase.from("client_health_scores").select("total_score, score_status, summary").eq("client_id", clientId).eq("year", year).eq("month", month).maybeSingle(),
         supabase.from("client_checkins").select("satisfaction_score, created_at, year, month").eq("client_id", clientId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("monthly_goals").select("id, objective, metric, target, progress, deadline, status").eq("client_id", clientId).eq("month", monthStartDate),
-        supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "sent_for_approval"),
+        supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).in("status", PENDING_POST_STATUSES as any),
         supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "published").gte("scheduled_for", monthStart),
         supabase.from("content_posts").select("id, title, platform, thumbnail_url, scheduled_for").eq("client_id", clientId).eq("status", "published").gte("scheduled_for", monthStart).order("scheduled_for", { ascending: false }).limit(20),
-        supabase.from("content_posts").select("id, title, platform, scheduled_for, status, approval_status").eq("client_id", clientId).gte("scheduled_for", new Date().toISOString()).in("status", ["scheduled", "sent_for_approval", "approved"] as any).order("scheduled_for", { ascending: true }).limit(5),
+        supabase.from("content_posts").select("id, title, platform, scheduled_for, status, approval_status").eq("client_id", clientId).gte("scheduled_for", new Date().toISOString()).in("status", ["scheduled", "approved", ...PENDING_POST_STATUSES] as any).order("scheduled_for", { ascending: true }).limit(5),
         supabase.from("reports").select("id, title, summary, period_start, period_end, created_at").eq("client_id", clientId).eq("client_visible", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("monthly_strategies").select("strategy_title, executive_summary, content_to_repeat, business_focus").eq("client_id", clientId).eq("year", year).eq("month", month).maybeSingle(),
         supabase.from("business_impact_entries").select("calls, dms, bookings, sales, appointments, viewings, contracts, orders, revenue_estimate").eq("client_id", clientId).gte("entry_date", since30),
@@ -483,11 +484,11 @@ export function ClientDashboard({
                     variant="outline"
                     className={
                       p.approval_status === "approved" ? "text-emerald-600 border-emerald-500/30 text-[10px]"
-                      : p.status === "sent_for_approval" ? "text-amber-600 border-amber-500/30 text-[10px]"
+                      : (PENDING_POST_STATUSES as string[]).includes(p.status) ? "text-amber-600 border-amber-500/30 text-[10px]"
                       : "text-[10px]"
                     }
                   >
-                    {p.approval_status === "approved" ? "aprobat" : p.status === "sent_for_approval" ? "de aprobat" : "programat"}
+                    {p.approval_status === "approved" ? "aprobat" : (PENDING_POST_STATUSES as string[]).includes(p.status) ? "de aprobat" : "programat"}
                   </Badge>
                 </div>
               ))}

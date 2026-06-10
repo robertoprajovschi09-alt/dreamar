@@ -45,17 +45,25 @@ export default function AcceptInvite() {
     })();
   }, [token]);
 
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (authLoading || !user || !preview || accepting) return;
+    if (authLoading || !user || !preview || accepting || acceptError) return;
     setAccepting(true);
     (async () => {
       const { error } = await supabase.rpc("accept_client_invite", { _token: token });
-      if (error) { toast.error(error.message); setAccepting(false); return; }
+      if (error) { setAcceptError(error.message); setAccepting(false); return; }
       await refresh();
       toast.success(`Bine ai venit în ${preview.client_name}!`);
       navigate("/client", { replace: true });
     })();
-  }, [user, authLoading, preview, accepting, token, navigate, refresh]);
+  }, [user, authLoading, preview, accepting, acceptError, token, navigate, refresh]);
+
+  const signOutAndStay = async () => {
+    await supabase.auth.signOut();
+    setAcceptError(null);
+    setAccepting(false);
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +101,24 @@ export default function AcceptInvite() {
             <h1 className="text-xl font-bold">Invitație indisponibilă</h1>
             <p className="text-sm text-muted-foreground">{previewError}</p>
             <Link to="/auth"><Button variant="outline">Mergi la autentificare</Button></Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user && acceptError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center space-y-4">
+            <AlertCircle className="h-10 w-10 mx-auto text-destructive" />
+            <h1 className="text-xl font-bold">Nu putem accepta invitația</h1>
+            <p className="text-sm text-muted-foreground">{acceptError}</p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={signOutAndStay} variant="outline">Deconectează-te și acceptă cu alt cont</Button>
+              <Link to="/"><Button variant="ghost" className="w-full">Mergi la contul meu</Button></Link>
+            </div>
           </CardContent>
         </Card>
       </div>

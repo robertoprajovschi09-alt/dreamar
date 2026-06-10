@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader2, Save, Trash2, Sparkles, ChevronDown, Film, Megaphone, Wand2 } from "lucide-react";
+import { Loader2, Save, Trash2, Sparkles, ChevronDown, Film, Megaphone, Wand2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { POST_STATUSES, PLATFORM_OPTIONS, CONTENT_TYPES, type PostStatus } from "@/lib/content";
+import { PENDING_POST_STATUSES, hasReviewableAsset } from "@/lib/approvals";
+import { SendForApprovalDialog } from "@/components/approvals/SendForApprovalDialog";
 import { AssetUploader, type AssetItem } from "./AssetUploader";
 
 type Props = {
@@ -71,6 +73,7 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -313,7 +316,7 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
               </div>
             </Section>
 
-            <SheetFooter className="pt-2 flex-row justify-between gap-2 sticky bottom-0 bg-background py-3 -mx-6 px-6 border-t border-border/60">
+            <SheetFooter className="pt-2 flex-row justify-between gap-2 sticky bottom-0 bg-background py-3 -mx-6 px-6 border-t border-border/60 flex-wrap">
               <div>
                 {postId && (
                   <Button type="button" variant="ghost" onClick={remove} className="text-destructive hover:text-destructive">
@@ -321,7 +324,15 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
                   </Button>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {postId && agency && form.client_id
+                  && hasReviewableAsset({ video_url: null, script: form.script, assets: form.assets })
+                  && !(PENDING_POST_STATUSES as string[]).includes(form.status)
+                  && (
+                  <Button type="button" variant="secondary" onClick={() => setApprovalOpen(true)}>
+                    <Send className="h-4 w-4 mr-1.5" /> Trimite la aprobare
+                  </Button>
+                )}
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Renunță</Button>
                 <Button type="submit" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
@@ -331,6 +342,12 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
           </form>
         )}
       </SheetContent>
+      <SendForApprovalDialog
+        open={approvalOpen}
+        onOpenChange={setApprovalOpen}
+        post={postId && agency && form.client_id ? { id: postId, agency_id: agency.id, client_id: form.client_id, title: form.title || "—" } : null}
+        onSent={() => { setApprovalOpen(false); onSaved(); }}
+      />
     </Sheet>
   );
 }

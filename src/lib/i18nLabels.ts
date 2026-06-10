@@ -60,6 +60,13 @@ export const GOAL_TITLE_RO: Record<string, string> = {
   engagement: "Mai multă interacțiune",
   reach: "Acoperire mai mare",
   followers: "Mai mulți urmăritori",
+  average_order_value: "Bon mediu mai mare",
+  aov: "Bon mediu mai mare",
+  avg_ticket: "Bon mediu mai mare",
+  bon_mediu: "Bon mediu mai mare",
+  customers_served: "Mai mulți clienți serviți",
+  clients_served: "Mai mulți clienți serviți",
+  covers: "Mai mulți clienți serviți",
 };
 
 export const NICHE_RO: Record<string, string> = {

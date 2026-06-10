@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { BOARD_COLUMNS, columnAccent, columnToStatus, statusToColumn, type BoardColumnId } from "@/lib/contentBoard";
 import { ContentCard, type ContentRow } from "./ContentCard";
 import { ContentEditor } from "./ContentEditor";
+import { SendForApprovalDialog } from "@/components/approvals/SendForApprovalDialog";
+import { PENDING_POST_STATUSES, hasReviewableAsset } from "@/lib/approvals";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -24,6 +26,11 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<any>(null);
+  const [approvalDialog, setApprovalDialog] = useState<{
+    open: boolean;
+    post: { id: string; agency_id: string; client_id: string; title: string } | null;
+    previousStatus: string | null;
+  }>({ open: false, post: null, previousStatus: null });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -32,7 +39,7 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
     setLoading(true);
     let q = supabase
       .from("content_posts")
-      .select("id,title,platform,status,scheduled_for,deadline,content_type,hook,thumbnail_url,assets,assigned_to,client_id,clients(name)")
+      .select("id,title,platform,status,scheduled_for,deadline,content_type,hook,script,video_url,thumbnail_url,assets,assigned_to,client_id,agency_id,clients(name)")
       .eq("agency_id", agency.id)
       .order("scheduled_for", { ascending: true, nullsFirst: false });
     if (clientId) q = q.eq("client_id", clientId);
@@ -65,6 +72,22 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
     const targetCol = over.id as BoardColumnId;
     const row = rows.find((r) => r.id === active.id);
     if (!row) return;
+
+    // Approval column: open send-for-approval dialog instead of just changing status
+    if (targetCol === "approval") {
+      if ((PENDING_POST_STATUSES as string[]).includes(row.status)) return;
+      if (!hasReviewableAsset(row as any)) {
+        toast.error("Atașează un video sau un scenariu înainte de a trimite la aprobare.");
+        return;
+      }
+      setApprovalDialog({
+        open: true,
+        post: { id: row.id, agency_id: (row as any).agency_id, client_id: row.client_id, title: row.title },
+        previousStatus: row.status,
+      });
+      return;
+    }
+
     const newStatus = columnToStatus(targetCol, row.status);
     if (newStatus === row.status) return;
     // optimistic
@@ -104,6 +127,13 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
         defaultClientId={clientId || null}
         defaultStatus={defaultStatus}
         onSaved={load}
+      />
+      <SendForApprovalDialog
+        open={approvalDialog.open}
+        onOpenChange={(v) => setApprovalDialog((s) => ({ ...s, open: v }))}
+        post={approvalDialog.post}
+        onSent={() => { setApprovalDialog({ open: false, post: null, previousStatus: null }); load(); }}
+        onCancel={() => setApprovalDialog({ open: false, post: null, previousStatus: null })}
       />
     </>
   );
