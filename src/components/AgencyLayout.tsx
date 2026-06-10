@@ -49,11 +49,13 @@ const mobileNav = [...primaryNav, ...secondaryNav, ...remainingNav];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+    "relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
     isActive
-      ? "bg-accent/10 text-foreground border-l-2 border-accent"
-      : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+      ? "bg-accent/10 text-accent before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r-full before:bg-accent"
+      : "text-muted-foreground hover:text-foreground hover:bg-surface-2"
   );
+
+const sectionLabelClass = "px-3 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground/70";
 
 export default function AgencyLayout() {
   const { signOut } = useAuth();
@@ -101,11 +103,12 @@ export default function AgencyLayout() {
 
   return (
     <div className="min-h-screen flex w-full bg-background text-foreground">
-      <aside className="hidden md:flex w-60 flex-col border-r border-border bg-sidebar">
-        <div className="h-16 flex items-center px-5 border-b border-sidebar-border">
+      <aside className="hidden md:flex w-64 flex-col bg-sidebar border-r border-sidebar-border">
+        <div className="h-20 flex items-center px-6">
           <Logo />
         </div>
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-4 pb-6 space-y-0.5 overflow-y-auto">
+          <div className={sectionLabelClass}>Meniu</div>
           {primaryNav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end} className={navLinkClass}>
               <n.icon className="h-4 w-4" />
@@ -114,7 +117,7 @@ export default function AgencyLayout() {
           ))}
 
           <Collapsible defaultOpen={false} className="pt-1">
-            <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors [&[data-state=open]>svg]:rotate-180">
+            <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors [&[data-state=open]>svg]:rotate-180">
               <span>Mai multe</span>
               <ChevronDown className="h-4 w-4 transition-transform" />
             </CollapsibleTrigger>
@@ -128,6 +131,7 @@ export default function AgencyLayout() {
             </CollapsibleContent>
           </Collapsible>
 
+          <div className={sectionLabelClass}>General</div>
           {remainingNav.map((n) => (
             <NavLink key={n.to} to={n.to} className={navLinkClass}>
               <n.icon className="h-4 w-4" />
@@ -137,7 +141,7 @@ export default function AgencyLayout() {
 
           {profile?.is_saas_admin && (
             <>
-              <div className="mt-3 pt-3 border-t border-border" />
+              <div className={sectionLabelClass}>Admin</div>
               {[
                 { to: "/admin", label: "SaaS admin" },
                 { to: "/agency/admin/ai-prompts", label: "AI Prompts" },
@@ -147,18 +151,7 @@ export default function AgencyLayout() {
                 { to: "/agency/admin/ai-actions", label: "AI Action Approvals" },
                 { to: "/agency/admin/continuous-improvement", label: "Continuous Improvement" },
               ].map((a) => (
-                <NavLink
-                  key={a.to}
-                  to={a.to}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-accent/10 text-foreground border-l-2 border-accent"
-                        : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
-                    )
-                  }
-                >
+                <NavLink key={a.to} to={a.to} className={navLinkClass}>
                   <ShieldCheck className="h-4 w-4" />
                   {a.label}
                 </NavLink>
