@@ -56,10 +56,27 @@ export default function ClientPortal() {
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
   const [tab, setTab] = useState<string>("overview");
 
+  const [isNewClient, setIsNewClient] = useState<boolean>(false);
+
   // Track last login for the agency to see
   useEffect(() => {
     supabase.rpc("touch_client_login").then(() => {});
   }, []);
+
+  // Detect a brand-new client (no prior check-ins AND no published posts ever)
+  useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
+    (async () => {
+      const [ci, pp] = await Promise.all([
+        supabase.from("client_checkins").select("id", { count: "exact", head: true }).eq("client_id", client.id),
+        supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", client.id).eq("status", "published"),
+      ]);
+      if (cancelled) return;
+      setIsNewClient((ci.count || 0) === 0 && (pp.count || 0) === 0);
+    })();
+    return () => { cancelled = true; };
+  }, [client?.id]);
 
 
   useEffect(() => {
