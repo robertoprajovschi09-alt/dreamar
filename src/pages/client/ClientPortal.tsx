@@ -174,13 +174,15 @@ export default function ClientPortal() {
 function ObjectivesTab({ clientId }: { clientId: string }) {
   const [goals, setGoals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false });
-      setGoals(data || []); setLoading(false);
-    })();
-  }, [clientId]);
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("monthly_goals").select("*").eq("client_id", clientId).order("month", { ascending: false });
+    setGoals(data || []); setLoading(false);
+  };
+  useEffect(() => { load(); }, [clientId]);
+  useEffect(() => subscribeTables(`client-goals-${clientId}`, [
+    { table: "monthly_goals", filter: `client_id=eq.${clientId}` },
+  ], load), [clientId]);
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
   if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No objectives set yet.</CardContent></Card>;
   return (
