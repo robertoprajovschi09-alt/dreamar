@@ -114,6 +114,12 @@ function mapKpiTypeToLegacy(t?: string): "number" | "currency" | "percent" | "te
   return "number";
 }
 
+function LogoPreview({ path }: { path: string | null }) {
+  const url = useSignedUrl(path);
+  if (!path) return null;
+  return <img src={url ?? undefined} alt="logo" className="h-10 w-10 rounded object-cover border bg-muted" />;
+}
+
 export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
