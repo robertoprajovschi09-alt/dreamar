@@ -316,7 +316,7 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
               </div>
             </Section>
 
-            <SheetFooter className="pt-2 flex-row justify-between gap-2 sticky bottom-0 bg-background py-3 -mx-6 px-6 border-t border-border/60">
+            <SheetFooter className="pt-2 flex-row justify-between gap-2 sticky bottom-0 bg-background py-3 -mx-6 px-6 border-t border-border/60 flex-wrap">
               <div>
                 {postId && (
                   <Button type="button" variant="ghost" onClick={remove} className="text-destructive hover:text-destructive">
@@ -324,7 +324,15 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
                   </Button>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {postId && agency && form.client_id
+                  && hasReviewableAsset({ video_url: null, script: form.script, assets: form.assets })
+                  && !(PENDING_POST_STATUSES as string[]).includes(form.status)
+                  && (
+                  <Button type="button" variant="secondary" onClick={() => setApprovalOpen(true)}>
+                    <Send className="h-4 w-4 mr-1.5" /> Trimite la aprobare
+                  </Button>
+                )}
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Renunță</Button>
                 <Button type="submit" disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
@@ -334,6 +342,12 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
           </form>
         )}
       </SheetContent>
+      <SendForApprovalDialog
+        open={approvalOpen}
+        onOpenChange={setApprovalOpen}
+        post={postId && agency && form.client_id ? { id: postId, agency_id: agency.id, client_id: form.client_id, title: form.title || "—" } : null}
+        onSent={() => { setApprovalOpen(false); onSaved(); }}
+      />
     </Sheet>
   );
 }
