@@ -15,9 +15,10 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   post: { id: string; agency_id: string; client_id: string; title: string } | null;
   onSent?: () => void;
+  onCancel?: () => void;
 }
 
-export function SendForApprovalDialog({ open, onOpenChange, post, onSent }: Props) {
+export function SendForApprovalDialog({ open, onOpenChange, post, onSent, onCancel }: Props) {
   const [users, setUsers] = useState<{ user_id: string; email: string }[]>([]);
   const [assigned, setAssigned] = useState<string>("all");
   const [due, setDue] = useState<string>("");
@@ -52,42 +53,47 @@ export function SendForApprovalDialog({ open, onOpenChange, post, onSent }: Prop
       onOpenChange(false);
       onSent?.();
     } catch (e: any) {
-      toast.error(e.message || "Failed to send");
+      toast.error(e.message || "Trimiterea a eșuat");
     } finally {
       setBusy(false);
     }
   };
 
+  const cancel = () => {
+    onOpenChange(false);
+    onCancel?.();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) cancel(); else onOpenChange(v); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Send for client approval</DialogTitle>
+          <DialogTitle>Trimite la aprobare către client</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Assigned to</Label>
+            <Label>Atribuit către</Label>
             <Select value={assigned} onValueChange={setAssigned}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All client users</SelectItem>
+                <SelectItem value="all">Toți utilizatorii clientului</SelectItem>
                 {users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.email}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Due date</Label>
+            <Label>Termen limită</Label>
             <Input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} />
           </div>
           <div>
-            <Label>Message (optional)</Label>
-            <Textarea rows={3} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Anything the client should know…" />
+            <Label>Mesaj (opțional)</Label>
+            <Textarea rows={3} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Orice ar trebui să știe clientul…" />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
+          <Button variant="outline" onClick={cancel}>Anulează</Button>
           <Button onClick={submit} disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-1.5" /> Send</>}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-1.5" /> Trimite</>}
           </Button>
         </DialogFooter>
       </DialogContent>
