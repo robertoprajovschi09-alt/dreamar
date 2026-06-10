@@ -31,6 +31,8 @@ import { ClientAnalyticsTab } from "@/components/analytics/ClientAnalyticsTab";
 import { LatestCheckInCard } from "@/components/client/LatestCheckInCard";
 import { DashboardContextCard } from "@/components/client/DashboardContextCard";
 import { ContentBoard } from "@/components/content/ContentBoard";
+import { subscribeTables } from "@/lib/realtime";
+import { brandStyle, brandInitials } from "@/lib/brandTheme";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -72,6 +74,19 @@ export default function ClientProfile() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Realtime: refresh when the client sends feedback, sets goals, submits brief, posts content, or approves things.
+  useEffect(() => {
+    if (!id) return;
+    const filter = `client_id=eq.${id}`;
+    return subscribeTables(`client-profile-${id}`, [
+      { table: "client_feedback", filter },
+      { table: "monthly_goals", filter },
+      { table: "client_briefs", filter },
+      { table: "content_posts", filter },
+      { table: "content_approvals", filter },
+    ], () => loadAll());
+  }, [id, loadAll]);
+
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
   if (!client) return (
     <div className="p-8">
@@ -81,17 +96,27 @@ export default function ClientProfile() {
   );
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-5xl">
+    <div className="p-6 md:p-8 space-y-6 max-w-5xl" style={brandStyle(client.brand_color)}>
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <Link to="/agency/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1">
-            <ArrowLeft className="h-3 w-3" /> Clienți
-          </Link>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{client.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} ·
-            <span className="ml-1 uppercase tracking-wide text-xs">{client.status}</span>
-          </p>
+        <div className="flex items-center gap-3 min-w-0">
+          {client.logo_url ? (
+            <img src={client.logo_url} alt={client.name} className="h-12 w-12 rounded-full object-cover border border-border shrink-0" />
+          ) : (
+            <div className="h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border border-border shrink-0"
+                 style={{ background: "hsl(var(--brand) / 0.12)", color: "hsl(var(--brand))" }}>
+              {brandInitials(client.name)}
+            </div>
+          )}
+          <div className="min-w-0">
+            <Link to="/agency/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1">
+              <ArrowLeft className="h-3 w-3" /> Clienți
+            </Link>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">{client.name}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} ·
+              <span className="ml-1 uppercase tracking-wide text-xs">{client.status}</span>
+            </p>
+          </div>
         </div>
         <Button onClick={() => setInviteOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <UserPlus className="h-4 w-4 mr-1.5" /> Invită client
