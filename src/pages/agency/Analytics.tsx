@@ -32,6 +32,7 @@ export default function Analytics() {
   const load = useCallback(async () => {
     if (!agency) return;
     setLoading(true);
+    setError(null);
     try {
       const { data: cs } = await supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name");
       setClients((cs || []).map((c: any) => ({ id: c.id, name: c.name })));
@@ -47,6 +48,8 @@ export default function Analytics() {
       }, {});
       setByClientNow(groupBy(now));
       setByClientPrev(groupBy(prev));
+    } catch (e: any) {
+      setError(e?.message || "Nu am putut încărca datele. Încearcă din nou.");
     } finally { setLoading(false); }
   }, [agency, year, month]);
 
