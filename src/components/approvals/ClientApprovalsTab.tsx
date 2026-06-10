@@ -63,11 +63,11 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
     setBusyId(approval.id);
     try {
       await respondToApproval(approval.id, status, c.trim() || null);
-      toast.success(status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Changes requested");
+      toast.success(status === "approved" ? "Aprobat" : status === "rejected" ? "Respins" : "Modificări cerute");
       setComments({ ...comments, [approval.id]: "" });
       load();
     } catch (e: any) {
-      toast.error(e.message || "Failed");
+      toast.error(e.message || "Acțiunea a eșuat");
     } finally {
       setBusyId(null);
     }
