@@ -1,0 +1,2 @@
+ALTER TABLE public.videos ADD COLUMN IF NOT EXISTS content_post_id uuid REFERENCES public.content_posts(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_videos_post ON public.videos(content_post_id);

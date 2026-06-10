@@ -1,152 +1,122 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Plus, Search, LayoutGrid, List, Users } from "lucide-react";
 import { ContentEditor } from "@/components/content/ContentEditor";
-import { POST_STATUSES, PLATFORM_OPTIONS, statusMeta } from "@/lib/content";
-import { SaveToSwipeButton } from "@/components/swipe/SaveToSwipeButton";
-import { SendForApprovalDialog } from "@/components/approvals/SendForApprovalDialog";
-import { Send } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ContentBoard } from "@/components/content/ContentBoard";
+import { ContentList } from "@/components/content/ContentList";
+import { POST_STATUSES, PLATFORM_OPTIONS } from "@/lib/content";
 
 export default function Content() {
   const { agency } = useUser();
-  const [rows, setRows] = useState<any[]>([]);
+  const [params, setParams] = useSearchParams();
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [sendPost, setSendPost] = useState<any | null>(null);
-  const [filterClient, setFilterClient] = useState("all");
-  const [filterPlatform, setFilterPlatform] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [q, setQ] = useState("");
+  const [view, setView] = useState<"board" | "list">("board");
+  const [search, setSearch] = useState("");
+  const [platform, setPlatform] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const load = async () => {
+  const clientId = params.get("client") || "";
+
+  useEffect(() => {
     if (!agency) return;
-    setLoading(true);
-    const [{ data: posts }, { data: cls }] = await Promise.all([
-      supabase.from("content_posts")
-        .select("id,title,platform,status,scheduled_for,content_type,client_id,agency_id,hook,script,caption,clients(name)")
-        .eq("agency_id", agency.id)
-        .order("scheduled_for", { ascending: false, nullsFirst: false }),
-      supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
-    ]);
-    setRows(posts || []); setClients(cls || []); setLoading(false);
+    supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name")
+      .then(({ data }) => setClients(data || []));
+  }, [agency]);
+
+  const selectedClient = clients.find((c) => c.id === clientId);
+  const setClient = (id: string) => {
+    const next = new URLSearchParams(params);
+    if (id === "all") next.delete("client"); else next.set("client", id);
+    setParams(next, { replace: true });
   };
 
-  useEffect(() => { load(); }, [agency]);
-
-  const filtered = rows.filter((r) =>
-    (filterClient === "all" || r.client_id === filterClient) &&
-    (filterPlatform === "all" || r.platform === filterPlatform) &&
-    (filterStatus === "all" || r.status === filterStatus) &&
-    (!q || r.title.toLowerCase().includes(q.toLowerCase()))
-  );
-
   return (
-    <div className="p-6 md:p-8 space-y-4 max-w-[1400px]">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="p-6 md:p-8 space-y-5 max-w-[1600px]">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Conținut</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tot conținutul programat și ciornele pentru clienții tăi.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {selectedClient ? `Pipeline-ul pentru ${selectedClient.name}.` : "Tot conținutul pentru clienții tăi, într-un singur loc."}
+          </p>
         </div>
-        <Button onClick={() => { setEditingId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button onClick={() => setEditorOpen(true)}>
           <Plus className="h-4 w-4 mr-1.5" /> Conținut nou
         </Button>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
-          <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input placeholder="Caută titlu..." value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
+      {/* Sticky filter bar */}
+      <div className="bg-card rounded-3xl border border-border/60 shadow-soft p-3 md:p-4 flex items-center gap-2 flex-wrap sticky top-2 z-20">
+        <div className="flex items-center gap-2 pr-3 border-r border-border">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <Select value={clientId || "all"} onValueChange={setClient}>
+            <SelectTrigger className="h-10 min-w-[200px] border-0 bg-surface-1 font-semibold">
+              <SelectValue placeholder="Toți clienții" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toți clienții</SelectItem>
+              {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={filterClient} onValueChange={setFilterClient}>
-          <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toți clienții</SelectItem>
-            {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterPlatform} onValueChange={setFilterPlatform}>
-          <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+
+        <div className="relative flex-1 min-w-[180px] max-w-[320px]">
+          <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
+          <Input placeholder="Caută după titlu..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+
+        <Select value={platform} onValueChange={setPlatform}>
+          <SelectTrigger className="h-10 w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toate platformele</SelectItem>
             {PLATFORM_OPTIONS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toate statusurile</SelectItem>
-            {POST_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
+
+        {view === "list" && (
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-10 w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toate statusurile</SelectItem>
+              {POST_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+
+        <div className="ml-auto">
+          <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+            <TabsList className="rounded-full bg-surface-1 h-10 p-1">
+              <TabsTrigger value="board" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-soft gap-1.5">
+                <LayoutGrid className="h-3.5 w-3.5" /> Board
+              </TabsTrigger>
+              <TabsTrigger value="list" className="rounded-full data-[state=active]:bg-card data-[state=active]:shadow-soft gap-1.5">
+                <List className="h-3.5 w-3.5" /> Listă
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
-      <Card>
-        {loading ? (
-          <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-        ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">Niciun conținut nu corespunde filtrelor.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium">Titlu</th>
-                  <th className="text-left px-4 py-3 font-medium">Client</th>
-                  <th className="text-left px-4 py-3 font-medium">Platformă</th>
-                  <th className="text-left px-4 py-3 font-medium">Tip</th>
-                  <th className="text-left px-4 py-3 font-medium">Programat</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-right px-4 py-3 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filtered.map((r) => {
-                  const m = statusMeta(r.status);
-                  return (
-                    <tr key={r.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => { setEditingId(r.id); setEditorOpen(true); }}>
-                      <td className="px-4 py-3 font-medium">{r.title}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.clients?.name || "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.platform || "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.content_type || "—"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{r.scheduled_for ? new Date(r.scheduled_for).toLocaleString() : "—"}</td>
-                      <td className="px-4 py-3"><span className={cn("inline-block px-2 py-0.5 rounded text-[11px] font-medium", m.color)}>{m.label}</span></td>
-                      <td className="px-4 py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
-                        {(r.status === "ready_for_client" || r.status === "changes_requested" || r.status === "internal_review") && (
-                          <Button size="sm" variant="outline" className="h-8" onClick={() => setSendPost(r)}>
-                            <Send className="h-3.5 w-3.5 mr-1" /> Trimite
-                          </Button>
-                        )}
-                        <SaveToSwipeButton defaults={{
-                          title: r.title,
-                          type: "video_idea",
-                          platform: r.platform || undefined,
-                          client_id: r.client_id || null,
-                          hook: r.hook || null,
-                          script: r.script || null,
-                          caption: r.caption || null,
-                          content_format: r.content_type || null,
-                          source_post_id: r.id,
-                        }} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {view === "board" ? (
+        <ContentBoard key={`b-${reloadKey}`} clientId={clientId || null} search={search} platform={platform} showNewButton />
+      ) : (
+        <ContentList key={`l-${reloadKey}`} clientId={clientId || null} search={search} platform={platform} statusFilter={statusFilter} />
+      )}
 
-      <ContentEditor open={editorOpen} onOpenChange={setEditorOpen} postId={editingId} onSaved={load} />
-      <SendForApprovalDialog open={!!sendPost} onOpenChange={(v) => !v && setSendPost(null)} post={sendPost} onSent={load} />
+      <ContentEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        postId={null}
+        defaultClientId={clientId || null}
+        onSaved={() => setReloadKey((k) => k + 1)}
+      />
     </div>
   );
 }
