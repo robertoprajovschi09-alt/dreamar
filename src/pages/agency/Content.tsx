@@ -21,6 +21,7 @@ export default function Content() {
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [reloadKey, setReloadKey] = useState(0);
 
   const clientId = params.get("client") || "";
 
