@@ -455,3 +455,9 @@ function FeedbackTab({ clientId, agencyId, userId }: { clientId: string; agencyI
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return <div className="space-y-1.5"><Label>{label}</Label><Input type="number" min="0" value={value} onChange={(e) => onChange(Number(e.target.value) || 0)} /></div>;
 }
+
+function ClientLogoImg({ path, name }: { path: string | null; name: string }) {
+  const url = useSignedUrl(path);
+  if (!path) return null;
+  return <img src={url ?? undefined} alt={name} className="h-14 w-14 rounded-full object-cover border border-border bg-muted" />;
+}
