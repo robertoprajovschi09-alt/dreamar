@@ -188,7 +188,7 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => resend(i.id)}>
+                            <DropdownMenuItem onClick={() => resend(i.id, i.token)}>
                               <RefreshCw className="h-4 w-4 mr-2" /> Resend / refresh link
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setPermTarget({ kind: "invite", id: i.id, email: i.email, role: i.portal_role, permissions: i.permissions })}>
