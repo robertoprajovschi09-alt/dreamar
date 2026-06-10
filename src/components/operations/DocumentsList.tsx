@@ -44,9 +44,10 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
   const onUpload = async (file: File) => {
     if (!file) return;
     setBusy(true);
-    const path = `${agencyId}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+    const safe = file.name.replace(/[^\w.\-]/g, "_");
+    const path = `${agencyId}/documents/${Date.now()}-${safe}`;
     const { error: upErr } = await supabase.storage.from("agency-files").upload(path, file, { contentType: file.type });
-    if (upErr) { setBusy(false); return toast.error(upErr.message); }
+    if (upErr) { setBusy(false); toast.error(`Upload eșuat: ${upErr.message}`); return; }
 
     const finalClient = clientId || uploadClient || null;
     const visibility = (clientId || finalClient) ? uploadVisibility : "internal";
