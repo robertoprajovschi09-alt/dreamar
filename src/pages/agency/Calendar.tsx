@@ -12,6 +12,7 @@ import { UpcomingList } from "@/components/content/UpcomingList";
 import { ContentEditor } from "@/components/content/ContentEditor";
 import { QuickAddPopover } from "@/components/content/QuickAddPopover";
 import { POST_STATUSES, PLATFORM_OPTIONS } from "@/lib/content";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 
 type View = "month" | "week" | "list";
@@ -19,7 +20,9 @@ type View = "month" | "week" | "list";
 export default function Calendar() {
   const { agency } = useUser();
   const [params, setParams] = useSearchParams();
-  const view = (params.get("view") as View) || "month";
+  const isMobile = useIsMobile();
+  const viewParam = (params.get("view") as View) || "month";
+  const view: View = isMobile ? "list" : viewParam;
   const setView = (v: View) => { params.set("view", v); setParams(params, { replace: true }); };
 
   const [cursor, setCursor] = useState(new Date());
@@ -126,14 +129,14 @@ export default function Calendar() {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-4 max-w-[1400px]">
+    <div className="p-4 md:p-8 space-y-4 max-w-[1400px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Calendar</h1>
           <p className="text-sm text-muted-foreground mt-1">Trage elementele pentru a le replanifica. Clic pe o zi pentru a adăuga rapid.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as View)} size="sm" variant="outline">
+          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as View)} size="sm" variant="outline" className="hidden md:flex">
             <ToggleGroupItem value="month" className="text-xs">Lună</ToggleGroupItem>
             <ToggleGroupItem value="week" className="text-xs">Săptămână</ToggleGroupItem>
             <ToggleGroupItem value="list" className="text-xs">Listă</ToggleGroupItem>

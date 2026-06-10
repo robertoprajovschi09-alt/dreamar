@@ -39,7 +39,7 @@ export default function Content() {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-5 max-w-[1600px]">
+    <div className="p-4 md:p-8 space-y-5 max-w-[1600px]">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Conținut</h1>

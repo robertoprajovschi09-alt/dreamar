@@ -137,6 +137,11 @@
     @apply border-border;
   }
 
+  html, body {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
   html {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
@@ -144,6 +149,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* iOS: prevent auto-zoom on focus by forcing 16px inputs on small screens */
+  @media (max-width: 767px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
   }
 
   .font-mono {
@@ -187,4 +199,20 @@
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-soft-lg { box-shadow: var(--shadow-soft-lg); }
   .rounded-4xl { border-radius: 2rem; }
+
+  /* iPhone safe areas */
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top    { padding-top: env(safe-area-inset-top); }
+  .pb-safe     { padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
+  .mb-safe     { margin-bottom: env(safe-area-inset-bottom); }
+
+  /* Hide scrollbar on horizontal scroll strips */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Touch targets */
+  .touch-target { min-height: 44px; min-width: 44px; }
+
+  /* Fluid hero heading */
+  .h-fluid { font-size: clamp(1.75rem, 7vw, 3rem); line-height: 1.1; }
 }

@@ -35,7 +35,7 @@ export default function Competitors() {
   }, [agency?.id]);
 
   return (
-    <div className="p-6 md:p-8 max-w-6xl space-y-6">
+    <div className="p-4 md:p-8 max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Concurenți</h1>
         <p className="text-sm text-muted-foreground mt-1">Urmărește activitatea concurenților pentru toți clienții tăi. Privat din start.</p>

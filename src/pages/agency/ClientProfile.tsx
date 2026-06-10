@@ -97,7 +97,7 @@ export default function ClientProfile() {
   );
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-5xl" style={brandStyle(client.brand_color)}>
+    <div className="p-4 md:p-8 space-y-6 max-w-5xl" style={brandStyle(client.brand_color)}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <ClientLogo logoPath={client.logo_url} name={client.name} />

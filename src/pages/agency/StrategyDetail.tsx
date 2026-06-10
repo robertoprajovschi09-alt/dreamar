@@ -118,7 +118,7 @@ export default function StrategyDetail() {
   const meta = STRATEGY_STATUS_META[s.status];
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild><Link to="/agency/strategies"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Link></Button>
         <Badge className={meta.color}>{meta.label}</Badge>

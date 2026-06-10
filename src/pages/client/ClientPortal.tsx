@@ -87,6 +87,14 @@ export default function ClientPortal() {
       .catch(() => setBriefStatus("missing"));
   }, [client?.id]);
 
+  // Auto-scroll active tab pill into view on mobile
+  useEffect(() => {
+    const el = document.querySelector(`[data-tab-trigger][data-state="active"]`) as HTMLElement | null;
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, [tab]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!client || !agency) {
     return (
@@ -140,7 +148,7 @@ export default function ClientPortal() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 md:p-8 space-y-6">
+      <main className="max-w-5xl mx-auto p-4 md:p-8 space-y-6 pb-[calc(2rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-3">
           <ClientLogoImg path={client.logo_url} name={client.name} />
           <div>
@@ -153,16 +161,18 @@ export default function ClientPortal() {
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="flex-wrap h-auto rounded-full bg-muted p-1 gap-1">
-            <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Sumar</TabsTrigger>
-            <TabsTrigger value="checkin" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Check-in</TabsTrigger>
-            <TabsTrigger value="calendar" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Calendar</TabsTrigger>
-            <TabsTrigger value="approvals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Aprobări</TabsTrigger>
-            <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rapoarte</TabsTrigger>
-            <TabsTrigger value="results" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rezultate</TabsTrigger>
-            <TabsTrigger value="objectives" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Obiective</TabsTrigger>
-            <TabsTrigger value="documents" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Documente</TabsTrigger>
-            <TabsTrigger value="feedback" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Feedback</TabsTrigger>
+          <TabsList
+            className="flex md:flex-wrap h-auto rounded-full bg-muted p-1 gap-1 overflow-x-auto md:overflow-visible no-scrollbar snap-x snap-mandatory whitespace-nowrap -mx-4 md:mx-0 px-4 md:px-1 w-[calc(100%+2rem)] md:w-full"
+          >
+            <TabsTrigger value="overview" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Sumar</TabsTrigger>
+            <TabsTrigger value="checkin" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Check-in</TabsTrigger>
+            <TabsTrigger value="calendar" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Calendar</TabsTrigger>
+            <TabsTrigger value="approvals" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Aprobări</TabsTrigger>
+            <TabsTrigger value="reports" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rapoarte</TabsTrigger>
+            <TabsTrigger value="results" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rezultate</TabsTrigger>
+            <TabsTrigger value="objectives" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Obiective</TabsTrigger>
+            <TabsTrigger value="documents" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Documente</TabsTrigger>
+            <TabsTrigger value="feedback" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Feedback</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><ClientDashboard
             agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id}

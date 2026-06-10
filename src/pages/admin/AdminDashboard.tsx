@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   }), { agencies: 0, clients: 0, members: 0, mrr: 0 });
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <PageHeader title="SaaS admin" subtitle="All agencies on the platform" />
 
       <div className="grid gap-4 md:grid-cols-4">

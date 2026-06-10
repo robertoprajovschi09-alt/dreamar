@@ -1,71 +1,131 @@
-# Traducere completă în română (100%)
+# Plan: Optimizare mobile iPhone-first (țintă 390px)
 
-Aplicația devine Romanian-only. Înlocuiesc textele englezești direct inline, fără librărie i18n. Nu modific logică, chei DB, enum-uri, nume de rute sau variabile.
+Aplic schimbări doar la `md` și sub (mobil); desktop rămâne identic. Păstrăm dark mode, brand roșu, logica și DB neschimbate.
 
-## 1. Hărți centrale de etichete (sursa unică)
+## 1. Fundație globală
 
-Extind `src/lib/i18nLabels.ts` (există deja parțial) cu toate hărțile cerute și adaug funcții ajutătoare:
+**`index.html`**
+- Viewport: `width=device-width, initial-scale=1, viewport-fit=cover`.
+- Meta `theme-color` aliniat cu fundalul.
 
-- `GOAL_STATUS_RO`, `CONTENT_STATUS_RO`, `APPROVAL_STATUS_RO`, `HEALTH_STATUS_RO`, `METRIC_RO`, `NICHE_RO` (completate conform brief-ului)
-- `AGENCY_NAV_RO` — mapare pentru sidebar
-- helpers: `contentStatusLabel`, `approvalStatusLabel`, `metricLabel` (deja există)
-- păstrez `MONTHS_RO`, `WEEKDAYS_RO_*`, `fmtMonthYearRO`, `fmtDayShortRO`, `fmtDateRO`
-- adaug `fmtNumberRO`, `fmtCurrencyRO` (locale `ro-RO`) pentru numere/sume
+**`src/index.css`**
+- Reguli globale anti-zoom: `input, select, textarea { font-size: 16px; }` doar sub `md`.
+- Utility classes noi:
+  - `.safe-bottom` → `padding-bottom: env(safe-area-inset-bottom)`
+  - `.safe-top` → `padding-top: env(safe-area-inset-top)`
+  - `.no-scrollbar` → ascunde scrollbar pe x-scroll
+  - `.h-touch` → `min-h-[44px] min-w-[44px]`
+  - `.scroll-snap-x` → scroll orizontal cu snap
+- `html, body { overflow-x: hidden; }` ca plasă de siguranță.
+- Heading helper `.h-fluid` cu `clamp()` pentru titluri mari.
 
-Actualizez `src/lib/operations.ts` (TASK_STATUSES, TASK_PRIORITIES, CAMPAIGN_STATUSES, DOCUMENT_FOLDERS) — sunt deja în RO, completez ce lipsește (ex. folderele de documente).
+**`tailwind.config.ts`**
+- Adaug `spacing: { 'safe-b': 'env(safe-area-inset-bottom)' }` și `minHeight.touch: '44px'`.
 
-## 2. Zone de tradus (checklist complet)
+## 2. Client Portal — tab navigation (`src/pages/client/ClientPortal.tsx`)
 
-### A. Landing (`src/pages/Index.tsx`)
-Tot textul rescris în română cu tonul cerut: hero, sub-hero, badges, CTA, secțiunea „Everything in one place", carduri module, pricing (păstrez prețurile și numele de plan rămân în formă scurtă RO: „Starter", „Creștere", „Nelimitat", „White Label Pro"), CTA final, footer.
+Tab-urile (Sumar, Check-in, Calendar, Aprobări, Rapoarte, Rezultate, Obiective, Documente, Feedback) se rup pe 3 rânduri pe mobil.
 
-### B. Auth & invitații
-- `src/pages/Auth.tsx`, `src/pages/AdminLogin.tsx`
-- `src/pages/AcceptInvite.tsx`, `src/pages/AcceptTeamInvite.tsx`
-- Toate label-urile, butoanele, mesajele de eroare/zod, toast-urile.
+- Sub `md`: segmented control orizontal — `flex overflow-x-auto no-scrollbar snap-x` cu `whitespace-nowrap`, fiecare tab `min-h-[44px] px-4`, indicator activ, `scrollIntoView({inline:'center'})` la schimbarea tab-ului.
+- Peste `md`: layout actual neschimbat.
+- Container sticky top sub header, fără wrap.
 
-### C. Layout agenție + sidebar
-- `src/components/AgencyLayout.tsx` — etichetele din meniu folosesc `AGENCY_NAV_RO`.
-- `src/components/PageHeader.tsx`, `NavLink.tsx`, `Logo.tsx` (dacă au text).
+## 3. Calendar — agenție și client
 
-### D. Pagini agenție (toate fișierele din `src/pages/agency/*`)
-AgencyDashboard, Clients, ClientProfile, Calendar, Content, Approvals, Analytics, Campaigns, Reports, ReportPrint, Strategies, StrategyDetail, StrategyPrint, Documents, Tasks, SwipeLibrary, Competitors, Assistant, Team, Billing, Settings, AiActions, AiMemory, InviteClientDialog.
-Titluri, subtitluri, butoane, coloane de tabel, filtre, empty states, tab-uri.
+**`src/components/content/MonthCalendar.tsx`** + **`src/pages/agency/Calendar.tsx`** + locuri unde apare în client portal:
+- Sub `md`, forțat view = `list` (agendă): postări grupate pe zi (zi+dată RO via `Intl.DateTimeFormat('ro-RO')`), titlu, platformă (iconiță), badge status colorat.
+- Empty state prietenos „Nicio postare planificată".
+- Pe agenție: `ToggleGroup` Lună/Săpt/Listă rămâne, dar pe mobil ascund Lună/Săpt (doar Listă vizibil). Pe desktop neschimbat.
+- `UpcomingList` reutilizat / extins pentru ambele.
 
-### E. Pagini admin (`src/pages/admin/*`)
-AdminDashboard, AiActionsApprovalQueue, AiLogs, AiMaintainer, AiPrompts, AiSafety, ContinuousImprovement.
+## 4. Tabele → carduri pe mobil
 
-### F. Client portal
-- `src/pages/client/ClientPortal.tsx` și componente `client/*` (DashboardContextCard, BriefWizard, BusinessImpact*, ClientDashboard, ClientQuickCheckIn, EditPortalPermissionsDialog, LatestCheckInCard, NicheDashboardSection, NicheSummaryCard, PortalSettingsCard, PriorityKpiCard, QuickAddClientDialog, QuickClientOnboarding, RealEstateDashboardSection, CustomNicheDashboardSection, AddClientWizard).
+Pattern: wrapper `<div className="hidden md:block">` pentru `<Table>`, `<div className="md:hidden space-y-2">` pentru carduri.
 
-### G. Componente shared
-`src/components/`:
-- analytics/*, approvals/*, ai/*, competitors/*, content/*, health/*, operations/*, performance/*, reports/*, risk/*, strategies/*, swipe/*, team/*, EmptyState, ScrollToTop, MetricCard, RoleRoute, AdminRoute.
-- Badge-uri/status pills folosesc hărțile centrale.
-- `error-state.tsx` (deja RO).
+Fișiere afectate:
+- `src/pages/agency/Clients.tsx`
+- `src/pages/agency/Content.tsx` + `src/components/content/ContentList.tsx`
+- `src/pages/agency/Tasks.tsx` (vezi #6 pentru kanban)
+- `src/pages/agency/Approvals.tsx` + `ClientApprovalsTab.tsx`
+- `src/pages/agency/Reports.tsx` + `ClientReportsTab.tsx`
+- `src/pages/agency/Team.tsx`
+- `src/components/competitors/CompetitorsTab.tsx`
+- `src/components/operations/DocumentsList.tsx`
+- `src/components/performance/VideosTable.tsx`
+- `src/components/analytics/ContentRankingTable.tsx`
 
-### H. Toast-uri, validări, mesaje
-Caut `toast.success(`, `toast.error(`, `toast(`, `z.string(`, `.min(`, `message:`, `placeholder=`, `aria-label=`, `title=` în toată baza de cod și traduc tot ce e vizibil.
+Cardul: titlu/nume bold, 2-3 câmpuri cheie pe linii, badge status, meniu „…" (`DropdownMenu`) pentru acțiuni. Click pe card = acțiunea principală.
 
-### I. Emailuri (edge functions)
-- `supabase/functions/send-client-invite/index.ts`
-- `supabase/functions/send-team-invite/index.ts`
-Subject + corp HTML/text 100% RO. (Nu ating funcțiile AI/Gemini.)
+## 5. Dialoguri/Wizard-uri → bottom sheet pe mobil
 
-### J. `index.html`
-`<title>`, `<meta name="description">`, `og:title`, `og:description` în română. Lang `ro`.
+Strategie: creez un wrapper `<ResponsiveDialog>` care randează `Sheet` (side="bottom", `h-[95vh]`) sub `md` și `Dialog` peste. Conținut scrollabil, bara de acțiuni `sticky bottom-0 safe-bottom` cu butoane full-width.
 
-## 3. Formatare date/numere
-Înlocuiesc orice `toLocaleDateString()` / `toLocaleString()` fără locale, sau cu `en-*`, cu varianta `ro-RO` sau cu helperele din `i18nLabels.ts`. Lunile/zilele afișate manual folosesc `MONTHS_RO` / `WEEKDAYS_RO_*`.
+Aplic la:
+- `AddClientWizard`, `QuickAddClientDialog`, `QuickClientOnboarding`
+- `BriefWizard`
+- `ApprovalDetailDialog`, `SendForApprovalDialog`
+- `AnalyticsEntryDialog`, `ContentMetricDialog`, `CsvImportDialog`
+- `InviteClientDialog`, `InviteTeamMemberDialog`
+- `EditPortalPermissionsDialog`, `PortalSettingsCard` modaluri
+- `ContentEditor`, `QuickAddPopover`
+- `CompetitorFormDialog`, `CompetitorInsightsDialog`, `ObservationFormDialog`, `ObservationDetailDialog`, `CompareDialog`
+- `SwipeFormDialog`, `SwipeDetailDialog`, `UseInCalendarDialog`
+- `GenerateStrategyDialog`, `RiskAnalysisDialog`, `ReportEditor`
+- `TaskEditor`, `QuickEditTaskSheet` (deja sheet — doar verific safe area)
+- `VideoEditor`
 
-## 4. Verificare finală
-Grep global după cuvintele tipice EN cerute în brief (`Save`, `Cancel`, `Delete`, `Add`, `Edit`, `Create`, `Search`, `Loading`, `Success`, `Error`, `Settings`, `Client`, `Report`, `Pending`, `Approved`, `Draft`, `This month`, `No data`, `Get started`, `Sign in`, `Upgrade`, `Health`, `Month`, `Week`, `Today`, `Yesterday`, `New`, `IN PROGRESS`, `June`, etc.) — orice apariție vizibilă se traduce. Identificatorii din cod / chei DB rămân neschimbați.
+Wizard-urile: stepper compact sus, butoane „Înapoi/Înainte" sticky jos.
 
-## Ce NU modific
-- Logică, nume de funcții/variabile, scheme, RLS, rute.
-- Valori enum din DB.
-- Funcții AI/Gemini (prompturi rămân cum sunt).
-- Brand: Dreamar, drea.mar, DR.DREAM; platforme: Instagram/TikTok/Facebook/YouTube; termeni tehnici: ROAS, CTR, CPM, AI.
+## 6. Kanban Sarcini (`src/pages/agency/Tasks.tsx`)
 
-## Livrare
-Lucrare amplă (zeci de fișiere). O fac într-o singură rundă de build, grupat pe zonele de mai sus, cu hărțile centrale reutilizate ca să rămână consecvent.
+- Sub `md`: coloane în row cu `overflow-x-auto snap-x snap-mandatory`, fiecare coloană `w-[85vw] shrink-0 snap-center`. Indicator de paginare deasupra (puncte sau nume coloane scrollabile). Alternativ comutator listă pe status (preferă scroll-snap pentru parity cu desktop).
+- Peste `md`: grid actual.
+
+## 7. Grafice (`src/components/analytics/*`, `health/*`)
+
+- `ResponsiveContainer` cu `height={220}` pe mobil, `300` pe desktop.
+- Legendă sub grafic pe mobil.
+- Axă X: `interval="preserveStartEnd"`, font 11, fără rotație extremă.
+- Wrappers `overflow-hidden` ca să nu împingă layout-ul.
+
+## 8. Formulare
+
+- Toate `Input`/`Select`/`Textarea`: full-width pe mobil, label deasupra, `gap-4` între câmpuri.
+- Adaug `inputMode`/`type` corecte unde lipsesc (numerice în Analytics, brief, business impact, KPI; email în invitații; tel unde aplicabil).
+- Butoane formular `min-h-[44px]`, principalul full-width pe mobil.
+
+## 9. Stat cards & carduri (`MetricCard`, `PriorityKpiCard`, `HealthScoreCard`, dashboards)
+
+- Grid `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`.
+- Numere mari cu `truncate` + `clamp()` font.
+- Padding `p-4 md:p-6`.
+
+## 10. Layout & headere
+
+**`AgencyLayout.tsx`**
+- Sidebar deja drawer pe mobil — verific `safe-top` și că nu apare scroll-x.
+- Header pagini (`PageHeader`): titlu mai mic pe mobil, acțiuni se mută într-un meniu `…` dacă sunt >1.
+- Container principal: `px-4 md:px-8 pb-[calc(env(safe-area-inset-bottom)+1rem)]`.
+
+**Client Portal**: header sticky compact, dacă alegem bottom-nav (alternativ tab-urilor) → fixed jos cu `safe-bottom`, conținut cu `padding-bottom` corespunzător.
+
+## 11. Media
+
+- Toate `<img>`/thumbnails: `max-w-full h-auto object-cover`.
+- Carduri swipe / competitor / approval video: aspect-ratio fix.
+
+## Decizie cerută (un singur punct)
+
+Pentru tab-urile din client portal, prefer **segmented control orizontal cu scroll-snap** (păstrează pattern-ul existent, doar îl face scrollabil). Alternativa bottom-nav adaugă complexitate (icoane noi, decid ce intră în „Mai mult"). Merg pe segmented control cu scroll dacă nu spui altceva.
+
+## QA (la 390px, dark mode)
+
+Pentru fiecare rută verific în preview mobile:
+- `/`, `/auth`, `/agency` (toate sub-paginile), `/client`, `/admin`.
+- Checklist: zero overflow-x, taburi pe un rând, calendar = listă, tabelele = carduri, dialogurile = bottom sheet cu acțiuni sticky, butoane ≥44px, fără zoom la focus input, bottom nav respectă safe area.
+
+## Ce NU se atinge
+
+- Logica, RPC-uri, RLS, tipurile DB, AI/Gemini, rute, valori enum.
+- Layout-ul desktop (peste `md`).
+- Brand: roșu și dark mode rămân.

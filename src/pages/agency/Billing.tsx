@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 export default function Billing() {
   const { agency } = useUser();
   return (
-    <div className="p-6 md:p-8 max-w-4xl">
+    <div className="p-4 md:p-8 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Facturare</h1>
         <p className="text-sm text-muted-foreground mt-1">Plan, facturi și locuri utilizate.</p>
