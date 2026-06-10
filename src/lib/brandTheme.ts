@@ -32,12 +32,12 @@ export function brandStyle(brandColor?: string | null): React.CSSProperties {
   const fg = hsl.l > 60 ? "0 0% 10%" : "0 0% 100%";
   const soft = `${hsl.h} ${Math.min(80, hsl.s)}% 95%`;
   return {
-    // CSS vars consumed by `var(--brand)` etc. in this subtree
+    // Only expose --brand vars to the subtree. Do NOT override --accent — the
+    // client portal must inherit the global signal-red accent regardless of the
+    // client's brand color (which is used only for tiny brand chips).
     ["--brand" as any]: base,
     ["--brand-foreground" as any]: fg,
     ["--brand-soft" as any]: soft,
-    ["--accent" as any]: base,
-    ["--accent-foreground" as any]: fg,
   };
 }
 

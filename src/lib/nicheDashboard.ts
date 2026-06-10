@@ -108,7 +108,7 @@ export const NICHE_DASHBOARD_COPY: Record<string, Partial<NicheDashboardCopy>> =
     show_content_snapshot: false,
   },
   hospitality: {
-    hero_eyebrow: "Luna aceasta în hospitality",
+    hero_eyebrow: "Luna aceasta la hotel",
     impact_section_title: "Rezervări & oaspeți",
     impact_section_help: "Câte rezervări, cereri și nopți rezervate ai avut din promovare?",
     primary_kpi_keys: ["bookings", "reservation_requests", "occupancy_rate"],

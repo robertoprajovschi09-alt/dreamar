@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
+import {
+  fmtMonthYearRO, healthStatusLabel, goalStatusLabel,
+  metricLabel, NICHE_RO,
+} from "@/lib/i18nLabels";
 
 type InsightCard = {
   title: string;
@@ -40,19 +44,9 @@ type Props = {
   onOpenReports?: () => void;
 };
 
-const monthLabel = (d = new Date()) =>
-  d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+const monthLabel = (d = new Date()) => fmtMonthYearRO(d);
 
-const NICHE_BADGES: Record<string, string> = {
-  real_estate: "Imobiliare",
-  restaurant: "Restaurant",
-  beauty: "Beauty",
-  ecommerce: "eCommerce",
-  fitness: "Fitness",
-  medical: "Medical",
-  hospitality: "Hotels",
-  custom: "Custom",
-};
+const NICHE_BADGES: Record<string, string> = NICHE_RO;
 
 const STATUS_COLORS: Record<string, string> = {
   excellent: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
@@ -209,9 +203,7 @@ export function ClientDashboard({
   // Derive Main Result KPI
   const mainResultKey = personalization?.priority_metrics?.[0] || copy.primary_kpi_keys?.[0];
   const mainResultValue = mainResultKey ? (impactTotals[mainResultKey] ?? null) : null;
-  const mainResultLabel = mainResultKey
-    ? mainResultKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : "Rezultat principal";
+  const mainResultLabel = mainResultKey ? metricLabel(mainResultKey) : "Rezultat principal";
 
   // Business impact total
   const totalLeads = (impactTotals.calls || 0) + (impactTotals.dms || 0) + (impactTotals.bookings || 0)
@@ -255,11 +247,11 @@ export function ClientDashboard({
               {health && (
                 <div className="flex items-center gap-2">
                   <div className="text-right leading-tight">
-                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Health</div>
+                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sănătate</div>
                     <div className="text-lg font-semibold tabular-nums">{Math.round(Number(health.total_score) || 0)}</div>
                   </div>
                   <Badge className={STATUS_COLORS[health.score_status] || ""} variant="outline">
-                    {health.score_status?.replace("_", " ")}
+                    {healthStatusLabel(health.score_status)}
                   </Badge>
                 </div>
               )}

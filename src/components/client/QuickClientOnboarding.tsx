@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getClientBrief, saveClientBrief, BRAND_TONES, type ClientBrief } from "@/lib/brief";
 import { PLATFORMS } from "@/lib/niches";
 import { getNichePreset, type KpiField, type Question } from "@/lib/nichePresets";
+import { goalTitleFor } from "@/lib/i18nLabels";
 
 type Props = {
   agencyId: string;
@@ -121,7 +122,7 @@ export function QuickClientOnboarding({
 
         // --- Step 2: goals from KPI preset (first 3) ---
         const seedGoals: GoalDraft[] = (kpiFields.slice(0, 3)).map((k) => ({
-          objective: `Mai mulți ${k.label.toLowerCase()}`,
+          objective: goalTitleFor(k.key, k.label),
           metric: k.label,
           target: "",
         }));

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fmtMonthYearRO } from "@/lib/i18nLabels";
 
 const PRIORITY_LABELS: Record<string, string> = {
   more_leads: "Mai multe lead-uri",
@@ -49,13 +50,13 @@ export function LatestCheckInCard({ clientId }: { clientId: string }) {
   try { parsed = row.objections ? JSON.parse(row.objections) : null; } catch { parsed = null; }
   const isCheckIn = parsed?.kind === "quick_check_in";
 
-  const monthLabel = new Date(row.month).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const monthLabel = fmtMonthYearRO(row.month);
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Latest monthly check-in</CardTitle>
+          <CardTitle className="text-base">Ultimul check-in lunar</CardTitle>
           <Badge variant="outline" className="text-[10px] capitalize">{monthLabel}</Badge>
         </div>
       </CardHeader>

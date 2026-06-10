@@ -30,6 +30,11 @@ import { ClientQuickCheckIn } from "@/components/client/ClientQuickCheckIn";
 import { brandStyle } from "@/lib/brandTheme";
 import { useSignedUrl } from "@/lib/storage";
 import { subscribeTables } from "@/lib/realtime";
+import {
+  fmtMonthYearRO, fmtDateRO, fmtDayShortRO,
+  WEEKDAYS_RO_SHORT, goalStatusLabel, metricLabel,
+} from "@/lib/i18nLabels";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 const monthInputDefault = () => {
@@ -51,10 +56,27 @@ export default function ClientPortal() {
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
   const [tab, setTab] = useState<string>("overview");
 
+  const [isNewClient, setIsNewClient] = useState<boolean>(false);
+
   // Track last login for the agency to see
   useEffect(() => {
     supabase.rpc("touch_client_login").then(() => {});
   }, []);
+
+  // Detect a brand-new client (no prior check-ins AND no published posts ever)
+  useEffect(() => {
+    if (!client) return;
+    let cancelled = false;
+    (async () => {
+      const [ci, pp] = await Promise.all([
+        supabase.from("client_checkins").select("id", { count: "exact", head: true }).eq("client_id", client.id),
+        supabase.from("content_posts").select("id", { count: "exact", head: true }).eq("client_id", client.id).eq("status", "published"),
+      ]);
+      if (cancelled) return;
+      setIsNewClient((ci.count || 0) === 0 && (pp.count || 0) === 0);
+    })();
+    return () => { cancelled = true; };
+  }, [client?.id]);
 
 
   useEffect(() => {
@@ -70,8 +92,8 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
         <div>
-          <p className="text-muted-foreground">No client is assigned to your account yet.</p>
-          <Button onClick={async () => { await signOut(); navigate("/auth"); }} variant="outline" className="mt-4">Sign out</Button>
+          <p className="text-muted-foreground">Nu există încă niciun client asociat contului tău.</p>
+          <Button onClick={async () => { await signOut(); navigate("/auth"); }} variant="outline" className="mt-4">Deconectare</Button>
         </div>
       </div>
     );
@@ -108,11 +130,11 @@ export default function ClientPortal() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-2xl">
               <DropdownMenuLabel className="text-xs">
-                <div className="font-semibold truncate">{profile?.full_name || "Account"}</div>
+                <div className="font-semibold truncate">{profile?.full_name || "Cont"}</div>
                 <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async () => { await signOut(); navigate("/auth"); }}><LogOut className="h-4 w-4 mr-2" /> Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => { await signOut(); navigate("/auth"); }}><LogOut className="h-4 w-4 mr-2" /> Deconectare</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -122,25 +144,25 @@ export default function ClientPortal() {
         <div className="flex items-center gap-3">
           <ClientLogoImg path={client.logo_url} name={client.name} />
           <div>
-            <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: "hsl(var(--brand))" }}>Client portal</div>
+            <div className="text-xs uppercase tracking-widest font-semibold mb-1 text-accent">Portal client</div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{client.name}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} · managed by <span className="text-foreground">{agency.name}</span>
+              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} · administrat de <span className="text-foreground">{agency.name}</span>
             </p>
           </div>
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="checkin">Check-in</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="approvals">Approvals</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="results">Results</TabsTrigger>
-            <TabsTrigger value="objectives">Objectives</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsList className="flex-wrap h-auto rounded-full bg-muted p-1 gap-1">
+            <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Sumar</TabsTrigger>
+            <TabsTrigger value="checkin" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Check-in</TabsTrigger>
+            <TabsTrigger value="calendar" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Calendar</TabsTrigger>
+            <TabsTrigger value="approvals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Aprobări</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rapoarte</TabsTrigger>
+            <TabsTrigger value="results" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rezultate</TabsTrigger>
+            <TabsTrigger value="objectives" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Obiective</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Documente</TabsTrigger>
+            <TabsTrigger value="feedback" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Feedback</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><ClientDashboard
             agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id}
@@ -152,6 +174,7 @@ export default function ClientPortal() {
           <TabsContent value="checkin">
             <ClientQuickCheckIn
               agencyId={agency.id} clientId={client.id} niche={client.niche || ""} userId={user!.id}
+              isNewClient={isNewClient}
               onDone={() => setTab("overview")} onCancel={() => setTab("overview")}
             />
           </TabsContent>
@@ -183,17 +206,17 @@ function ObjectivesTab({ clientId }: { clientId: string }) {
     { table: "monthly_goals", filter: `client_id=eq.${clientId}` },
   ], load), [clientId]);
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No objectives set yet.</CardContent></Card>;
+  if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Niciun obiectiv setat încă.</CardContent></Card>;
   return (
-    <Card><CardContent className="pt-4">
+    <Card className="rounded-2xl md:rounded-3xl"><CardContent className="pt-4">
       <ul className="divide-y divide-border">
         {goals.map((g) => (
           <li key={g.id} className="py-3 flex items-center justify-between gap-2">
             <div>
               <div className="font-medium text-sm">{g.objective}</div>
-              <div className="text-xs text-muted-foreground">{g.metric || "—"} {g.target ? `· target ${g.target}` : ""} · {new Date(g.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
+              <div className="text-xs text-muted-foreground">{metricLabel(g.metric)} {g.target ? `· țintă ${g.target}` : ""} · {fmtMonthYearRO(g.month)}</div>
             </div>
-            <Badge variant="secondary" className="text-[10px] uppercase">{g.status.replace("_", " ")}</Badge>
+            <Badge variant="secondary" className="text-[10px]">{goalStatusLabel(g.status)}</Badge>
           </li>
         ))}
       </ul>
@@ -212,6 +235,7 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
   const [month, setMonth] = useState(new Date());
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   const range = useMemo(() => {
     const s = new Date(month.getFullYear(), month.getMonth(), 1);
     const e = new Date(month.getFullYear(), month.getMonth() + 1, 1);
@@ -231,15 +255,79 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
       setItems((data || []) as any); setLoading(false);
     })();
   }, [clientId, range.start, range.end]);
-  const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  const monthLabel = fmtMonthYearRO(month);
+  // Only items inside the displayed month, for the agenda
+  const monthItems = useMemo(() => items.filter((it) => {
+    const d = new Date(it.scheduled_for);
+    return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
+  }), [items, month]);
+
+  // Group by ISO day for the agenda view
+  const grouped = useMemo(() => {
+    const m = new Map<string, CalendarItem[]>();
+    monthItems.forEach((it) => {
+      const key = it.scheduled_for.slice(0, 10);
+      const arr = m.get(key) || [];
+      arr.push(it); m.set(key, arr);
+    });
+    return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [monthItems]);
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 justify-end">
-        <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-        <div className="text-sm font-medium min-w-[160px] text-center">{monthLabel}</div>
-        <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 justify-between">
+        <Button variant="outline" size="icon" className="rounded-full" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+        <div className="text-base font-semibold min-w-[180px] text-center capitalize">{monthLabel}</div>
+        <Button variant="outline" size="icon" className="rounded-full" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
       </div>
-      {loading ? <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div> : <MonthCalendar month={month} items={items} />}
+
+      {loading ? (
+        <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : monthItems.length === 0 ? (
+        <Card className="rounded-2xl md:rounded-3xl">
+          <CardContent className="py-12 text-center space-y-2">
+            <div className="mx-auto h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+              <ChevronLeft className="h-4 w-4 opacity-0" />
+            </div>
+            <p className="text-sm text-muted-foreground">Nicio postare programată în <span className="capitalize">{monthLabel}</span>.</p>
+          </CardContent>
+        </Card>
+      ) : isMobile ? (
+        <div className="space-y-4">
+          {grouped.map(([day, list]) => {
+            const d = new Date(day);
+            return (
+              <div key={day} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground capitalize">{fmtDayShortRO(d)}</div>
+                </div>
+                <Card className="rounded-2xl">
+                  <CardContent className="p-3 divide-y divide-border/60">
+                    {list.map((it) => {
+                      const m = statusMeta(it.status);
+                      return (
+                        <div key={it.id} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">{it.title}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                              {it.platform || "—"} · {new Date(it.scheduled_for).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </div>
+                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${m.color}`}>{m.label}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <MonthCalendar month={month} items={items} weekdayLabels={WEEKDAYS_RO_SHORT} />
+      )}
     </div>
   );
 }
@@ -353,9 +441,9 @@ function ClientDocumentsTab({ clientId }: { clientId: string }) {
     window.open(data.signedUrl, "_blank");
   };
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (docs.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No documents shared with you yet.</CardContent></Card>;
+  if (docs.length === 0) return <Card className="rounded-2xl md:rounded-3xl"><CardContent className="py-10 text-center text-sm text-muted-foreground">Niciun document partajat încă.</CardContent></Card>;
   return (
-    <Card><CardContent className="pt-4">
+    <Card className="rounded-2xl md:rounded-3xl"><CardContent className="pt-4">
       <ul className="divide-y divide-border">
         {docs.map((d) => (
           <li key={d.id} className="py-3 flex items-center justify-between">
@@ -363,10 +451,10 @@ function ClientDocumentsTab({ clientId }: { clientId: string }) {
               <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
                 <div className="font-medium text-sm truncate">{d.name}</div>
-                <div className="text-[11px] text-muted-foreground">{d.folder} · {new Date(d.created_at).toLocaleDateString()}</div>
+                <div className="text-[11px] text-muted-foreground">{d.folder} · {fmtDateRO(d.created_at)}</div>
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={() => download(d)}><Download className="h-3.5 w-3.5 mr-1.5" /> Download</Button>
+            <Button size="sm" variant="outline" className="rounded-full" onClick={() => download(d)}><Download className="h-3.5 w-3.5 mr-1.5" /> Descarcă</Button>
           </li>
         ))}
       </ul>
@@ -404,47 +492,47 @@ function FeedbackTab({ clientId, agencyId, userId }: { clientId: string; agencyI
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Feedback submitted. Thank you!");
+    toast.success("Feedback trimis. Mulțumim!");
     setForm({ ...emptyForm, month: form.month });
     loadPast();
   };
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Send className="h-4 w-4 text-accent" /> Monthly feedback & business impact</CardTitle></CardHeader>
+      <Card className="rounded-2xl md:rounded-3xl">
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Send className="h-4 w-4 text-accent" /> Feedback lunar și impact business</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5"><Label>Month</Label><Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} required /></div>
-              <div className="space-y-1.5"><Label>Sales estimate (€)</Label><Input type="number" min="0" step="0.01" value={form.sales_estimate} onChange={(e) => setForm({ ...form, sales_estimate: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Luna</Label><Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} required /></div>
+              <div className="space-y-1.5"><Label>Vânzări estimate (€)</Label><Input type="number" min="0" step="0.01" value={form.sales_estimate} onChange={(e) => setForm({ ...form, sales_estimate: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <NumField label="Calls received" value={form.calls_received} onChange={(v) => setForm({ ...form, calls_received: v })} />
-              <NumField label="Messages received" value={form.messages_received} onChange={(v) => setForm({ ...form, messages_received: v })} />
-              <NumField label="Bookings" value={form.bookings} onChange={(v) => setForm({ ...form, bookings: v })} />
+              <NumField label="Apeluri primite" value={form.calls_received} onChange={(v) => setForm({ ...form, calls_received: v })} />
+              <NumField label="Mesaje primite" value={form.messages_received} onChange={(v) => setForm({ ...form, messages_received: v })} />
+              <NumField label="Rezervări" value={form.bookings} onChange={(v) => setForm({ ...form, bookings: v })} />
             </div>
-            <div className="space-y-1.5"><Label>General feedback</Label><Textarea rows={3} value={form.feedback_text} onChange={(e) => setForm({ ...form, feedback_text: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Real-life impact</Label><Textarea rows={2} value={form.real_life_impact} onChange={(e) => setForm({ ...form, real_life_impact: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>Objections heard from customers</Label><Textarea rows={2} value={form.objections} onChange={(e) => setForm({ ...form, objections: e.target.value })} /></div>
-            <div className="space-y-1.5"><Label>What should we promote next month?</Label><Textarea rows={2} value={form.promote_next_month} onChange={(e) => setForm({ ...form, promote_next_month: e.target.value })} /></div>
-            <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-2" /> Submit</>}</Button>
+            <div className="space-y-1.5"><Label>Feedback general</Label><Textarea rows={3} value={form.feedback_text} onChange={(e) => setForm({ ...form, feedback_text: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Impact real</Label><Textarea rows={2} value={form.real_life_impact} onChange={(e) => setForm({ ...form, real_life_impact: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Obiecții auzite de la clienți</Label><Textarea rows={2} value={form.objections} onChange={(e) => setForm({ ...form, objections: e.target.value })} /></div>
+            <div className="space-y-1.5"><Label>Ce să promovăm luna viitoare?</Label><Textarea rows={2} value={form.promote_next_month} onChange={(e) => setForm({ ...form, promote_next_month: e.target.value })} /></div>
+            <Button type="submit" disabled={busy} className="rounded-full bg-accent hover:bg-accent/90 text-accent-foreground">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-2" /> Trimite</>}</Button>
           </form>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Your previous submissions</CardTitle></CardHeader>
+      <Card className="rounded-2xl md:rounded-3xl">
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Trimiterile tale anterioare</CardTitle></CardHeader>
         <CardContent>
           {pastLoading ? <div className="py-6 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-            : past.length === 0 ? <div className="py-6 text-center text-sm text-muted-foreground">No submissions yet.</div>
+            : past.length === 0 ? <div className="py-6 text-center text-sm text-muted-foreground">Nicio trimitere încă.</div>
             : <ul className="divide-y divide-border">{past.map((f) => (
                 <li key={f.id} className="py-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium">{new Date(f.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
-                    <div className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString()}</div>
+                    <div className="font-medium capitalize">{fmtMonthYearRO(f.month)}</div>
+                    <div className="text-xs text-muted-foreground">{fmtDateRO(f.created_at)}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{f.calls_received} calls · {f.messages_received} messages · {f.bookings} bookings{f.sales_estimate ? ` · €${f.sales_estimate}` : ""}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{f.calls_received} apeluri · {f.messages_received} mesaje · {f.bookings} rezervări{f.sales_estimate ? ` · €${f.sales_estimate}` : ""}</div>
                 </li>
               ))}</ul>}
         </CardContent>
