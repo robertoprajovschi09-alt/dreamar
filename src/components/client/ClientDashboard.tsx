@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
+import { PENDING_POST_STATUSES } from "@/lib/approvals";
 import {
   fmtMonthYearRO, healthStatusLabel, goalStatusLabel,
   metricLabel, NICHE_RO,
