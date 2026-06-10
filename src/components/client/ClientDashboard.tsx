@@ -484,11 +484,11 @@ export function ClientDashboard({
                     variant="outline"
                     className={
                       p.approval_status === "approved" ? "text-emerald-600 border-emerald-500/30 text-[10px]"
-                      : p.status === "sent_for_approval" ? "text-amber-600 border-amber-500/30 text-[10px]"
+                      : (PENDING_POST_STATUSES as string[]).includes(p.status) ? "text-amber-600 border-amber-500/30 text-[10px]"
                       : "text-[10px]"
                     }
                   >
-                    {p.approval_status === "approved" ? "aprobat" : p.status === "sent_for_approval" ? "de aprobat" : "programat"}
+                    {p.approval_status === "approved" ? "aprobat" : (PENDING_POST_STATUSES as string[]).includes(p.status) ? "de aprobat" : "programat"}
                   </Badge>
                 </div>
               ))}
