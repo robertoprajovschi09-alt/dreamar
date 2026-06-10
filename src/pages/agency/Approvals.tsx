@@ -7,6 +7,8 @@ import { Loader2, AlertTriangle, CheckCircle2, Clock, MessageSquareWarning, Time
 import { fetchApprovalKpis, ApprovalKpis, APPROVAL_STATUS_META } from "@/lib/approvals";
 import { ApprovalDetailDialog } from "@/components/approvals/ApprovalDetailDialog";
 import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+import { statusPillKind } from "@/lib/approvals";
 
 export default function Approvals() {
   const { agency } = useUser();
@@ -32,6 +34,21 @@ export default function Approvals() {
   };
 
   useEffect(() => { load(); }, [agency, tab]);
+
+  // Realtime: refetch on any change to this agency's approvals
+  useEffect(() => {
+    if (!agency) return;
+    const channel = supabase
+      .channel(`approvals-${agency.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "content_approvals", filter: `agency_id=eq.${agency.id}` },
+        () => load(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency?.id]);
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
@@ -80,8 +97,8 @@ export default function Approvals() {
                           {r.feedback && ` · "${(r.feedback as string).slice(0, 60)}"`}
                         </div>
                       </div>
-                      {overdue && <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300">Întârziat</span>}
-                      <span className={cn("px-2 py-0.5 rounded text-[11px] font-medium", m?.color)}>{m?.label}</span>
+                      {overdue && <StatusPill kind="danger">Întârziat</StatusPill>}
+                      <StatusPill kind={statusPillKind(r.status)}>{m?.label}</StatusPill>
                     </li>
                   );
                 })}

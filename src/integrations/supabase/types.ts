@@ -3958,6 +3958,33 @@ export type Database = {
       mark_team_invite_opened: { Args: { _token: string }; Returns: undefined }
       resend_client_invite: { Args: { _invite_id: string }; Returns: undefined }
       resend_team_invite: { Args: { _invite_id: string }; Returns: undefined }
+      respond_to_approval: {
+        Args: { _feedback: string; _id: string; _status: string }
+        Returns: {
+          agency_id: string
+          assigned_to_client_user: string | null
+          client_id: string
+          comment: string | null
+          content_post_id: string
+          created_at: string
+          decided_by: string | null
+          decision: string
+          due_date: string | null
+          feedback: string | null
+          id: string
+          requested_at: string
+          requested_by: string | null
+          responded_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "content_approvals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revoke_client_invite: { Args: { _invite_id: string }; Returns: undefined }
       revoke_team_invite: { Args: { _invite_id: string }; Returns: undefined }
       touch_client_login: { Args: never; Returns: undefined }

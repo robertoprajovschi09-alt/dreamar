@@ -8,6 +8,9 @@ import { aiSuggestClarifications, APPROVAL_STATUS_META, resendForApproval } from
 import { Loader2, Sparkles, RotateCw, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+import { statusPillKind } from "@/lib/approvals";
+import { ApprovalVideoPlayer } from "./ApprovalVideoPlayer";
 
 interface Props {
   open: boolean;
@@ -31,7 +34,7 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
     (async () => {
       const { data } = await supabase
         .from("content_approvals")
-        .select("*, content_posts(id,title,hook,caption,script,thumbnail_url,platform,content_type,scheduled_for,client_id,agency_id,status), clients(name)")
+        .select("*, content_posts(id,title,hook,caption,script,thumbnail_url,video_url,assets,platform,content_type,scheduled_for,client_id,agency_id,status), clients(name)")
         .eq("id", approvalId)
         .single();
       setRow(data);
@@ -87,7 +90,7 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {post?.title || "Approval"}
-            {meta && <span className={cn("px-2 py-0.5 rounded text-[11px] font-medium", meta.color)}>{meta.label}</span>}
+            {row && <StatusPill kind={statusPillKind(row.status)}>{meta?.label}</StatusPill>}
           </DialogTitle>
         </DialogHeader>
 
@@ -97,10 +100,11 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
           <div className="space-y-4">
             <div className="text-xs text-muted-foreground">
               Client: <strong>{row.clients?.name}</strong> · Platform: {post?.platform || "—"} · Type: {post?.content_type || "—"}
+              {row.requested_at && <> · Requested {new Date(row.requested_at).toLocaleString()}</>}
+              {row.responded_at && <> · Responded {new Date(row.responded_at).toLocaleString()}</>}
+              {row.due_date && <> · Due {new Date(row.due_date).toLocaleDateString()}</>}
             </div>
-            {post?.thumbnail_url && (
-              <img src={post.thumbnail_url} alt={post.title} className="rounded border border-border max-h-60" />
-            )}
+            <ApprovalVideoPlayer post={post} poster={post?.thumbnail_url} />
             {post?.hook && <Field label="Hook" value={post.hook} />}
             {post?.caption && <Field label="Caption" value={post.caption} />}
             {post?.script && <Field label="Script" value={post.script} />}
