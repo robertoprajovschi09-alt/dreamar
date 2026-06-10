@@ -83,12 +83,12 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
       <Card>
         <CardContent className="py-4 flex items-center gap-3">
           <div className="text-3xl font-bold text-accent">{pending.length}</div>
-          <div className="text-sm text-muted-foreground">item{pending.length === 1 ? "" : "s"} waiting for your approval</div>
+          <div className="text-sm text-muted-foreground">{pending.length === 1 ? "postare așteaptă aprobarea ta" : "postări așteaptă aprobarea ta"}</div>
         </CardContent>
       </Card>
 
       {items.length === 0 && (
-        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nothing waiting for your approval right now.</CardContent></Card>
+        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nimic de aprobat momentan.</CardContent></Card>
       )}
 
       {[...pending, ...others].map((approval) => {
@@ -106,8 +106,8 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
                   <div className="font-semibold text-lg">{p.title}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {p.platform || "—"} · {p.content_type || "—"}
-                    {p.scheduled_for ? ` · planned ${new Date(p.scheduled_for).toLocaleString()}` : ""}
-                    {approval.due_date ? ` · due ${new Date(approval.due_date).toLocaleDateString()}` : ""}
+                    {p.scheduled_for ? ` · programat ${new Date(p.scheduled_for).toLocaleString()}` : ""}
+                    {approval.due_date ? ` · termen ${new Date(approval.due_date).toLocaleDateString()}` : ""}
                   </div>
                 </div>
                 <StatusPill kind={statusPillKind(approval.status)}>{m?.label}</StatusPill>
@@ -115,17 +115,17 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
 
               {p.hook && <Block label="Hook" value={p.hook} />}
               {p.caption && <Block label="Caption" value={p.caption} />}
-              {p.script && <details><summary className="text-xs uppercase tracking-wide text-muted-foreground cursor-pointer">Script</summary><div className="text-sm whitespace-pre-wrap mt-1">{p.script}</div></details>}
+              {p.script && <details><summary className="text-xs uppercase tracking-wide text-muted-foreground cursor-pointer">Scenariu</summary><div className="text-sm whitespace-pre-wrap mt-1">{p.script}</div></details>}
 
               {!isPending && (approval.feedback || approval.comment) && (
                 <div className="text-xs p-3 rounded-2xl bg-muted">
-                  Your feedback: "{approval.feedback || approval.comment}"
+                  Feedback-ul tău: "{approval.feedback || approval.comment}"
                 </div>
               )}
 
               {hist.length > 0 && (
                 <details>
-                  <summary className="text-xs text-muted-foreground cursor-pointer">Previous decisions ({hist.length})</summary>
+                  <summary className="text-xs text-muted-foreground cursor-pointer">Decizii anterioare ({hist.length})</summary>
                   <div className="mt-2 space-y-1.5">
                     {hist.map((h) => {
                       const hm = APPROVAL_STATUS_META[h.status as keyof typeof APPROVAL_STATUS_META];
@@ -145,7 +145,7 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
                 <div className="space-y-2 pt-2 border-t border-border">
                   <Textarea
                     rows={2}
-                    placeholder="Tell the agency what to adjust… (required for changes)"
+                    placeholder="Spune-i agenției ce să ajusteze… (obligatoriu pentru modificări)"
                     value={comments[approval.id] || ""}
                     onChange={(e) => setComments({ ...comments, [approval.id]: e.target.value })}
                   />
@@ -155,20 +155,20 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
                       disabled={busyId === approval.id}
                       className="bg-accent hover:bg-accent/90 text-accent-foreground"
                     >
-                      {busyId === approval.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-1.5" /> Approve</>}
+                      {busyId === approval.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-1.5" /> Aprobă</>}
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => decide(approval, "approved", "Looks good 👍")}
+                      onClick={() => decide(approval, "approved", "Arată bine 👍")}
                       disabled={busyId === approval.id}
                     >
-                      <ThumbsUp className="h-4 w-4 mr-1.5" /> Looks good
+                      <ThumbsUp className="h-4 w-4 mr-1.5" /> Arată bine
                     </Button>
                     <Button variant="outline" onClick={() => decide(approval, "changes_requested")} disabled={busyId === approval.id}>
-                      Request changes
+                      Cere modificări
                     </Button>
                     <Button variant="ghost" onClick={() => decide(approval, "rejected")} disabled={busyId === approval.id} className="text-red-600 hover:text-red-700">
-                      <X className="h-4 w-4 mr-1.5" /> Reject
+                      <X className="h-4 w-4 mr-1.5" /> Respinge
                     </Button>
                   </div>
                 </div>
