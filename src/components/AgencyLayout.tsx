@@ -162,39 +162,52 @@ export default function AgencyLayout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 gap-3 bg-background/80 backdrop-blur sticky top-0 z-30">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="h-2 w-2 rounded-full bg-accent" />
-            <span className="truncate text-sm font-medium">{agency?.name || "Agenție"}</span>
-            {profile?.role && <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">{profile.role.replace("_", " ")}</Badge>}
+        <header className="h-20 flex items-center justify-between px-4 md:px-8 gap-3 bg-background/80 backdrop-blur sticky top-0 z-30">
+          <div className="flex items-center gap-3 min-w-0 flex-1 max-w-xl">
+            <div className="hidden md:flex items-center gap-2 px-4 h-11 rounded-full bg-card shadow-soft border border-border/60 flex-1">
+              <span className="text-muted-foreground text-sm">🔍</span>
+              <span className="text-sm text-muted-foreground flex-1 truncate">{agency?.name || "Agenție"}</span>
+              <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-2 text-[10px] font-mono text-muted-foreground">⌘F</kbd>
+            </div>
+            <div className="md:hidden flex items-center gap-2 min-w-0">
+              <span className="h-2 w-2 rounded-full bg-accent" />
+              <span className="truncate text-sm font-semibold">{agency?.name || "Agenție"}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={toggle} className="h-10 w-10 rounded-full bg-card shadow-soft border border-border/60">
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 gap-2 px-2">
-                  <Avatar className="h-7 w-7">
-                    <AvatarFallback className="text-[11px] bg-accent text-accent-foreground">
+                <button className="h-11 flex items-center gap-2 pl-1.5 pr-4 rounded-full bg-card shadow-soft border border-border/60 hover:bg-surface-1 transition-colors">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-[11px] bg-gradient-accent text-accent-foreground font-bold">
                       {initials(profile?.full_name || profile?.email || "?")}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:block text-sm font-medium max-w-[140px] truncate">{profile?.full_name || profile?.email}</span>
-                </Button>
+                  <div className="hidden sm:flex flex-col items-start leading-tight">
+                    <span className="text-xs font-semibold max-w-[140px] truncate">{profile?.full_name || profile?.email}</span>
+                    {profile?.email && profile?.full_name && (
+                      <span className="text-[10px] text-muted-foreground max-w-[140px] truncate">{profile.email}</span>
+                    )}
+                  </div>
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl">
                 <DropdownMenuLabel className="text-xs">
                   <div className="font-semibold truncate">{profile?.full_name || "Cont"}</div>
                   <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
+                  {profile?.role && (
+                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase tracking-wide">{profile.role.replace("_", " ")}</Badge>
+                  )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {soonNav.map((n) => (
                   <DropdownMenuItem key={n.to} onClick={() => navigate(n.to)}>
                     <n.icon className="h-4 w-4 mr-2" />
                     <span className="flex-1">{n.label}</span>
-                    <Badge variant="secondary" className="ml-2 text-[10px] uppercase tracking-wide">În curând</Badge>
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
