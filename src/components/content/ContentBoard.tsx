@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { BOARD_COLUMNS, columnAccent, columnToStatus, statusToColumn, type BoardColumnId } from "@/lib/contentBoard";
 import { ContentCard, type ContentRow } from "./ContentCard";
 import { ContentEditor } from "./ContentEditor";
+import { SendForApprovalDialog } from "@/components/approvals/SendForApprovalDialog";
+import { PENDING_POST_STATUSES, hasReviewableAsset } from "@/lib/approvals";
 import { cn } from "@/lib/utils";
 
 type Props = {
