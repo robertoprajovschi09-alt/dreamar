@@ -9,6 +9,10 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
+import {
+  fmtMonthYearRO, healthStatusLabel, goalStatusLabel,
+  metricLabel, NICHE_RO,
+} from "@/lib/i18nLabels";
 
 type InsightCard = {
   title: string;
@@ -40,19 +44,9 @@ type Props = {
   onOpenReports?: () => void;
 };
 
-const monthLabel = (d = new Date()) =>
-  d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+const monthLabel = (d = new Date()) => fmtMonthYearRO(d);
 
-const NICHE_BADGES: Record<string, string> = {
-  real_estate: "Imobiliare",
-  restaurant: "Restaurant",
-  beauty: "Beauty",
-  ecommerce: "eCommerce",
-  fitness: "Fitness",
-  medical: "Medical",
-  hospitality: "Hotels",
-  custom: "Custom",
-};
+const NICHE_BADGES: Record<string, string> = NICHE_RO;
 
 const STATUS_COLORS: Record<string, string> = {
   excellent: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
