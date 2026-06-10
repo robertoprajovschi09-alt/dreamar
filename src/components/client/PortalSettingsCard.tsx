@@ -148,11 +148,11 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
         {/* Pending invitations */}
         <section>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            Invitations ({pendingInvites.length})
+            Invitații ({pendingInvites.length})
           </h4>
           {pendingInvites.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 border border-dashed border-border rounded-lg text-center">
-              No pending invitations.
+              Nicio invitație în așteptare.
             </div>
           ) : (
             <ul className="divide-y divide-border border border-border rounded-lg">
