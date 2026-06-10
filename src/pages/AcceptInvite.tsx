@@ -45,17 +45,25 @@ export default function AcceptInvite() {
     })();
   }, [token]);
 
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (authLoading || !user || !preview || accepting) return;
+    if (authLoading || !user || !preview || accepting || acceptError) return;
     setAccepting(true);
     (async () => {
       const { error } = await supabase.rpc("accept_client_invite", { _token: token });
-      if (error) { toast.error(error.message); setAccepting(false); return; }
+      if (error) { setAcceptError(error.message); setAccepting(false); return; }
       await refresh();
       toast.success(`Bine ai venit în ${preview.client_name}!`);
       navigate("/client", { replace: true });
     })();
-  }, [user, authLoading, preview, accepting, token, navigate, refresh]);
+  }, [user, authLoading, preview, accepting, acceptError, token, navigate, refresh]);
+
+  const signOutAndStay = async () => {
+    await supabase.auth.signOut();
+    setAcceptError(null);
+    setAccepting(false);
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
