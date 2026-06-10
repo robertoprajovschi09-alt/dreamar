@@ -23,7 +23,6 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const bootstrappingRef = useRef(false);
 
-  // Self-heal: if a signed-in user lands here with no agency and no client, create one.
   useEffect(() => {
     if (loading || userLoading) return;
     if (!user || !profile) return;
@@ -31,8 +30,8 @@ export default function Auth() {
     if (bootstrappingRef.current) return;
     bootstrappingRef.current = true;
     const name =
-      (profile.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "My") +
-      "'s Agency";
+      (profile.full_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "Agenția mea") +
+      " · Agenție";
     supabase.rpc("create_agency_for_current_user", { _name: name }).then(async ({ error }) => {
       if (error) { toast.error(error.message); bootstrappingRef.current = false; return; }
       await refresh();
@@ -50,7 +49,6 @@ export default function Auth() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) toast.error(error.message);
-    // role redirect handled by Navigate above on next render
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -62,10 +60,9 @@ export default function Auth() {
     });
     if (error) { setBusy(false); toast.error(error.message); return; }
 
-    // If email confirmation is off, we already have a session — provision agency now.
     if (data.session) {
       const { error: rpcErr } = await supabase.rpc("create_agency_for_current_user", {
-        _name: `${fullName || "My"}'s Agency`,
+        _name: `${fullName || "Agenția mea"} · Agenție`,
       });
       if (rpcErr) { setBusy(false); toast.error(rpcErr.message); return; }
       await refresh();
@@ -74,14 +71,14 @@ export default function Auth() {
       return;
     }
     setBusy(false);
-    toast.success("Account created. Check your email to confirm.");
+    toast.success("Cont creat. Verifică emailul pentru confirmare.");
   };
 
   const handleGoogle = async () => {
     setBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/agency" });
-      if (result.error) { toast.error("Google sign-in failed"); setBusy(false); return; }
+      if (result.error) { toast.error("Autentificarea cu Google a eșuat"); setBusy(false); return; }
       if (result.redirected) return;
     } catch (e: any) { toast.error(e.message); setBusy(false); }
   };
@@ -93,17 +90,17 @@ export default function Auth() {
         <Logo size="lg" />
         <div className="relative z-10 max-w-md space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-accent/30 bg-accent/5 text-xs font-semibold uppercase tracking-wider">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-glow" /> The Operating System for Marketing Agencies
+            <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-glow" /> Sistemul de operare pentru agenții de marketing
           </div>
           <h2 className="text-4xl font-bold tracking-tight leading-tight">
-            Run your entire agency from <span className="text-gradient-accent">one premium workspace</span>.
+            Conduce toată agenția dintr-un <span className="text-gradient-accent">singur loc</span>.
           </h2>
           <p className="text-muted-foreground">
-            Sign up to create your agency. Clients you invite will get their own private portal — they only see their own data.
+            Înregistrează-te ca să îți creezi agenția. Clienții pe care îi inviți primesc propriul portal privat — văd doar datele lor.
           </p>
         </div>
         <div className="text-xs text-muted-foreground relative z-10">
-          Are you a client of an agency? Use the invite link they sent you.
+          Ești clientul unei agenții? Folosește linkul de invitație pe care l-ai primit.
         </div>
       </div>
 
@@ -113,58 +110,58 @@ export default function Auth() {
 
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Create agency</TabsTrigger>
+              <TabsTrigger value="signin">Intră în cont</TabsTrigger>
+              <TabsTrigger value="signup">Creează agenție</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
-              <h1 className="text-2xl font-bold">Welcome back</h1>
-              <p className="text-sm text-muted-foreground mt-1 mb-6">Sign in to your workspace.</p>
+              <h1 className="text-2xl font-bold">Bine ai revenit</h1>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">Conectează-te la spațiul tău de lucru.</p>
 
               <Button variant="outline" className="w-full mb-4" onClick={handleGoogle} disabled={busy}>
-                <GoogleIcon /> Continue with Google
+                <GoogleIcon /> Continuă cu Google
               </Button>
-              <div className="relative my-4 text-center text-xs text-muted-foreground"><span className="bg-background px-2 relative z-10">or</span><div className="absolute inset-x-0 top-1/2 border-t border-border" /></div>
+              <div className="relative my-4 text-center text-xs text-muted-foreground"><span className="bg-background px-2 relative z-10">sau</span><div className="absolute inset-x-0 top-1/2 border-t border-border" /></div>
 
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@agency.com" />
+                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@agentia.ro" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Parolă</Label>
                   <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                 </div>
                 <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={busy}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Intră în cont"}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup">
-              <h1 className="text-2xl font-bold">Create your agency</h1>
-              <p className="text-sm text-muted-foreground mt-1 mb-6">Your workspace is created automatically.</p>
+              <h1 className="text-2xl font-bold">Creează-ți agenția</h1>
+              <p className="text-sm text-muted-foreground mt-1 mb-6">Spațiul de lucru se creează automat.</p>
 
               <Button variant="outline" className="w-full mb-4" onClick={handleGoogle} disabled={busy}>
-                <GoogleIcon /> Continue with Google
+                <GoogleIcon /> Continuă cu Google
               </Button>
-              <div className="relative my-4 text-center text-xs text-muted-foreground"><span className="bg-background px-2 relative z-10">or</span><div className="absolute inset-x-0 top-1/2 border-t border-border" /></div>
+              <div className="relative my-4 text-center text-xs text-muted-foreground"><span className="bg-background px-2 relative z-10">sau</span><div className="absolute inset-x-0 top-1/2 border-t border-border" /></div>
 
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="name">Your name</Label>
-                  <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
+                  <Label htmlFor="name">Numele tău</Label>
+                  <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ion Popescu" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="email2">Email</Label>
-                  <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@agency.com" />
+                  <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@agentia.ro" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="password2">Password</Label>
-                  <Input id="password2" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+                  <Label htmlFor="password2">Parolă</Label>
+                  <Input id="password2" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Cel puțin 8 caractere" />
                 </div>
                 <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={busy}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create agency"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Creează agenție"}
                 </Button>
               </form>
             </TabsContent>

@@ -25,37 +25,34 @@ export default function AcceptInvite() {
   const [accepting, setAccepting] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Auth form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
   useEffect(() => {
     (async () => {
-      if (!token) { setPreviewError("Missing invite token."); setPreviewLoading(false); return; }
-      // Mark as opened so the agency sees the status update
+      if (!token) { setPreviewError("Lipsește tokenul de invitație."); setPreviewLoading(false); return; }
       supabase.rpc("mark_invite_opened", { _token: token }).then(() => {});
       const { data, error } = await supabase.rpc("get_invite_preview", { _token: token });
       if (error) { setPreviewError(error.message); setPreviewLoading(false); return; }
       const row = Array.isArray(data) ? data[0] : data;
-      if (!row) { setPreviewError("Invite not found."); setPreviewLoading(false); return; }
-      if (!["pending", "sent", "opened"].includes(row.status)) { setPreviewError(`This invite is ${row.status}.`); setPreviewLoading(false); return; }
-      if (new Date(row.expires_at) < new Date()) { setPreviewError("This invite has expired."); setPreviewLoading(false); return; }
+      if (!row) { setPreviewError("Invitația nu a fost găsită."); setPreviewLoading(false); return; }
+      if (!["pending", "sent", "opened"].includes(row.status)) { setPreviewError(`Această invitație este: ${row.status}.`); setPreviewLoading(false); return; }
+      if (new Date(row.expires_at) < new Date()) { setPreviewError("Această invitație a expirat."); setPreviewLoading(false); return; }
       setPreview(row);
       setEmail(row.email);
       setPreviewLoading(false);
     })();
   }, [token]);
 
-  // Auto-accept once user is logged in & invite is valid
   useEffect(() => {
     if (authLoading || !user || !preview || accepting) return;
     setAccepting(true);
     (async () => {
-      const { data, error } = await supabase.rpc("accept_client_invite", { _token: token });
+      const { error } = await supabase.rpc("accept_client_invite", { _token: token });
       if (error) { toast.error(error.message); setAccepting(false); return; }
       await refresh();
-      toast.success(`Welcome to ${preview.client_name}!`);
+      toast.success(`Bine ai venit în ${preview.client_name}!`);
       navigate("/client", { replace: true });
     })();
   }, [user, authLoading, preview, accepting, token, navigate, refresh]);
@@ -80,7 +77,7 @@ export default function AcceptInvite() {
     });
     setBusy(false);
     if (error) toast.error(error.message);
-    else toast.success("Account created. Accepting invite...");
+    else toast.success("Cont creat. Acceptăm invitația...");
   };
 
   if (previewLoading || authLoading) {
@@ -93,9 +90,9 @@ export default function AcceptInvite() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center space-y-4">
             <AlertCircle className="h-10 w-10 mx-auto text-destructive" />
-            <h1 className="text-xl font-bold">Invite unavailable</h1>
+            <h1 className="text-xl font-bold">Invitație indisponibilă</h1>
             <p className="text-sm text-muted-foreground">{previewError}</p>
-            <Link to="/auth"><Button variant="outline">Go to sign in</Button></Link>
+            <Link to="/auth"><Button variant="outline">Mergi la autentificare</Button></Link>
           </CardContent>
         </Card>
       </div>
@@ -107,7 +104,7 @@ export default function AcceptInvite() {
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
         <div className="space-y-3">
           <CheckCircle2 className="h-10 w-10 mx-auto text-accent" />
-          <p className="text-sm text-muted-foreground">Accepting your invite…</p>
+          <p className="text-sm text-muted-foreground">Acceptăm invitația…</p>
           <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
         </div>
       </div>
@@ -121,49 +118,34 @@ export default function AcceptInvite() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center mb-6">
-              <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">You're invited</div>
-              <h1 className="text-xl font-bold">Join {preview.client_name}'s portal</h1>
-              <p className="text-sm text-muted-foreground mt-1">Invited by <span className="text-foreground">{preview.agency_name}</span></p>
+              <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">Ai fost invitat</div>
+              <h1 className="text-xl font-bold">Alătură-te portalului {preview.client_name}</h1>
+              <p className="text-sm text-muted-foreground mt-1">Invitat de <span className="text-foreground">{preview.agency_name}</span></p>
             </div>
 
             <Tabs defaultValue="signup">
               <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="signup">Create account</TabsTrigger>
-                <TabsTrigger value="signin">I have an account</TabsTrigger>
+                <TabsTrigger value="signup">Cont nou</TabsTrigger>
+                <TabsTrigger value="signin">Am deja cont</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label>Your name</Label>
-                    <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Email</Label>
-                    <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Password</Label>
-                    <Input type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
-                  </div>
+                  <div className="space-y-1.5"><Label>Numele tău</Label><Input required value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <div className="space-y-1.5"><Label>Parolă</Label><Input type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Cel puțin 8 caractere" /></div>
                   <Button type="submit" disabled={busy} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account & accept"}
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Creează cont și acceptă"}
                   </Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label>Email</Label>
-                    <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Password</Label>
-                    <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
+                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <div className="space-y-1.5"><Label>Parolă</Label><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
                   <Button type="submit" disabled={busy} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in & accept"}
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conectează-te și acceptă"}
                   </Button>
                 </form>
               </TabsContent>

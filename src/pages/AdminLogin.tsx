@@ -17,7 +17,6 @@ export default function AdminLogin() {
 
   useEffect(() => {
     (async () => {
-      // Ensure the Super Admin account exists with the known initial password.
       try { await supabase.functions.invoke("ensure-super-admin-account"); } catch { /* non-blocking */ }
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -36,7 +35,7 @@ export default function AdminLogin() {
         email: email.trim(), password,
       });
       if (error) {
-        toast.error("Invalid admin credentials.");
+        toast.error("Date de autentificare admin invalide.");
         return;
       }
 
@@ -44,17 +43,17 @@ export default function AdminLogin() {
 
       const { data: { session } } = await supabase.auth.getSession();
       const uid = session?.user?.id;
-      if (!uid) { toast.error("Invalid admin credentials."); return; }
+      if (!uid) { toast.error("Date de autentificare admin invalide."); return; }
 
       const { data: prof } = await supabase
         .from("profiles").select("is_saas_admin").eq("id", uid).maybeSingle();
 
       if (prof?.is_saas_admin) {
-        toast.success("Welcome, admin.");
+        toast.success("Bine ai venit, admin.");
         navigate("/admin", { replace: true });
       } else {
         await supabase.auth.signOut();
-        toast.error("Access denied. This area is only for Super Admin.");
+        toast.error("Acces refuzat. Această zonă e doar pentru Super Admin.");
       }
     } finally {
       setBusy(false);
@@ -74,8 +73,8 @@ export default function AdminLogin() {
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-accent/30 bg-accent/5 mb-3">
               <ShieldCheck className="h-6 w-6 text-accent" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Admin Login</h1>
-            <p className="text-xs text-muted-foreground mt-1">Restricted area · Super Admin only</p>
+            <h1 className="text-2xl font-semibold tracking-tight">Autentificare admin</h1>
+            <p className="text-xs text-muted-foreground mt-1">Zonă restricționată · doar Super Admin</p>
           </div>
           <Card className="border-border/60">
             <CardContent className="p-6">
@@ -86,18 +85,18 @@ export default function AdminLogin() {
                     value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="admin-password">Password</Label>
+                  <Label htmlFor="admin-password">Parolă</Label>
                   <Input id="admin-password" type="password" autoComplete="current-password" required
                     value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={busy}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login as Admin"}
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Intră ca admin"}
                 </Button>
               </form>
             </CardContent>
           </Card>
           <div className="text-center mt-4">
-            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Back to site</Link>
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">← Înapoi la site</Link>
           </div>
         </div>
       </div>
