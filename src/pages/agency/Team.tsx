@@ -106,10 +106,13 @@ export default function Team() {
     const { error } = await supabase.rpc("resend_team_invite", { _invite_id: id });
     if (error) return toast.error(error.message);
     try {
-      const { data } = await supabase.functions.invoke("send-team-invite", { body: { token } });
-      if (data?.ok) toast.success("Invitație retrimisă");
-      else toast.warning("Emailul nu a putut fi trimis.");
-    } catch { toast.warning("Emailul nu a putut fi trimis."); }
+      const { data, error: fnErr } = await supabase.functions.invoke("send-team-invite", { body: { token } });
+      if (fnErr) toast.error(`Emailul nu a putut fi trimis: ${fnErr.message}. Copiază linkul manual.`);
+      else if ((data as any)?.ok) toast.success("Invitație retrimisă pe email");
+      else toast.error(`Emailul nu a putut fi trimis: ${(data as any)?.error || "eroare necunoscută"}. Copiază linkul manual.`);
+    } catch (e: any) {
+      toast.error(`Emailul nu a putut fi trimis: ${e?.message || "eroare necunoscută"}. Copiază linkul manual.`);
+    }
     load();
   };
 
