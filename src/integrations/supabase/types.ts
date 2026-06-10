@@ -3767,6 +3767,7 @@ export type Database = {
           client_id: string
           comments: number | null
           completion_rate: number | null
+          content_post_id: string | null
           created_at: string
           cta: string | null
           dms: number | null
@@ -3802,6 +3803,7 @@ export type Database = {
           client_id: string
           comments?: number | null
           completion_rate?: number | null
+          content_post_id?: string | null
           created_at?: string
           cta?: string | null
           dms?: number | null
@@ -3837,6 +3839,7 @@ export type Database = {
           client_id?: string
           comments?: number | null
           completion_rate?: number | null
+          content_post_id?: string | null
           created_at?: string
           cta?: string | null
           dms?: number | null
@@ -3875,6 +3878,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_content_post_id_fkey"
+            columns: ["content_post_id"]
+            isOneToOne: false
+            referencedRelation: "content_posts"
             referencedColumns: ["id"]
           },
         ]
