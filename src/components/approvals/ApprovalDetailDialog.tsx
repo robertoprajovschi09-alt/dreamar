@@ -90,7 +90,7 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {post?.title || "Approval"}
-            {meta && <span className={cn("px-2 py-0.5 rounded text-[11px] font-medium", meta.color)}>{meta.label}</span>}
+            {row && <StatusPill kind={statusPillKind(row.status)}>{meta?.label}</StatusPill>}
           </DialogTitle>
         </DialogHeader>
 
@@ -100,10 +100,11 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
           <div className="space-y-4">
             <div className="text-xs text-muted-foreground">
               Client: <strong>{row.clients?.name}</strong> · Platform: {post?.platform || "—"} · Type: {post?.content_type || "—"}
+              {row.requested_at && <> · Requested {new Date(row.requested_at).toLocaleString()}</>}
+              {row.responded_at && <> · Responded {new Date(row.responded_at).toLocaleString()}</>}
+              {row.due_date && <> · Due {new Date(row.due_date).toLocaleDateString()}</>}
             </div>
-            {post?.thumbnail_url && (
-              <img src={post.thumbnail_url} alt={post.title} className="rounded border border-border max-h-60" />
-            )}
+            <ApprovalVideoPlayer post={post} poster={post?.thumbnail_url} />
             {post?.hook && <Field label="Hook" value={post.hook} />}
             {post?.caption && <Field label="Caption" value={post.caption} />}
             {post?.script && <Field label="Script" value={post.script} />}
