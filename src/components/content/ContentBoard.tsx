@@ -72,6 +72,22 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
     const targetCol = over.id as BoardColumnId;
     const row = rows.find((r) => r.id === active.id);
     if (!row) return;
+
+    // Approval column: open send-for-approval dialog instead of just changing status
+    if (targetCol === "approval") {
+      if ((PENDING_POST_STATUSES as string[]).includes(row.status)) return;
+      if (!hasReviewableAsset(row as any)) {
+        toast.error("Atașează un video sau un scenariu înainte de a trimite la aprobare.");
+        return;
+      }
+      setApprovalDialog({
+        open: true,
+        post: { id: row.id, agency_id: (row as any).agency_id, client_id: row.client_id, title: row.title },
+        previousStatus: row.status,
+      });
+      return;
+    }
+
     const newStatus = columnToStatus(targetCol, row.status);
     if (newStatus === row.status) return;
     // optimistic
