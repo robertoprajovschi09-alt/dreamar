@@ -115,6 +115,13 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, isNewCli
       direction_change_other: directionChange === "other" ? directionChangeOther.trim().slice(0, 200) : null,
     };
 
+    // For new clients we hide the retrospective questions, so don't require them.
+    const Schema = isNewClient
+      ? baseSchema.extend({
+          customer_feedback: z.string().max(500).nullable().optional(),
+          important_note: z.string().max(500).nullable().optional(),
+        })
+      : baseSchema;
     const parsed = Schema.safeParse(payload);
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message || "Verifică câmpurile.");
