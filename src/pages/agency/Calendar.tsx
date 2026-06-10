@@ -136,7 +136,7 @@ export default function Calendar() {
           <p className="text-sm text-muted-foreground mt-1">Trage elementele pentru a le replanifica. Clic pe o zi pentru a adăuga rapid.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as View)} size="sm" variant="outline">
+          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as View)} size="sm" variant="outline" className="hidden md:flex">
             <ToggleGroupItem value="month" className="text-xs">Lună</ToggleGroupItem>
             <ToggleGroupItem value="week" className="text-xs">Săptămână</ToggleGroupItem>
             <ToggleGroupItem value="list" className="text-xs">Listă</ToggleGroupItem>
