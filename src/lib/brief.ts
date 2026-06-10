@@ -52,8 +52,33 @@ export async function getClientBrief(clientId: string) {
   return data as ClientBrief | null;
 }
 
+// Explicit list of columns we persist. Keeps payload deterministic and prevents silent drops.
+export const BRIEF_COLUMNS = [
+  "agency_id", "client_id", "submitted_by",
+  "business_description", "main_objective", "target_audience",
+  "unique_selling_points", "main_competitors",
+  "brand_tone", "content_dos", "content_donts",
+  "preferred_platforms", "posting_frequency", "budget_range",
+  "extra_notes", "completed",
+] as const;
+
+export function serializeBrief(brief: ClientBrief): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const col of BRIEF_COLUMNS) {
+    const v = (brief as any)[col];
+    if (col === "preferred_platforms") {
+      out[col] = Array.isArray(v) ? v : [];
+    } else if (col === "completed") {
+      out[col] = !!v;
+    } else {
+      out[col] = v ?? null;
+    }
+  }
+  return out;
+}
+
 export async function saveClientBrief(brief: ClientBrief) {
-  const payload = { ...brief, updated_at: new Date().toISOString() };
+  const payload = { ...serializeBrief(brief), updated_at: new Date().toISOString() };
   if (brief.id) {
     const { error } = await (supabase as any).from("client_briefs").update(payload).eq("id", brief.id);
     if (error) throw error;

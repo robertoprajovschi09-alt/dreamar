@@ -35,7 +35,7 @@ export default function Approvals() {
 
   useEffect(() => { load(); }, [agency, tab]);
 
-  // Realtime: refetch on any change to this agency's approvals
+  // Realtime: refetch on any change to this agency's approvals or content posts
   useEffect(() => {
     if (!agency) return;
     const channel = supabase
@@ -43,6 +43,11 @@ export default function Approvals() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "content_approvals", filter: `agency_id=eq.${agency.id}` },
+        () => load(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "content_posts", filter: `agency_id=eq.${agency.id}` },
         () => load(),
       )
       .subscribe();

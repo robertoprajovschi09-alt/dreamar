@@ -9,6 +9,7 @@ import { respondToApproval, APPROVAL_STATUS_META, statusPillKind } from "@/lib/a
 import { cn } from "@/lib/utils";
 import { StatusPill } from "@/components/ui/status-pill";
 import { ApprovalVideoPlayer } from "./ApprovalVideoPlayer";
+import { subscribeTables } from "@/lib/realtime";
 
 export function ClientApprovalsTab({ clientId }: { clientId: string }) {
   const [items, setItems] = useState<any[]>([]);
@@ -44,6 +45,10 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
     setLoading(false);
   };
   useEffect(() => { load(); }, [clientId]);
+  useEffect(() => subscribeTables(`client-approvals-${clientId}`, [
+    { table: "content_approvals", filter: `client_id=eq.${clientId}` },
+    { table: "content_posts", filter: `client_id=eq.${clientId}` },
+  ], load), [clientId]);
 
   const decide = async (
     approval: any,

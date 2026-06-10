@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -125,6 +125,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const skipNextAutosave = useRef(false);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -156,6 +157,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
     if (!open) return;
     // Don't overwrite an existing draft until the user explicitly continues or discards it
     if (hasDraft && !draftLoaded) return;
+    if (skipNextAutosave.current) { skipNextAutosave.current = false; return; }
     try {
       localStorage.setItem(draftKey, JSON.stringify({ step, form, savedAt: Date.now() }));
     } catch {}
@@ -164,20 +166,36 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
   const continueDraft = () => {
     try {
       const raw = localStorage.getItem(draftKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.form) setForm({ ...empty, ...parsed.form });
-        if (typeof parsed?.step === "number") setStep(parsed.step);
-      }
-    } catch {}
-    setDraftLoaded(true);
-    setHasDraft(false);
+      if (!raw) { setDraftLoaded(true); setHasDraft(false); return; }
+      const parsed = JSON.parse(raw);
+      const nextForm = { ...empty, ...(parsed?.form && typeof parsed.form === "object" ? parsed.form : {}) };
+      // Normalize array-ish fields so render-time map() never throws
+      if (!Array.isArray((nextForm as any).kpis)) (nextForm as any).kpis = (empty as any).kpis ?? [];
+      if (!Array.isArray((nextForm as any).custom_fields)) (nextForm as any).custom_fields = (empty as any).custom_fields ?? [];
+      if (!Array.isArray((nextForm as any).platforms)) (nextForm as any).platforms = (empty as any).platforms ?? [];
+      const rawStep = typeof parsed?.step === "number" ? parsed.step : 1;
+      const safeStep = Math.min(6, Math.max(1, rawStep));
+      skipNextAutosave.current = true;
+      setForm(nextForm);
+      setStep(safeStep);
+      setDraftLoaded(true);
+      setHasDraft(false);
+      toast.success("Am preluat draftul salvat");
+    } catch (err) {
+      console.warn("[AddClientWizard] draft parse failed:", err);
+      clearDraft();
+      setDraftLoaded(true);
+      setForm(empty);
+      setStep(1);
+      toast.message("Draftul era corupt — am pornit de la zero");
+    }
   };
   const discardDraft = () => {
     clearDraft();
     setDraftLoaded(true);
     setForm(empty);
     setStep(1);
+    toast.success("Draft șters");
   };
 
   // ----- Niche library -----
