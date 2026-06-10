@@ -128,6 +128,13 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
         defaultStatus={defaultStatus}
         onSaved={load}
       />
+      <SendForApprovalDialog
+        open={approvalDialog.open}
+        onOpenChange={(v) => setApprovalDialog((s) => ({ ...s, open: v }))}
+        post={approvalDialog.post}
+        onSent={() => { setApprovalDialog({ open: false, post: null, previousStatus: null }); load(); }}
+        onCancel={() => setApprovalDialog({ open: false, post: null, previousStatus: null })}
+      />
     </>
   );
 }
