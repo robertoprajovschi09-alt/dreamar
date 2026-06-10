@@ -80,19 +80,19 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("agencies").update({ plan }).eq("id", a.id);
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success(`Plan updated to ${plan}`);
+    toast.success(`Plan actualizat: ${plan}`);
     load();
   };
 
   const submitRename = async () => {
     if (!renameTarget) return;
     const name = renameValue.trim();
-    if (!name) return toast.error("Name is required");
+    if (!name) return toast.error("Numele este obligatoriu");
     setBusy(renameTarget.id);
     const { error } = await supabase.from("agencies").update({ name }).eq("id", renameTarget.id);
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success("Agency renamed");
+    toast.success("Agenție redenumită");
     setRenameTarget(null);
     setRenameValue("");
     load();
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.rpc("admin_delete_agency", { _agency_id: deleteTarget.id });
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success("Agency deleted");
+    toast.success("Agenție ștearsă");
     setDeleteTarget(null);
     setDeleteConfirm("");
     load();
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
             <Input id="agency-name" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} autoFocus />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRenameTarget(null)}>Anulează</Button>
             <Button onClick={submitRename} disabled={!renameValue.trim() || busy === renameTarget?.id}>
               {busy === renameTarget?.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
             </Button>
@@ -243,7 +243,7 @@ export default function AdminDashboard() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) { setDeleteTarget(null); setDeleteConfirm(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete agency permanently?</AlertDialogTitle>
+            <AlertDialogTitle>Ștergi definitiv agenția?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete <span className="font-semibold text-foreground">{deleteTarget?.name}</span>{" "}
               and ALL its data: clients, content, members, subscriptions, invites. This cannot be undone.
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
             <Input id="confirm-name" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} autoFocus />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Anulează</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => { e.preventDefault(); submitDelete(); }}
               disabled={deleteConfirm !== deleteTarget?.name || busy === deleteTarget?.id}

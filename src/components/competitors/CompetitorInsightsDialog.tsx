@@ -69,7 +69,7 @@ export function CompetitorInsightsDialog({ open, onOpenChange, agencyId, clientI
                         {i.hook && <p className="text-xs"><span className="text-muted-foreground">Hook: </span>{i.hook}</p>}
                         {i.angle && <p className="text-xs"><span className="text-muted-foreground">Angle: </span>{i.angle}</p>}
                         {i.why_it_works && <p className="text-xs text-muted-foreground">{i.why_it_works}</p>}
-                        <Button size="sm" variant="outline" onClick={() => saveIdea(i)}><Bookmark className="h-3 w-3 mr-1" />Save to Swipe</Button>
+                        <Button size="sm" variant="outline" onClick={() => saveIdea(i)}><Bookmark className="h-3 w-3 mr-1" />Salvează în Inspirație</Button>
                       </div>
                     ))}
                   </div>

@@ -252,7 +252,7 @@ function BrandTab({ client, reload }: any) {
       <Field label="Main objectives"><Textarea rows={2} value={form.objectives} onChange={(e) => setForm({ ...form, objectives: e.target.value })} /></Field>
       <Field label="Internal notes"><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
       <Button type="submit" disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Save</>}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
       </Button>
     </form></CardContent></Card>
   );
@@ -320,7 +320,7 @@ function GoalsTab({ client, goals, reload }: any) {
       notes: form.notes || null,
     });
     if (error) return toast.error(error.message);
-    toast.success("Goal added");
+    toast.success("Obiectiv adăugat");
     setForm({ objective: "", metric: "", target: "", deadline: "", status: "in_progress", notes: "" });
     setAdding(false); reload();
   };
@@ -350,8 +350,8 @@ function GoalsTab({ client, goals, reload }: any) {
             </div>
             <Field label="Notes"><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
             <div className="flex gap-2">
-              <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save goal</Button>
-              <Button type="button" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Salvează obiectiv</Button>
+              <Button type="button" variant="outline" onClick={() => setAdding(false)}>Anulează</Button>
             </div>
           </form>
         )}
@@ -528,7 +528,7 @@ function SettingsTab({ client, reload }: any) {
         <Field label="Contact email"><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></Field>
       </div>
       <Button type="submit" disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Save</>}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
       </Button>
     </form></CardContent></Card>
   );
@@ -665,7 +665,7 @@ function ClientCampaignsTab({ client }: any) {
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
   if (items.length === 0) return (
     <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
-      No campaigns yet. <Link to="/agency/campaigns" className="text-accent underline">Create one</Link>
+      Nu există campanii încă. <Link to="/agency/campaigns" className="text-accent underline">Create one</Link>
     </CardContent></Card>
   );
   return (

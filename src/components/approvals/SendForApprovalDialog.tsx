@@ -48,7 +48,7 @@ export function SendForApprovalDialog({ open, onOpenChange, post, onSent }: Prop
         assignedToClientUser: assigned === "all" ? null : assigned,
         message: msg || null,
       });
-      toast.success("Sent for client approval");
+      toast.success("Trimis spre aprobare către client");
       onOpenChange(false);
       onSent?.();
     } catch (e: any) {
@@ -85,7 +85,7 @@ export function SendForApprovalDialog({ open, onOpenChange, post, onSent }: Prop
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           <Button onClick={submit} disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-1.5" /> Send</>}
           </Button>

@@ -50,7 +50,7 @@ export function TaskEditor({ open, onOpenChange, agencyId, taskId, defaultClient
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) return toast.error("Title required");
+    if (!form.title.trim()) return toast.error("Titlul este obligatoriu");
     setBusy(true);
     const payload: any = {
       agency_id: agencyId,
@@ -126,9 +126,9 @@ export function TaskEditor({ open, onOpenChange, agencyId, taskId, defaultClient
             </Select>
           </Field>
           <div className="flex justify-between pt-4 border-t border-border">
-            {taskId ? <Button type="button" variant="ghost" className="text-destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1.5" /> Delete</Button> : <span />}
+            {taskId ? <Button type="button" variant="ghost" className="text-destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1.5" /> Șterge</Button> : <span />}
             <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Save</>}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
             </Button>
           </div>
         </form>

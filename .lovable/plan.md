@@ -1,40 +1,71 @@
-# Fix: protect agency accounts from being demoted by invite acceptance
+# Traducere completă în română (100%)
 
-A single SQL migration file under `supabase/migrations/` replacing two RPCs. No other files touched.
+Aplicația devine Romanian-only. Înlocuiesc textele englezești direct inline, fără librărie i18n. Nu modific logică, chei DB, enum-uri, nume de rute sau variabile.
 
-## Changes to `public.accept_client_invite(_token text)`
+## 1. Hărți centrale de etichete (sursa unică)
 
-At the very top, after resolving `_uid` and the user's email:
+Extind `src/lib/i18nLabels.ts` (există deja parțial) cu toate hărțile cerute și adaug funcții ajutătoare:
 
-1. **Block agency accounts.** If the caller is already in `agency_members`, OR `profiles.role` ∈ `('agency_owner','agency_team','saas_admin')`, OR `profiles.is_saas_admin = true`:
-   - `RAISE EXCEPTION 'Acest cont este deja un cont de agenție. Nu poți accepta o invitație de client cu el — folosește un alt email pentru contul de client.'`
-   - No writes to `profiles`, `client_users`, `agencies`, or anywhere else.
+- `GOAL_STATUS_RO`, `CONTENT_STATUS_RO`, `APPROVAL_STATUS_RO`, `HEALTH_STATUS_RO`, `METRIC_RO`, `NICHE_RO` (completate conform brief-ului)
+- `AGENCY_NAV_RO` — mapare pentru sidebar
+- helpers: `contentStatusLabel`, `approvalStatusLabel`, `metricLabel` (deja există)
+- păstrez `MONTHS_RO`, `WEEKDAYS_RO_*`, `fmtMonthYearRO`, `fmtDayShortRO`, `fmtDateRO`
+- adaug `fmtNumberRO`, `fmtCurrencyRO` (locale `ro-RO`) pentru numere/sume
 
-2. **Email match check.** After loading the invite, require `lower(_email) = lower(_inv.email)`. Otherwise:
-   - `RAISE EXCEPTION 'Această invitație a fost trimisă către alt email. Loghează-te cu emailul invitat.'`
+Actualizez `src/lib/operations.ts` (TASK_STATUSES, TASK_PRIORITIES, CAMPAIGN_STATUSES, DOCUMENT_FOLDERS) — sunt deja în RO, completez ce lipsește (ex. folderele de documente).
 
-3. **Never downgrade role.** Keep the existing `client_users` upsert and invite-status update, but in the `profiles` upsert use:
-   - `INSERT ... ON CONFLICT (id) DO UPDATE SET role = COALESCE(public.profiles.role, EXCLUDED.role), agency_id = EXCLUDED.agency_id, client_id = EXCLUDED.client_id` — so if a row somehow exists with a role already, it is preserved. (In practice step 1 already rejects agency roles; this is defense in depth.)
+## 2. Zone de tradus (checklist complet)
 
-4. **Local bypass flag.** Switch both `set_config('app.bypass_profile_lock', 'on'/'off', true)` calls to use the third arg `true` (already true today — verified) AND wrap the write in a way that always restores `'off'` even on error path inside this RPC. Concretely: set `'on'` immediately before the profiles upsert, set `'off'` immediately after. (Already local-scoped via the `true` arg, so this is just a tidy-up.)
+### A. Landing (`src/pages/Index.tsx`)
+Tot textul rescris în română cu tonul cerut: hero, sub-hero, badges, CTA, secțiunea „Everything in one place", carduri module, pricing (păstrez prețurile și numele de plan rămân în formă scurtă RO: „Starter", „Creștere", „Nelimitat", „White Label Pro"), CTA final, footer.
 
-5. **Keep** the existing "clean up old solo agency" branch unchanged — it only runs when `_old_agency <> _inv.agency_id` AND the old agency has zero other members and zero clients, which cannot happen for a real agency account because step 1 already rejected.
+### B. Auth & invitații
+- `src/pages/Auth.tsx`, `src/pages/AdminLogin.tsx`
+- `src/pages/AcceptInvite.tsx`, `src/pages/AcceptTeamInvite.tsx`
+- Toate label-urile, butoanele, mesajele de eroare/zod, toast-urile.
 
-## Changes to `public.accept_team_invite(_token text)`
+### C. Layout agenție + sidebar
+- `src/components/AgencyLayout.tsx` — etichetele din meniu folosesc `AGENCY_NAV_RO`.
+- `src/components/PageHeader.tsx`, `NavLink.tsx`, `Logo.tsx` (dacă au text).
 
-Same shape, lighter:
+### D. Pagini agenție (toate fișierele din `src/pages/agency/*`)
+AgencyDashboard, Clients, ClientProfile, Calendar, Content, Approvals, Analytics, Campaigns, Reports, ReportPrint, Strategies, StrategyDetail, StrategyPrint, Documents, Tasks, SwipeLibrary, Competitors, Assistant, Team, Billing, Settings, AiActions, AiMemory, InviteClientDialog.
+Titluri, subtitluri, butoane, coloane de tabel, filtre, empty states, tab-uri.
 
-1. **Email match check** identical to above.
-2. **Don't wipe `client_id` for non-client roles silently** — keep current behavior of setting `client_id = NULL` because team membership is genuinely incompatible with being a client viewer, but add the email guard so a stranger cannot hijack.
-3. No "block agency accounts" rule here — accepting a team invite as an existing agency user is legitimate (the function already handles old-agency cleanup).
-4. Tidy the `set_config` calls the same way.
+### E. Pagini admin (`src/pages/admin/*`)
+AdminDashboard, AiActionsApprovalQueue, AiLogs, AiMaintainer, AiPrompts, AiSafety, ContinuousImprovement.
 
-## Migration file
+### F. Client portal
+- `src/pages/client/ClientPortal.tsx` și componente `client/*` (DashboardContextCard, BriefWizard, BusinessImpact*, ClientDashboard, ClientQuickCheckIn, EditPortalPermissionsDialog, LatestCheckInCard, NicheDashboardSection, NicheSummaryCard, PortalSettingsCard, PriorityKpiCard, QuickAddClientDialog, QuickClientOnboarding, RealEstateDashboardSection, CustomNicheDashboardSection, AddClientWizard).
 
-`supabase/migrations/<timestamp>_harden_accept_invite_rpcs.sql` containing two `CREATE OR REPLACE FUNCTION` statements (same signatures, same `SECURITY DEFINER`, same `search_path = public`). No table/policy changes. No data migration.
+### G. Componente shared
+`src/components/`:
+- analytics/*, approvals/*, ai/*, competitors/*, content/*, health/*, operations/*, performance/*, reports/*, risk/*, strategies/*, swipe/*, team/*, EmptyState, ScrollToTop, MetricCard, RoleRoute, AdminRoute.
+- Badge-uri/status pills folosesc hărțile centrale.
+- `error-state.tsx` (deja RO).
 
-## Verification (manual, after migration runs)
+### H. Toast-uri, validări, mesaje
+Caut `toast.success(`, `toast.error(`, `toast(`, `z.string(`, `.min(`, `message:`, `placeholder=`, `aria-label=`, `title=` în toată baza de cod și traduc tot ce e vizibil.
 
-- Agency owner logged in → calls `accept_client_invite` with a valid token → gets the Romanian error, `profiles.role` unchanged, no row inserted in `client_users`.
-- Fresh user matching invite email → accepts normally, becomes `client_viewer`.
-- Any user with mismatched email → gets the email-mismatch error.
+### I. Emailuri (edge functions)
+- `supabase/functions/send-client-invite/index.ts`
+- `supabase/functions/send-team-invite/index.ts`
+Subject + corp HTML/text 100% RO. (Nu ating funcțiile AI/Gemini.)
+
+### J. `index.html`
+`<title>`, `<meta name="description">`, `og:title`, `og:description` în română. Lang `ro`.
+
+## 3. Formatare date/numere
+Înlocuiesc orice `toLocaleDateString()` / `toLocaleString()` fără locale, sau cu `en-*`, cu varianta `ro-RO` sau cu helperele din `i18nLabels.ts`. Lunile/zilele afișate manual folosesc `MONTHS_RO` / `WEEKDAYS_RO_*`.
+
+## 4. Verificare finală
+Grep global după cuvintele tipice EN cerute în brief (`Save`, `Cancel`, `Delete`, `Add`, `Edit`, `Create`, `Search`, `Loading`, `Success`, `Error`, `Settings`, `Client`, `Report`, `Pending`, `Approved`, `Draft`, `This month`, `No data`, `Get started`, `Sign in`, `Upgrade`, `Health`, `Month`, `Week`, `Today`, `Yesterday`, `New`, `IN PROGRESS`, `June`, etc.) — orice apariție vizibilă se traduce. Identificatorii din cod / chei DB rămân neschimbați.
+
+## Ce NU modific
+- Logică, nume de funcții/variabile, scheme, RLS, rute.
+- Valori enum din DB.
+- Funcții AI/Gemini (prompturi rămân cum sunt).
+- Brand: Dreamar, drea.mar, DR.DREAM; platforme: Instagram/TikTok/Facebook/YouTube; termeni tehnici: ROAS, CTR, CPM, AI.
+
+## Livrare
+Lucrare amplă (zeci de fișiere). O fac într-o singură rundă de build, grupat pe zonele de mai sus, cu hărțile centrale reutilizate ca să rămână consecvent.

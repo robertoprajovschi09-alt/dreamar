@@ -68,10 +68,10 @@ export function BriefWizard({ agencyId, agencyName, clientId, clientName, userId
       const id = await saveClientBrief({ ...brief, completed: markCompleted });
       setBrief((b) => ({ ...b, id }));
       if (markCompleted) {
-        toast.success("Thank you! Your brief is saved.");
+        toast.success("Mulțumim! Brief-ul a fost salvat.");
         onCompleted();
       } else {
-        toast.success("Saved as draft");
+        toast.success("Salvat ca ciornă");
       }
     } catch (e: any) {
       toast.error(e.message);

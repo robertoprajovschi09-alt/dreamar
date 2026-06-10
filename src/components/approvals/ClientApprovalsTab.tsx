@@ -57,7 +57,7 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
   ) => {
     const c = quickComment ?? comments[approval.id] ?? "";
     if (status !== "approved" && !c.trim()) {
-      toast.error("Please tell us what to change");
+      toast.error("Spune-ne ce trebuie modificat");
       return;
     }
     setBusyId(approval.id);

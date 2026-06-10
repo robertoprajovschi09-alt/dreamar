@@ -65,7 +65,7 @@ export default function AiActionsApprovalQueue() {
     setBusyId(req.id);
     try {
       await decideAiAction(req.id, decision, opts);
-      toast.success(`Action ${decision}d`);
+      toast.success(`Acțiune ${decision === 'approve' ? 'aprobată' : 'respinsă'}`);
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
@@ -79,7 +79,7 @@ export default function AiActionsApprovalQueue() {
     try {
       await decideAiAction(req.id, "approve");
       await decideAiAction(req.id, "execute");
-      toast.success("Approved & executed");
+      toast.success("Aprobat și executat");
       load();
     } catch (e: any) { toast.error(e?.message ?? "Failed"); }
     finally { setBusyId(null); }
@@ -92,7 +92,7 @@ export default function AiActionsApprovalQueue() {
   function saveEditAndApprove() {
     if (!editFor) return;
     let parsed;
-    try { parsed = JSON.parse(editText); } catch { return toast.error("Invalid JSON"); }
+    try { parsed = JSON.parse(editText); } catch { return toast.error("JSON invalid"); }
     handle("approve", editFor, { edited_payload: parsed });
     setEditFor(null);
   }
@@ -103,8 +103,8 @@ export default function AiActionsApprovalQueue() {
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="pending">În așteptare</TabsTrigger>
+          <TabsTrigger value="approved">Aprobate</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
@@ -128,7 +128,7 @@ export default function AiActionsApprovalQueue() {
                   {req.status === "pending" && (
                     <>
                       <Button size="sm" variant="outline" disabled={busyId === req.id} onClick={() => openEdit(req)}>
-                        <Pencil className="h-3.5 w-3.5 mr-1" />Edit
+                        <Pencil className="h-3.5 w-3.5 mr-1" />Modifică
                       </Button>
                       <Button size="sm" variant="outline" disabled={busyId === req.id} onClick={() => { setRejectFor(req); setRejectReason(""); }}>
                         <XCircle className="h-3.5 w-3.5 mr-1" />Reject
@@ -172,11 +172,11 @@ export default function AiActionsApprovalQueue() {
 
       <Dialog open={!!editFor} onOpenChange={(o) => !o && setEditFor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit payload before approve</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Modifică payload-ul înainte de aprobare</DialogTitle></DialogHeader>
           <Textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="font-mono text-xs min-h-[280px]" />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditFor(null)}>Cancel</Button>
-            <Button onClick={saveEditAndApprove}>Save & Approve</Button>
+            <Button variant="ghost" onClick={() => setEditFor(null)}>Anulează</Button>
+            <Button onClick={saveEditAndApprove}>Salvează și aprobă</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -186,7 +186,7 @@ export default function AiActionsApprovalQueue() {
           <DialogHeader><DialogTitle>Reject action</DialogTitle></DialogHeader>
           <Textarea placeholder="Reason (optional)" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRejectFor(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setRejectFor(null)}>Anulează</Button>
             <Button variant="destructive" onClick={() => { if (rejectFor) handle("reject", rejectFor, { rejection_reason: rejectReason }); setRejectFor(null); }}>Reject</Button>
           </DialogFooter>
         </DialogContent>

@@ -59,7 +59,7 @@ export function ObservationDetailDialog({ open, onOpenChange, observation, onUpd
                     {analyzing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
                     {Object.keys(a).length ? "Re-analyze" : "Analyze"}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setSwipeOpen(true)}><Bookmark className="h-3 w-3 mr-1" />Save to Swipe</Button>
+                  <Button size="sm" variant="outline" onClick={() => setSwipeOpen(true)}><Bookmark className="h-3 w-3 mr-1" />Salvează în Inspirație</Button>
                 </div>
               </div>
               {a.why_it_likely_worked && <Field label="Why it likely worked" value={a.why_it_likely_worked} />}

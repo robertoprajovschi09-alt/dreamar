@@ -124,7 +124,7 @@ function CampaignEditor({ open, onOpenChange, agencyId, editing, clients, onSave
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.client_id) return toast.error("Name and client are required");
+    if (!form.name.trim() || !form.client_id) return toast.error("Numele și clientul sunt obligatorii");
     setBusy(true);
     const payload: any = {
       agency_id: agencyId,
@@ -182,9 +182,9 @@ function CampaignEditor({ open, onOpenChange, agencyId, editing, clients, onSave
           <Field label="Description / brief"><Textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
 
           <div className="flex justify-between pt-4 border-t border-border">
-            {editing ? <Button type="button" variant="ghost" className="text-destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1.5" /> Delete</Button> : <span />}
+            {editing ? <Button type="button" variant="ghost" className="text-destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1.5" /> Șterge</Button> : <span />}
             <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Save</>}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
             </Button>
           </div>
         </form>

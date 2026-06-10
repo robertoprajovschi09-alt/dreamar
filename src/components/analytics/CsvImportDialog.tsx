@@ -43,7 +43,7 @@ export function CsvImportDialog({ open, onOpenChange, agencyId, clientId, target
         rows: parsed.rows, mapping, target,
         defaults: { agency_id: agencyId, client_id: clientId },
       });
-      toast.success(`Imported ${count} rows`);
+      toast.success(`${count} rânduri importate`);
       onImported?.(); onOpenChange(false); reset();
     } catch (e: any) { toast.error(e.message || "Import failed"); }
     finally { setBusy(false); }
@@ -84,7 +84,7 @@ export function CsvImportDialog({ open, onOpenChange, agencyId, clientId, target
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           {step === "map" && (
             <Button onClick={doImport} disabled={busy} className="bg-accent text-accent-foreground hover:bg-accent/90">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Import ${parsed?.rows.length || 0} rows`}

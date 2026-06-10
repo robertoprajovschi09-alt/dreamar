@@ -85,7 +85,7 @@ export function UseInCalendarDialog({ open, onOpenChange, swipe, navigateAfter }
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           <Button onClick={submit} disabled={saving}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Create draft</Button>
         </DialogFooter>
       </DialogContent>

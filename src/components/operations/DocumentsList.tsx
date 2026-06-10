@@ -85,7 +85,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
   };
   const toggleVisibility = async (d: any) => {
     const next = d.visibility === "client_visible" ? "internal" : "client_visible";
-    if (next === "client_visible" && !d.client_id) return toast.error("Assign a client to share this document");
+    if (next === "client_visible" && !d.client_id) return toast.error("Atribuie un client ca să distribui documentul");
     const { error } = await supabase.from("documents").update({ visibility: next }).eq("id", d.id);
     if (error) return toast.error(error.message);
     load();

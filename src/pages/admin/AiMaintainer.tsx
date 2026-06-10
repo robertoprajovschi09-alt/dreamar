@@ -77,7 +77,7 @@ export default function AiMaintainer() {
     });
     setRunning(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(`Audit complete — ${data?.suggestions_count ?? 0} suggestions generated`);
+    toast.success(`Audit finalizat — ${data?.suggestions_count ?? 0} sugestii generate`);
     setRunOpen(false);
     loadAll();
   }
@@ -103,7 +103,7 @@ export default function AiMaintainer() {
     const { data, error } = await supabase.functions.invoke("ai-generate-fix-prompt", { body: { suggestion_id: s.id } });
     toast.dismiss("gen-" + s.id);
     if (error) return toast.error(error.message);
-    toast.success("Prompt updated");
+    toast.success("Prompt actualizat");
     loadAll();
   }
   async function createTask(s: Suggestion) {
@@ -115,7 +115,7 @@ export default function AiMaintainer() {
     if (error) return toast.error(error.message);
     if (s.status === "approved") await updateSuggestion(s.id, { status: "in_progress" });
     else loadAll();
-    toast.success("Task created");
+    toast.success("Sarcină creată");
   }
   async function updateTaskStatus(id: string, status: string) {
     const { error } = await supabase.from("ai_maintenance_tasks").update({ status }).eq("id", id);
@@ -123,9 +123,9 @@ export default function AiMaintainer() {
     loadAll();
   }
   async function copyPrompt(text: string | null) {
-    if (!text) return toast.error("No prompt yet — generate one first");
+    if (!text) return toast.error("Nu există încă prompt — generează unul mai întâi");
     await navigator.clipboard.writeText(text);
-    toast.success("Prompt copied");
+    toast.success("Prompt copiat");
   }
 
   if (!isOwner) return <div className="p-6 text-sm">Admin or Agency Owner only.</div>;
@@ -173,7 +173,7 @@ export default function AiMaintainer() {
               </SelectContent>
             </Select>
           </div>
-          {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
+          {loading && <div className="text-sm text-muted-foreground">Se încarcă…</div>}
           {!loading && filteredSuggestions.length === 0 && <div className="text-sm text-muted-foreground">No suggestions yet. Run an AI Audit to generate some.</div>}
           {filteredSuggestions.map(s => (
             <Card key={s.id}>
@@ -200,7 +200,7 @@ export default function AiMaintainer() {
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => copyPrompt(s.suggested_prompt_for_lovable)}><Copy className="h-3 w-3 mr-1" />Copy prompt</Button>
                   <Button size="sm" variant="outline" onClick={() => generateFixPrompt(s)}><Sparkles className="h-3 w-3 mr-1" />Generate Lovable Fix Prompt</Button>
-                  <Button size="sm" variant="outline" onClick={() => createTask(s)}><ListPlus className="h-3 w-3 mr-1" />Create Task</Button>
+                  <Button size="sm" variant="outline" onClick={() => createTask(s)}><ListPlus className="h-3 w-3 mr-1" />Creează sarcină</Button>
                   {s.status !== "approved" && s.status !== "implemented" && (
                     <Button size="sm" onClick={() => approveSuggestion(s)}><CheckCircle2 className="h-3 w-3 mr-1" />Approve</Button>
                   )}
@@ -322,7 +322,7 @@ export default function AiMaintainer() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRunOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setRunOpen(false)}>Anulează</Button>
             <Button onClick={runAudit} disabled={running}>{running ? <Loader2 className="h-4 w-4 animate-spin" /> : "Run audit"}</Button>
           </DialogFooter>
         </DialogContent>

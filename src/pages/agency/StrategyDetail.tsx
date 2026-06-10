@@ -86,7 +86,7 @@ export default function StrategyDetail() {
     setBusy(true);
     try {
       await setStrategyStatus(s, status);
-      toast.success(`Status updated to ${STRATEGY_STATUS_META[status].label}`);
+      toast.success(`Status actualizat: ${STRATEGY_STATUS_META[status].label}`);
       await load();
     } catch (e: any) { toast.error(e.message || "Failed"); }
     finally { setBusy(false); }
@@ -97,7 +97,7 @@ export default function StrategyDetail() {
     setBusy(true);
     try {
       const n = await createTasksFromStrategy(s);
-      toast.success(`Created ${n} task${n === 1 ? "" : "s"}`);
+      toast.success(`Am creat ${n} ${n === 1 ? "sarcină" : "sarcini"}`);
     } catch (e: any) { toast.error(e.message || "Failed"); }
     finally { setBusy(false); }
   };
@@ -107,7 +107,7 @@ export default function StrategyDetail() {
     setBusy(true);
     try {
       const n = await createDraftsFromStrategy(s);
-      toast.success(`Created ${n} content draft${n === 1 ? "" : "s"}`);
+      toast.success(`Am creat ${n} ${n === 1 ? "ciornă de conținut" : "ciorne de conținut"}`);
     } catch (e: any) { toast.error(e.message || "Failed"); }
     finally { setBusy(false); }
   };
@@ -130,7 +130,7 @@ export default function StrategyDetail() {
           <div className="text-sm text-muted-foreground">{client?.name || "—"} · {monthLabel(s.month, s.year)}</div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={save} disabled={saving} variant="outline"><Save className="h-4 w-4 mr-1" /> Save</Button>
+          <Button onClick={save} disabled={saving} variant="outline"><Save className="h-4 w-4 mr-1" /> Salvează</Button>
           <Button onClick={regenerate} disabled={busy} variant="outline"><Sparkles className="h-4 w-4 mr-1" /> Regenerate</Button>
           <Button onClick={makeTasks} disabled={busy} variant="outline"><ListChecks className="h-4 w-4 mr-1" /> Create tasks</Button>
           <Button onClick={makeDrafts} disabled={busy} variant="outline"><CalendarPlus className="h-4 w-4 mr-1" /> Create drafts</Button>
@@ -274,7 +274,7 @@ function ListSection({ title, items, onChange }: { title: string; items: string[
             <Button variant="ghost" size="icon" onClick={() => onChange(items.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button>
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={() => onChange([...(items || []), ""])}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+        <Button variant="outline" size="sm" onClick={() => onChange([...(items || []), ""])}><Plus className="h-4 w-4 mr-1" /> Adaugă</Button>
       </div>
     </Section>
   );

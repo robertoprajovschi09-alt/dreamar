@@ -75,7 +75,7 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.client_id) return toast.error("Pick a client");
+    if (!form.client_id) return toast.error("Alege un client");
     setBusy(true);
     const payload: any = {
       agency_id: agencyId,
@@ -208,10 +208,10 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
 
           <div className="flex justify-between pt-4 border-t border-border">
             {videoId ? (
-              <Button type="button" variant="ghost" className="text-destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1.5" /> Delete</Button>
+              <Button type="button" variant="ghost" className="text-destructive" onClick={remove}><Trash2 className="h-4 w-4 mr-1.5" /> Șterge</Button>
             ) : <span />}
             <Button type="submit" disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Save</>}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
             </Button>
           </div>
         </form>

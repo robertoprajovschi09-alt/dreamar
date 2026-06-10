@@ -34,11 +34,11 @@ export function GenerateStrategyDialog({
   }, [open, agency, defaultClientId]);
 
   const submit = async () => {
-    if (!clientId) return toast.error("Pick a client");
+    if (!clientId) return toast.error("Alege un client");
     setLoading(true);
     try {
       const res = await generateStrategy(clientId, year, month);
-      toast.success("Strategy generated");
+      toast.success("Strategie generată");
       onOpenChange(false);
       onGenerated?.(res.id);
     } catch (e: any) {
@@ -88,7 +88,7 @@ export function GenerateStrategyDialog({
           </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           <Button onClick={submit} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />} Generate
           </Button>

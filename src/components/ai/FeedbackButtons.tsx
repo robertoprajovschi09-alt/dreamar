@@ -35,7 +35,7 @@ export function FeedbackButtons({ runId, feature }: { runId: string | null; feat
     if (error) { toast.error(error.message); return; }
     setSent(rating);
     setComment(""); setCorrection("");
-    toast.success("Thanks for the feedback");
+    toast.success("Mulțumim pentru feedback");
   }
 
   return (

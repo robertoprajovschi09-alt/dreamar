@@ -51,9 +51,9 @@ export default function AiSafety() {
     <div className="p-6 space-y-4">
       <PageHeader title="AI Safety Guardrails" subtitle="Regex rules applied to every AI input and output." action={
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New rule</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Regulă nouă</Button></DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>New safety rule</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Regulă nouă de siguranță</DialogTitle></DialogHeader>
             <div className="space-y-2">
               <Input placeholder="rule_key" value={form.rule_key} onChange={(e) => setForm({ ...form, rule_key: e.target.value })} />
               <Input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
@@ -67,7 +67,7 @@ export default function AiSafety() {
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter><Button onClick={create}>Create</Button></DialogFooter>
+            <DialogFooter><Button onClick={create}>Creează</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       } />
@@ -81,7 +81,7 @@ export default function AiSafety() {
             <CardContent>
               {r.description && <p className="text-xs text-muted-foreground">{r.description}</p>}
               <pre className="text-xs bg-muted p-2 rounded mt-2 overflow-auto">{r.pattern}</pre>
-              <Button size="sm" variant="ghost" className="mt-2 text-destructive" onClick={() => del(r.id)}>Delete</Button>
+              <Button size="sm" variant="ghost" className="mt-2 text-destructive" onClick={() => del(r.id)}>Șterge</Button>
             </CardContent>
           </Card>
         ))}

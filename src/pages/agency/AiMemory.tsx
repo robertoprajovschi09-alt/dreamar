@@ -90,13 +90,13 @@ export default function AiMemory() {
 
   async function save() {
     if (!editing) return;
-    if (!editing.title?.trim() || !editing.content?.trim()) { toast.error("Title & content required"); return; }
+    if (!editing.title?.trim() || !editing.content?.trim()) { toast.error("Titlul și conținutul sunt obligatorii"); return; }
     if (!editing.source_type?.trim() || !editing.source_id?.trim()) {
-      toast.error("Source type & source id are required (no memory without a source)"); return;
+      toast.error("Tipul și ID-ul sursei sunt obligatorii (nu salvăm memorie fără sursă)"); return;
     }
     try {
       await upsertMemory(editing as any);
-      toast.success("Memory saved");
+      toast.success("Memorie salvată");
       setOpenMem(false); setEditing(null); load();
     } catch (e: any) { toast.error(e.message || "Save failed"); }
   }
@@ -125,7 +125,7 @@ export default function AiMemory() {
         title: ingest.title.trim(),
         raw_content: ingest.raw_content,
       });
-      toast.success(`Extracted ${res?.facts_count ?? 0} facts → ${res?.proposals_queued ?? 0} memory proposals queued for approval`);
+      toast.success(`Am extras ${res?.facts_count ?? 0} fapte → ${res?.proposals_queued ?? 0} propuneri de memorie trimise spre aprobare`);
       setOpenIngest(false);
       setIngest({ source_type: "document", source_id: "", title: "", raw_content: "", client_id: "" });
       load();
@@ -186,7 +186,7 @@ export default function AiMemory() {
           </Card>
 
           <div className="space-y-3">
-            {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+            {loading && <p className="text-sm text-muted-foreground">Se încarcă…</p>}
             {!loading && filtered.length === 0 && (
               <Card><CardContent className="py-10 text-center text-muted-foreground">No memories match the filters.</CardContent></Card>
             )}
@@ -207,7 +207,7 @@ export default function AiMemory() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch checked={m.is_active} onCheckedChange={() => toggleActive(m)} />
-                    <Button size="sm" variant="outline" onClick={() => { setEditing(m); setOpenMem(true); }}>Edit</Button>
+                    <Button size="sm" variant="outline" onClick={() => { setEditing(m); setOpenMem(true); }}>Modifică</Button>
                     <Button size="sm" variant="ghost" onClick={() => remove(m)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </CardHeader>
@@ -293,8 +293,8 @@ export default function AiMemory() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOpenMem(false); setEditing(null); }}>Cancel</Button>
-            <Button onClick={save}>Save</Button>
+            <Button variant="outline" onClick={() => { setOpenMem(false); setEditing(null); }}>Anulează</Button>
+            <Button onClick={save}>Salvează</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -328,7 +328,7 @@ export default function AiMemory() {
               value={ingest.raw_content} onChange={(e) => setIngest({ ...ingest, raw_content: e.target.value })} />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenIngest(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setOpenIngest(false)}>Anulează</Button>
             <Button onClick={runIngest}>Ingest</Button>
           </DialogFooter>
         </DialogContent>

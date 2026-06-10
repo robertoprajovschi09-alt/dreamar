@@ -22,7 +22,7 @@ const primaryNav = [
   { to: "/agency/content", icon: FileVideo, label: "Conținut" },
   { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
   { to: "/agency/approvals", icon: ClipboardCheck, label: "Aprobări" },
-  { to: "/agency/analytics", icon: BarChart3, label: "Analitice" },
+  { to: "/agency/analytics", icon: BarChart3, label: "Statistici" },
   { to: "/agency/reports", icon: FileText, label: "Rapoarte" },
 ];
 
@@ -31,9 +31,9 @@ const secondaryNav = [
   { to: "/agency/strategies", icon: Lightbulb, label: "Strategii" },
   { to: "/agency/tasks", icon: ListTodo, label: "Sarcini" },
   { to: "/agency/documents", icon: FolderOpen, label: "Documente" },
-  { to: "/agency/swipe", icon: BookmarkPlus, label: "Bibliotecă idei" },
-  { to: "/agency/competitors", icon: Target, label: "Concurenți" },
-  { to: "/agency/assistant", icon: Sparkles, label: "Asistent AI" },
+  { to: "/agency/swipe", icon: BookmarkPlus, label: "Inspirație" },
+  { to: "/agency/competitors", icon: Target, label: "Concurență" },
+  { to: "/agency/assistant", icon: Sparkles, label: "Asistent" },
 ];
 
 const remainingNav = [
@@ -93,7 +93,7 @@ export default function AgencyLayout() {
   ];
   const mobileMore = [
     { to: "/agency/calendar", icon: CalendarIcon, label: "Calendar" },
-    { to: "/agency/analytics", icon: BarChart3, label: "Analitice" },
+    { to: "/agency/analytics", icon: BarChart3, label: "Statistici" },
     { to: "/agency/reports", icon: FileText, label: "Rapoarte" },
     ...secondaryNav,
     ...remainingNav,
@@ -141,15 +141,15 @@ export default function AgencyLayout() {
 
           {profile?.is_saas_admin && (
             <>
-              <div className={sectionLabelClass}>Admin</div>
+              <div className={sectionLabelClass}>Administrare</div>
               {[
-                { to: "/admin", label: "SaaS admin" },
-                { to: "/agency/admin/ai-prompts", label: "AI Prompts" },
-                { to: "/agency/admin/ai-logs", label: "AI Logs" },
-                { to: "/agency/admin/ai-safety", label: "AI Safety" },
-                { to: "/agency/admin/ai-maintainer", label: "AI Maintainer" },
-                { to: "/agency/admin/ai-actions", label: "AI Action Approvals" },
-                { to: "/agency/admin/continuous-improvement", label: "Continuous Improvement" },
+                { to: "/admin", label: "Administrare SaaS" },
+                { to: "/agency/admin/ai-prompts", label: "Prompt-uri AI" },
+                { to: "/agency/admin/ai-logs", label: "Loguri AI" },
+                { to: "/agency/admin/ai-safety", label: "Siguranță AI" },
+                { to: "/agency/admin/ai-maintainer", label: "Mentenanță AI" },
+                { to: "/agency/admin/ai-actions", label: "Aprobări acțiuni AI" },
+                { to: "/agency/admin/continuous-improvement", label: "Îmbunătățire continuă" },
               ].map((a) => (
                 <NavLink key={a.to} to={a.to} className={navLinkClass}>
                   <ShieldCheck className="h-4 w-4" />
@@ -200,7 +200,7 @@ export default function AgencyLayout() {
                   <div className="font-semibold truncate">{profile?.full_name || "Cont"}</div>
                   <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
                   {profile?.role && (
-                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase tracking-wide">{profile.role.replace("_", " ")}</Badge>
+                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase tracking-wide">{({ agency_owner: "Proprietar agenție", agency_team: "Echipă agenție", saas_admin: "Admin SaaS", client_viewer: "Client" } as Record<string, string>)[profile.role] || profile.role.replace("_", " ")}</Badge>
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
