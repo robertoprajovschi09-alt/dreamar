@@ -119,10 +119,10 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                       <span>{u.email}</span>
                       <span>·</span>
                       <Badge variant="outline" className="text-[10px] uppercase h-4 px-1">
-                        {u.role === "client_owner" ? "Owner" : "Viewer"}
+                        {u.role === "client_owner" ? "Owner" : "Vizualizator"}
                       </Badge>
                       <span>·</span>
-                      <span>Last login {formatRelative(u.last_login_at)}</span>
+                      <span>Ultima logare {formatRelative(u.last_login_at)}</span>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -131,11 +131,11 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setPermTarget({ kind: "user", id: u.id, email: u.email, role: u.role, permissions: u.permissions })}>
-                        <ShieldCheck className="h-4 w-4 mr-2" /> Edit permissions
+                        <ShieldCheck className="h-4 w-4 mr-2" /> Editează permisiuni
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onClick={() => removeUser(u.id)}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Revoke access
+                        <Trash2 className="h-4 w-4 mr-2" /> Revocă accesul
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
