@@ -59,7 +59,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
       setScore(next);
       const hist = await fetchHistory(clientId, 6);
       setPrev(hist.find((h) => h.id !== next.id) || null);
-      if (!silent) toast.success("Score updated");
+      if (!silent) toast.success("Scor actualizat");
     } catch (e: any) {
       if (!silent) toast.error(e.message || "Could not compute score");
     } finally {
@@ -73,7 +73,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
     try {
       const updated = await generateRecommendation(score.id);
       setScore(updated);
-      toast.success("AI recommendation ready");
+      toast.success("Recomandare AI gata");
     } catch (e: any) {
       toast.error(e.message || "AI request failed");
     } finally {

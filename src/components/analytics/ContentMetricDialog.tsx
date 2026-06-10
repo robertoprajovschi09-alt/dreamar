@@ -48,7 +48,7 @@ export function ContentMetricDialog({ open, onOpenChange, agencyId, clientId, co
       for (const [k] of fields) { const v = form[k]; payload[k] = v === "" || v == null ? null : Number(v); }
       if (form.id) payload.id = form.id;
       await upsertContentMetric(payload);
-      toast.success("Metrics saved");
+      toast.success("Indicatori salvați");
       onSaved?.(); onOpenChange(false);
     } catch (e: any) { toast.error(e.message || "Failed"); }
     finally { setSaving(false); }
@@ -75,7 +75,7 @@ export function ContentMetricDialog({ open, onOpenChange, agencyId, clientId, co
           <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           <Button onClick={save} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90">{saving ? "Saving..." : "Save"}</Button>
         </DialogFooter>
       </DialogContent>

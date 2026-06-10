@@ -13,7 +13,7 @@ export function ClientMarketInsightsTab({ clientId }: { clientId: string }) {
     listClientVisibleObservations(clientId).then(setObs).finally(() => setLoading(false));
   }, [clientId]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">Se încarcă…</p>;
   if (!obs.length) return <p className="text-sm text-muted-foreground">No market insights shared yet.</p>;
 
   return (

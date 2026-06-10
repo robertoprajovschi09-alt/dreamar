@@ -8,7 +8,7 @@ export function MonthlyComparisonChart({ entries }: { entries: AnalyticsEntry[] 
     <Card>
       <CardHeader><CardTitle className="text-base">Monthly trend</CardTitle></CardHeader>
       <CardContent>
-        {data.length === 0 ? <p className="text-sm text-muted-foreground">No data yet.</p> : (
+        {data.length === 0 ? <p className="text-sm text-muted-foreground">Nu există date încă.</p> : (
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

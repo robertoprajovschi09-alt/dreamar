@@ -83,21 +83,21 @@ export default function AiPrompts() {
     const { data, error } = await supabase.functions.invoke("ai-propose-prompt-improvement", { body: { feature } });
     setProposing(null);
     if (error) return toast.error(error.message);
-    toast.success(`AI proposed v${data?.version} — review in Learning Events tab`);
+    toast.success(`AI a propus v${data?.version} — revezi în tabul Evenimente de învățare`);
     load();
   }
 
   async function runEvaluation() {
     if (!evalOpen) return;
     let parsedDataset: any[] = [];
-    try { parsedDataset = JSON.parse(evalDataset); } catch { return toast.error("Invalid JSON dataset"); }
+    try { parsedDataset = JSON.parse(evalDataset); } catch { return toast.error("Set de date JSON invalid"); }
     setEvalBusy(true);
     const { data, error } = await supabase.functions.invoke("ai-run-evaluation", {
       body: { prompt_version_id: evalOpen.id, dataset: parsedDataset },
     });
     setEvalBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`Avg score ${(data?.avg_score ?? 0).toFixed(2)} on ${data?.count} tests`);
+    toast.success(`Scor mediu ${(data?.avg_score ?? 0).toFixed(2)} pe ${data?.count} teste`);
     setEvalOpen(null);
     load();
   }
@@ -112,7 +112,7 @@ export default function AiPrompts() {
       }
     }
     await supabase.from("ai_learning_events").update({ status: "applied", reviewed_by: profile?.id, reviewed_at: new Date().toISOString() }).eq("id", ev.id);
-    toast.success("Approved & applied");
+    toast.success("Aprobat și aplicat");
     load();
   }
   async function rejectEvent(ev: LearnEvent) {
@@ -129,9 +129,9 @@ export default function AiPrompts() {
         subtitle="Prompt versions, performance, feedback, failed outputs, and AI-proposed improvements."
         action={
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New version</Button></DialogTrigger>
+            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Versiune nouă</Button></DialogTrigger>
             <DialogContent className="max-w-2xl">
-              <DialogHeader><DialogTitle>New prompt version</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Versiune nouă de prompt</DialogTitle></DialogHeader>
               <div className="space-y-2">
                 <Input placeholder="feature key (e.g. agency_assistant)" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} />
                 <Input placeholder="version name (optional)" value={form.version_name} onChange={(e) => setForm({ ...form, version_name: e.target.value })} />
@@ -141,7 +141,7 @@ export default function AiPrompts() {
                   <Input placeholder="temperature" value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })} />
                 </div>
               </div>
-              <DialogFooter><Button onClick={createNewVersion}>Create</Button></DialogFooter>
+              <DialogFooter><Button onClick={createNewVersion}>Creează</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         }
@@ -295,7 +295,7 @@ export default function AiPrompts() {
             <Textarea rows={12} value={evalDataset} onChange={(e) => setEvalDataset(e.target.value)} className="font-mono text-xs" />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEvalOpen(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setEvalOpen(null)}>Anulează</Button>
             <Button onClick={runEvaluation} disabled={evalBusy}>
               {evalBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Run"}
             </Button>

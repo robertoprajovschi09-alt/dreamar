@@ -100,7 +100,7 @@ export function CompetitorsTab({ agencyId, clientId }: Props) {
                 {COMP_PLATFORMS.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button size="sm" onClick={() => { setEditingObs(null); setObsFormOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Observation</Button>
+            <Button size="sm" onClick={() => { setEditingObs(null); setObsFormOpen(true); }}><Plus className="h-4 w-4 mr-1" />Adaugă observație</Button>
           </div>
         </div>
         <div>
@@ -142,7 +142,7 @@ export function CompetitorsTab({ agencyId, clientId }: Props) {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setInsightsOpen(true)}><Sparkles className="h-4 w-4 mr-1" />AI Insights</Button>
           <Button variant="outline" size="sm" onClick={() => setCompareOpen(true)} disabled={competitors.length < 2}><GitCompare className="h-4 w-4 mr-1" />Compare</Button>
-          <Button size="sm" onClick={() => { setEditingComp(null); setCompFormOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Competitor</Button>
+          <Button size="sm" onClick={() => { setEditingComp(null); setCompFormOpen(true); }}><Plus className="h-4 w-4 mr-1" />Adaugă concurent</Button>
         </div>
       </div>
 

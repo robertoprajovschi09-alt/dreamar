@@ -39,7 +39,7 @@ export function EditPortalPermissionsDialog({ open, onOpenChange, target, onSave
     const { error } = await supabase.from(table).update({ permissions: perms as any }).eq("id", target.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Permissions updated");
+    toast.success("Permisiuni actualizate");
     onSaved?.();
     onOpenChange(false);
   };
@@ -66,7 +66,7 @@ export function EditPortalPermissionsDialog({ open, onOpenChange, target, onSave
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           <Button onClick={save} disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
           </Button>

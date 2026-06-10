@@ -48,7 +48,7 @@ export default function ContinuousImprovement() {
         agency_id: scope === "platform" ? null : agency?.id ?? null,
         since_days: sinceDays,
       });
-      toast.success(`Run complete — ${res?.patterns?.length ?? 0} patterns, ${res?.queued_for_review ?? 0} actions queued`);
+      toast.success(`Rulare finalizată — ${res?.patterns?.length ?? 0} tipare, ${res?.queued_for_review ?? 0} acțiuni adăugate la coadă`);
       load();
     } catch (e: any) { toast.error(e.message || "Run failed"); }
     finally { setRunning(false); }
@@ -97,7 +97,7 @@ export default function ContinuousImprovement() {
       />
 
       <div className="space-y-3">
-        {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
+        {loading && <p className="text-sm text-muted-foreground">Se încarcă…</p>}
         {!loading && runs.length === 0 && (
           <Card><CardContent className="py-10 text-center text-muted-foreground">No runs yet. Click "Run Improvement Engine" to start.</CardContent></Card>
         )}

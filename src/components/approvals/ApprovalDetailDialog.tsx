@@ -73,7 +73,7 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
         client_id: row.content_posts.client_id,
         title: row.content_posts.title,
       });
-      toast.success("Resent for approval");
+      toast.success("Retrimis spre aprobare");
       onOpenChange(false);
       onChanged?.();
     } catch (e: any) {

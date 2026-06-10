@@ -27,7 +27,7 @@ export function MissingDataCallout({ missing, onAdd }: { missing: MissingField[]
             </li>
           ))}
         </ul>
-        {onAdd && <Button size="sm" variant="outline" onClick={onAdd}>Add missing data</Button>}
+        {onAdd && <Button size="sm" variant="outline" onClick={onAdd}>Adaugă datele lipsă</Button>}
       </CardContent>
     </Card>
   );

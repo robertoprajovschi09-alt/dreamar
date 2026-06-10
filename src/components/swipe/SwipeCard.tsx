@@ -34,11 +34,11 @@ export function SwipeCard({ swipe, onView, onEdit, onDelete, onUseInCalendar, on
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={onView}><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
-            <DropdownMenuItem onClick={onEdit}><Pencil className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
+            <DropdownMenuItem onClick={onEdit}><Pencil className="h-4 w-4 mr-2" /> Modifică</DropdownMenuItem>
             <DropdownMenuItem onClick={onUseInCalendar}><CalIcon className="h-4 w-4 mr-2" /> Use in calendar</DropdownMenuItem>
             <DropdownMenuItem onClick={onGenerateVariations}><Sparkles className="h-4 w-4 mr-2" /> Generate variations</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Delete</DropdownMenuItem>
+            <DropdownMenuItem onClick={onDelete} className="text-destructive"><Trash2 className="h-4 w-4 mr-2" /> Șterge</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

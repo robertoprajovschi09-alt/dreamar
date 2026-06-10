@@ -37,7 +37,7 @@ export function DashboardContextCard({ clientId }: Props) {
       });
       if (error) throw error;
       if ((data as any)?.context) setCtx((data as any).context);
-      toast.success("Dashboard context regenerated");
+      toast.success("Contextul dashboardului a fost regenerat");
     } catch (e: any) {
       toast.error(e.message || "Failed to regenerate");
     } finally {

@@ -1010,7 +1010,7 @@ function FieldEditor({
           <Label>{title}</Label>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
-        <Button type="button" size="sm" variant="outline" onClick={onAdd}><Plus className="h-3 w-3 mr-1" />Add</Button>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd}><Plus className="h-3 w-3 mr-1" />Adaugă</Button>
       </div>
       <div className="space-y-2">
         {items.map((f, i) => (
@@ -1071,7 +1071,7 @@ function KpiEditor({
           <Label>{title}</Label>
           {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
-        <Button type="button" size="sm" variant="outline" onClick={onAdd}><Plus className="h-3 w-3 mr-1" />Add KPI</Button>
+        <Button type="button" size="sm" variant="outline" onClick={onAdd}><Plus className="h-3 w-3 mr-1" />Adaugă KPI</Button>
       </div>
       <div className="space-y-2">
         {items.map((f, i) => (

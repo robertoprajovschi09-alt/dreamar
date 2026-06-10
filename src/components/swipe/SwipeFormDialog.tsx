@@ -188,7 +188,7 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
             <Label>Tags</Label>
             <div className="flex gap-2">
               <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} placeholder="Press Enter to add" />
-              <Button type="button" variant="outline" onClick={addTag}>Add</Button>
+              <Button type="button" variant="outline" onClick={addTag}>Adaugă</Button>
             </div>
             {tags.length > 0 && (
               <div className="flex gap-1 flex-wrap mt-2">
@@ -212,7 +212,7 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
           <Button onClick={onSubmit} disabled={saving}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Save</Button>
         </DialogFooter>
       </DialogContent>

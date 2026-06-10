@@ -117,7 +117,7 @@ function NicheTable({ schema, agencyId, clientId }: { schema: Schema; agencyId: 
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">{schema.title}</h3>
-        {!adding && <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="h-3.5 w-3.5 mr-1" /> Add</Button>}
+        {!adding && <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="h-3.5 w-3.5 mr-1" /> Adaugă</Button>}
       </div>
       {adding && (
         <Card><CardContent className="pt-4">
@@ -133,8 +133,8 @@ function NicheTable({ schema, agencyId, clientId }: { schema: Schema; agencyId: 
               ))}
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button type="submit" size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">Salvează</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setAdding(false)}>Anulează</Button>
             </div>
           </form>
         </CardContent></Card>
@@ -222,7 +222,7 @@ function CustomMetricsPanel({ agencyId, clientId }: { agencyId: string; clientId
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-sm font-semibold">Custom KPIs</h3>
-        {!adding && <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="h-3.5 w-3.5 mr-1" /> Add KPI</Button>}
+        {!adding && <Button size="sm" variant="outline" onClick={() => setAdding(true)}><Plus className="h-3.5 w-3.5 mr-1" /> Adaugă KPI</Button>}
       </div>
       {adding && (
         <Card><CardContent className="pt-4">
@@ -233,8 +233,8 @@ function CustomMetricsPanel({ agencyId, clientId }: { agencyId: string; clientId
               <div className="space-y-1"><Label className="text-xs">Unit</Label><Input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} placeholder="€, %, ..." /></div>
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+              <Button type="submit" size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">Salvează</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setAdding(false)}>Anulează</Button>
             </div>
           </form>
         </CardContent></Card>
