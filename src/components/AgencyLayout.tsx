@@ -200,7 +200,7 @@ export default function AgencyLayout() {
                   <div className="font-semibold truncate">{profile?.full_name || "Cont"}</div>
                   <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
                   {profile?.role && (
-                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase tracking-wide">{profile.role.replace("_", " ")}</Badge>
+                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase tracking-wide">{({ agency_owner: "Proprietar agenție", agency_team: "Echipă agenție", saas_admin: "Admin SaaS", client_viewer: "Client" } as Record<string, string>)[profile.role] || profile.role.replace("_", " ")}</Badge>
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
