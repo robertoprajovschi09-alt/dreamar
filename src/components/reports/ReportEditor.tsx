@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUser } from "@/contexts/UserContext";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Trash2, Plus, X } from "lucide-react";
-import { defaultPeriod, REPORT_STATUSES, type Report } from "@/lib/reports";
+import { defaultPeriod, REPORT_STATUSES, formatMetricKey, type Report } from "@/lib/reports";
 
 type Props = {
   open: boolean;
@@ -34,7 +34,7 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
     } else {
       const { period_start, period_end } = defaultPeriod();
       setForm({
-        title: "Monthly report",
+        title: "Raport lunar",
         client_id: defaultClientId ?? "",
         period_start, period_end,
         status: "draft",
@@ -51,7 +51,7 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
 
   async function generate() {
     if (!form.client_id || !form.period_start || !form.period_end) {
-      toast.error("Pick client and period first");
+      toast.error("Alege întâi clientul și perioada");
       return;
     }
     setGenerating(true);
@@ -69,9 +69,9 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
         metrics: data.metrics || {},
         status: "ready",
       }));
-      toast.success("Report generated");
+      toast.success("Raport generat");
     } catch (e: any) {
-      toast.error(e.message || "Failed to generate");
+      toast.error(e.message || "N-am putut genera raportul");
     } finally {
       setGenerating(false);
     }
@@ -79,7 +79,7 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
 
   async function save() {
     if (!agency || !form.client_id || !form.title) {
-      toast.error("Missing fields");
+      toast.error("Lipsesc câmpuri obligatorii");
       return;
     }
     setSaving(true);
@@ -101,17 +101,17 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
       : await supabase.from("reports").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success("Raport salvat");
     onSaved();
     onOpenChange(false);
   }
 
   async function remove() {
     if (!report) return;
-    if (!confirm("Delete this report?")) return;
+    if (!confirm("Ștergi raportul ăsta?")) return;
     const { error } = await supabase.from("reports").delete().eq("id", report.id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted");
+    toast.success("Raport șters");
     onSaved();
     onOpenChange(false);
   }
@@ -131,7 +131,7 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
           </div>
         ))}
         <Button size="sm" variant="outline" onClick={() => update(key, [...list, ""])}>
-          <Plus className="h-3.5 w-3.5 mr-1.5" /> Add
+          <Plus className="h-3.5 w-3.5 mr-1.5" /> Adaugă
         </Button>
       </div>
     );
@@ -141,12 +141,12 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{report ? "Edit report" : "New report"}</SheetTitle>
+          <SheetTitle>{report ? "Editează raport" : "Raport nou"}</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4 mt-6">
           <div>
-            <Label>Title</Label>
+            <Label>Titlu</Label>
             <Input value={form.title || ""} onChange={(e) => update("title", e.target.value)} />
           </div>
 
@@ -154,7 +154,7 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
             <div>
               <Label>Client</Label>
               <Select value={form.client_id || ""} onValueChange={(v) => update("client_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Pick client" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Alege client" /></SelectTrigger>
                 <SelectContent>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
@@ -172,53 +172,53 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Period start</Label><Input type="date" value={form.period_start || ""} onChange={(e) => update("period_start", e.target.value)} /></div>
-            <div><Label>Period end</Label><Input type="date" value={form.period_end || ""} onChange={(e) => update("period_end", e.target.value)} /></div>
+            <div><Label>Început perioadă</Label><Input type="date" value={form.period_start || ""} onChange={(e) => update("period_start", e.target.value)} /></div>
+            <div><Label>Sfârșit perioadă</Label><Input type="date" value={form.period_end || ""} onChange={(e) => update("period_end", e.target.value)} /></div>
           </div>
 
-          <div className="flex items-center justify-between border border-border rounded-md p-3">
+          <div className="flex items-center justify-between border border-border rounded-2xl p-3">
             <div>
-              <div className="text-sm font-medium">Visible to client</div>
-              <div className="text-xs text-muted-foreground">Allow the client to view this report in their portal.</div>
+              <div className="text-sm font-medium">Vizibil pentru client</div>
+              <div className="text-xs text-muted-foreground">Lasă clientul să-l vadă în portalul lui.</div>
             </div>
             <Switch checked={!!form.client_visible} onCheckedChange={(v) => update("client_visible", v)} />
           </div>
 
-          <div className="border border-dashed border-accent/40 rounded-md p-4 bg-accent/5">
-            <div className="flex items-center justify-between gap-3">
+          <div className="border border-dashed border-accent/40 rounded-2xl p-4 bg-accent/5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <div className="text-sm font-medium flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> AI generation</div>
-                <div className="text-xs text-muted-foreground">Pull metrics and synthesize a draft report for the chosen client and period.</div>
+                <div className="text-sm font-medium flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> Generare cu AI</div>
+                <div className="text-xs text-muted-foreground">Trag metricile clientului și-ți pregătesc o schiță pentru perioada aleasă.</div>
               </div>
               <Button onClick={generate} disabled={generating || !form.client_id}>
                 {generating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                Generate
+                Generează
               </Button>
             </div>
           </div>
 
           <div>
-            <Label>Summary</Label>
+            <Label>Rezumat</Label>
             <Textarea value={form.summary || ""} onChange={(e) => update("summary", e.target.value)} rows={5} />
           </div>
 
           <div>
-            <Label>Highlights</Label>
+            <Label>Momente cheie</Label>
             {editList("highlights")}
           </div>
 
           <div>
-            <Label>Recommendations</Label>
+            <Label>Recomandări</Label>
             {editList("recommendations")}
           </div>
 
           {form.metrics && Object.keys(form.metrics).length > 0 && (
             <div>
-              <Label>Metrics snapshot</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <Label>Snapshot metrici</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                 {Object.entries(form.metrics).map(([k, v]) => (
-                  <div key={k} className="border border-border rounded-md p-2">
-                    <div className="text-[10px] uppercase text-muted-foreground tracking-wide">{k.replace(/_/g, " ")}</div>
+                  <div key={k} className="border border-border rounded-2xl p-3">
+                    <div className="text-[10px] uppercase text-muted-foreground tracking-wide">{formatMetricKey(k)}</div>
                     <div className="text-sm font-mono font-semibold">{String(v)}</div>
                   </div>
                 ))}
@@ -230,14 +230,14 @@ export function ReportEditor({ open, onOpenChange, report, defaultClientId, clie
             <div>
               {report && (
                 <Button variant="ghost" className="text-destructive" onClick={remove}>
-                  <Trash2 className="h-4 w-4 mr-1.5" /> Delete
+                  <Trash2 className="h-4 w-4 mr-1.5" /> Șterge
                 </Button>
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>
               <Button onClick={save} disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Save
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />} Salvează
               </Button>
             </div>
           </div>
