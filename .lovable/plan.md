@@ -1,80 +1,59 @@
-## Plan: Hub de Conținut per client + formular reproiectat
+# Rapoarte – funcțional + UX polish
 
-### 1) Pagina `/agency/content` — HUB
-Refactor `src/pages/agency/Content.tsx` într-un hub centrat pe client.
+Scop: pagina **Rapoarte** și editorul devin complet în română, capătă **vedere read** premium, **export PDF** prin route dedicată, și sunt cablate corect și în **portalul clientului**. Funcția edge `ai-report` și providerul AI rămân neatinse (Gemini).
 
-**Bară de sus (sticky, soft-UI):**
-- Selector client proeminent (chip cu avatar + dropdown searchable; opțiune „Toți clienții"). Persistă selecția în URL (`?client=...`).
-- Search după titlu (pill input cu lupă).
-- Filtru status (multi-pill) + filtru platformă.
-- Toggle vedere: **Board** / **Listă** (Tabs pill, default Board).
-- Buton primar pill: „+ Conținut nou".
+## 1. Traduceri în română (ReportEditor + toasturi)
+În `src/components/reports/ReportEditor.tsx`:
+- Titluri sheet: "Raport nou" / "Editează raport".
+- Labels: Titlu, Client, Status, Început perioadă, Sfârșit perioadă, Rezumat, Momente cheie, Recomandări, Snapshot metrici.
+- Card "Vizibil pentru client" cu descriere conversațională ("Lasă clientul să-l vadă în portalul lui.").
+- Card "Generare cu AI" + buton **Generează**, descriere: "Trag metricile clientului și-ți pregătesc o schiță de raport pentru perioada aleasă."
+- Butoane: Salvează / Anulează / Șterge / Adaugă.
+- Toasturi: "Alege întâi clientul și perioada", "Raport generat", "N-am putut genera raportul", "Lipsesc câmpuri obligatorii", "Raport salvat", "Raport șters", confirm: "Ștergi raportul ăsta?".
+- Default title: "Raport lunar".
+- În `src/lib/reports.ts` traduc labelurile `REPORT_STATUSES` (Schiță / Gata / Trimis) — value-urile rămân la fel.
+- `formatPeriod` primește locale `ro-RO`.
 
-**Vedere BOARD (kanban, default):**
-- 7 coloane fixe:
-  1. **Idee** — `idea`
-  2. **Script** — `script`, `draft`
-  3. **Filmare** — `filming`
-  4. **Montaj** — `editing`, `internal_review`
-  5. **Spre aprobare** — `ready_for_client`, `sent_for_approval`, `pending_approval`, `changes_requested`, `rejected` (ultimele 2 cu marcaj „⚠ Schimbări cerute" / „✕ Respins" pe card)
-  6. **Programat** — `scheduled`, `approved`
-  7. **Publicat** — `published`, `posted`, `analyzed`
-- Drag-and-drop cu `@dnd-kit/core` + `@dnd-kit/sortable`. La drop → `update content_posts.status` la **statusul canonic** al coloanei (Idee→`idea`, Script→`script`, Filmare→`filming`, Montaj→`editing`, Spre aprobare→păstrează curentul dacă e deja în set altfel `ready_for_client`, Programat→`scheduled`, Publicat→`published`). Mapare extrasă în `src/lib/contentBoard.ts` (testabilă).
-- Optimistic update + toast + rollback la eroare.
-- **Card** (soft-UI, `rounded-2xl`, shadow-soft): thumbnail 16:9 (din `thumbnail_url` sau prima imagine din `assets`, placeholder gradient când lipsește), titlu (clamp-2), rând cu chip client + pill platformă + StatusPill, hook preview (1 linie italică „„…""), footer: dată programată (icon calendar) + avatar `assigned_to`. Click → deschide editorul.
-- Header coloană: nume + count + pill cu numărul de overdue (deadline trecut).
-- Empty state per coloană: „Trage aici sau adaugă din +".
+## 2. Vedere de raport (read mode) — premium
+Nou: `src/components/reports/ReportView.tsx` — Sheet larg, layout curat:
+- Header: logo agenție (din `agency.logo_url`) + nume client + perioadă, separator subtil, StatusPill, badge "Vizibil pentru client".
+- Secțiuni: **Rezumat**, **Momente cheie** (listă cu bullets soft), **Recomandări**, **Snapshot metrici** (grid cu carduri soft-UI roșu brand).
+- Footer: butoane **Editează** (deschide `ReportEditor`) și **Descarcă PDF** (deschide `/agency/reports/:id/print` într-un tab nou; declanșează `window.print()` automat).
 
-**Vedere LISTĂ:**
-- Tabelul existent restilizat (StatusPill, thumbnail mic, sortare pe titlu/dată/status, hover row, click → editor).
+Click pe card raport în Reports.tsx și ClientReportsTab.tsx → deschide **ReportView** (nu editorul direct).
 
-**Pe `ClientProfile`:**
-- Adaugă tab „Pipeline" (sau secțiune) care randează același `<ContentBoard clientId={id} />` filtrat — componentă extrasă reutilizabilă.
+## 3. Export PDF — print route
+Nou: `src/pages/agency/ReportPrint.tsx` (după pattern-ul `StrategyPrint.tsx`).
+- Route nouă: `/agency/reports/:id/print` în `src/App.tsx`.
+- Route portal client: `/client/reports/:id/print` (cu role guard `client_viewer`) — încarcă raportul cu `client_visible=true`.
+- Layout A4-friendly: header cu **logo agenție** + **logo client** (`clients.logo_url`), titlu, perioadă, rezumat, metrici, momente cheie, recomandări, footer cu data generării.
+- CSS print: `@media print` ascunde nav, padding 0, font legibil, page-breaks între secțiuni.
+- `setTimeout(window.print, 600)` ca în StrategyPrint.
 
-### 2) Formular „Conținut nou" — `ContentEditor` reproiectat
-Refactor `src/components/content/ContentEditor.tsx`. Sheet larg (max-w-2xl), structurat pe secțiuni cu titluri prietenoase. Copy 100% RO.
+Buton "Descarcă PDF" disponibil în ReportView (agenție) și `ClientReportsView` (portal client).
 
-**Secțiuni:**
-1. **Context** — „Pentru cine?" (client), „Unde postăm?" (platformă cu iconițe), „Ce fel de conținut?" (content_type + format opțional).
-2. **Titlu de lucru** — input mare, placeholder „Cum îi spunem internă acestei piese?"
-3. **HOOK → BODY → CTA** (card cu 3 textarea, fiecare cu helper text):
-   - Hook: „Primele 3 secunde" / „Ce-i oprește din scroll? Scrie cârligul…"
-   - Body/Script: „Mesajul" / „Explică simplu, fără teorie. Ce vrei să rămână cu ei?"
-   - CTA: „Ce fac mai departe?" / „Spune-le exact ce să facă: sună, scrie, rezervă…"
-   - Plus „Caption" colapsabil mai jos cu „Textul de sub postare".
-4. **Planificare** — „În ce etapă e?" (status, segmented pill), „Când iese?" (datetime), „Deadline intern" (opțional).
-5. **Fișiere** — drop-zone upload în bucket `agency-files` la path `content/{agency_id}/{post_id || tmp}/{filename}`. Salvează în `assets` jsonb ca `[{path, name, type, size, uploaded_at}]`. Thumbnail = prima imagine sau setabil manual.
-6. **Echipă & note** — „Cine se ocupă?" (membri agenție din `agency_members` join `profiles`), „Notițe interne" (`agency_notes`).
+## 4. Polish pagină Reports.tsx
+- Cards soft-UI (deja există kit-ul) + StatusPill în loc de Badge.
+- Filtre: client (există) + perioadă (last 3 / 6 / 12 luni / toate) + status.
+- Loading skeleton (3 carduri), error state cu `ErrorState` + buton Reîncearcă, empty state RO conversațional.
+- Click card → ReportView (nu editor).
+- Responsive: grid 1/2/3 coloane (deja ok), filtre wrap pe mobil.
 
-**Funcționalitate:**
-- Validare blândă: client + titlu obligatoriu, restul ghidat.
-- Toast succes/eroare, loading states.
-- Editare folosește același sheet (deja face asta).
-- „+ Conținut nou" pe board pre-selectează coloana → status default.
+## 5. Portal client (`ClientReportsView.tsx`)
+- Trad RO complet ("Rapoartele tale", "Niciun raport încă", "Rapoartele trimise de agenția ta apar aici.").
+- Click pe card → deschide o vedere read frumoasă (același `ReportView` reused, fără butonul Editează, doar Descarcă PDF).
+- Loading & error states.
 
-### 3) Migrare DB (opțional, pregătire AI reports)
-`supabase/migrations/<ts>_videos_link_post.sql`:
-- `ALTER TABLE public.videos ADD COLUMN content_post_id uuid REFERENCES public.content_posts(id) ON DELETE SET NULL;`
-- Index `idx_videos_post`.
-- Fără alte modificări.
+## 6. (Opțional) AI — limba RO
+În `supabase/functions/ai-report/index.ts` adaug **o singură linie** în system prompt: "Răspunde DOAR în limba română."  
+Nu schimb providerul/modelul.
 
-### 4) Fișiere
-- `src/pages/agency/Content.tsx` — refactor (hub: filtre + toggle + render board/list)
-- `src/components/content/ContentBoard.tsx` — **NOU** (kanban dnd-kit, reutilizabil; prop `clientId?`)
-- `src/components/content/ContentCard.tsx` — **NOU** (card kanban)
-- `src/components/content/ContentList.tsx` — **NOU** (extras din tabelul curent, restilizat)
-- `src/lib/contentBoard.ts` — **NOU** (definiția coloanelor + `statusToColumn`, `columnToStatus`)
-- `src/lib/__tests__/contentBoard.test.ts` — **NOU** (unit pe mapare)
-- `src/components/content/ContentEditor.tsx` — rescris (secțiuni + upload)
-- `src/components/content/AssetUploader.tsx` — **NOU** (drag-drop → Storage `agency-files`)
-- `src/pages/agency/ClientProfile.tsx` — adaugă montarea `<ContentBoard clientId>` (verific tabs existente)
-- `supabase/migrations/<ts>_videos_link_post.sql` — `content_post_id` pe `videos`
+## 7. Teste
+- Unit nou: `src/lib/__tests__/reports.test.ts` — `formatPeriod` (format ro-RO, interval valid), `defaultPeriod` (luna trecută completă).
+- Manual E2E în tenantul de test: client cu videoclipuri → generez raport → văd rezumat/highlights/recomandări → salvez → apare în listă → deschid vederea → "Descarcă PDF" → toggle "Vizibil pentru client" → login client_viewer → văd raportul + descarc PDF.
 
-### 5) Teste
-- Unit: `statusToColumn`/`columnToStatus` (toate enum values mapate, drag într-o coloană setează status canonic, status deja în setul coloanei rămâne nemodificat).
-- Manual E2E (tenant test): creare cu upload → apare în coloana corectă → drag schimbă status → filtru client funcționează → editare păstrează datele.
-
-### Note non-scope
-- Fără modificări la AI/Gemini.
-- Fără tabele noi (doar 1 coloană pe `videos`, opțional).
-- Texte UI 100% în română, ton conversațional.
+## Detalii tehnice
+- Fișiere noi: `src/components/reports/ReportView.tsx`, `src/pages/agency/ReportPrint.tsx`, `src/lib/__tests__/reports.test.ts`.
+- Fișiere editate: `src/pages/agency/Reports.tsx`, `src/components/reports/ReportEditor.tsx`, `src/components/reports/ClientReportsTab.tsx`, `src/components/reports/ClientReportsView.tsx`, `src/lib/reports.ts`, `src/App.tsx`, opțional `supabase/functions/ai-report/index.ts`.
+- Fără tabele noi, fără migrări. RLS existent pe `reports` permite deja `client_visible=true` pentru `client_users` (verific la implementare; dacă nu, adaug policy SELECT — atunci, și doar atunci, fac migrare separată).
+- PDF prin `window.print()` în route dedicat (zero dep noi), exact ca StrategyPrint.
