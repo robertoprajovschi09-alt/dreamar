@@ -73,6 +73,7 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
 
