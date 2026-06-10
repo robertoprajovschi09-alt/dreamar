@@ -30,6 +30,7 @@ import { ClientStrategiesTab } from "@/components/strategies/ClientStrategiesTab
 import { ClientAnalyticsTab } from "@/components/analytics/ClientAnalyticsTab";
 import { LatestCheckInCard } from "@/components/client/LatestCheckInCard";
 import { DashboardContextCard } from "@/components/client/DashboardContextCard";
+import { ContentBoard } from "@/components/content/ContentBoard";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
