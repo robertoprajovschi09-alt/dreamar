@@ -172,15 +172,15 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                           </span>
                           <span>·</span>
                           <Badge variant="outline" className="text-[10px] uppercase h-4 px-1">
-                            {i.portal_role === "client_owner" ? "Owner" : "Viewer"}
+                            {i.portal_role === "client_owner" ? "Owner" : "Vizualizator"}
                           </Badge>
                           <span>·</span>
-                          <span>{expired ? "Expired" : `Expires ${new Date(i.expires_at).toLocaleDateString()}`}</span>
-                          {i.send_count > 1 && <><span>·</span><span>Sent {i.send_count}×</span></>}
+                          <span>{expired ? "Expirată" : `Expiră ${new Date(i.expires_at).toLocaleDateString()}`}</span>
+                          {i.send_count > 1 && <><span>·</span><span>Trimisă de {i.send_count}×</span></>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(i.token, i.id)} title="Copy link">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(i.token, i.id)} title="Copiază link">
                           {copiedId === i.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                         </Button>
                         <DropdownMenu>
@@ -189,14 +189,14 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => resend(i.id, i.token)}>
-                              <RefreshCw className="h-4 w-4 mr-2" /> Resend / refresh link
+                              <RefreshCw className="h-4 w-4 mr-2" /> Retrimite / reîmprospătează link
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setPermTarget({ kind: "invite", id: i.id, email: i.email, role: i.portal_role, permissions: i.permissions })}>
-                              <ShieldCheck className="h-4 w-4 mr-2" /> Edit permissions
+                              <ShieldCheck className="h-4 w-4 mr-2" /> Editează permisiuni
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => revokeInvite(i.id)}>
-                              <Trash2 className="h-4 w-4 mr-2" /> Revoke invite
+                              <Trash2 className="h-4 w-4 mr-2" /> Revocă invitația
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
