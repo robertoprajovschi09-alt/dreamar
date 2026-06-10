@@ -162,11 +162,11 @@ export default function Tasks() {
       ) : error ? (
         <Card><CardContent className="p-2"><ErrorState message={error} onRetry={load} /></CardContent></Card>
       ) : (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+        <div className="flex md:grid gap-4 md:grid-cols-2 lg:grid-cols-4 overflow-x-auto md:overflow-visible snap-x snap-mandatory no-scrollbar -mx-6 md:mx-0 px-6 md:px-0">
           {TASK_STATUSES.map((col) => {
             const items = filtered.filter((t) => t.status === col.value);
             return (
-              <div key={col.value} className="space-y-2 min-h-[200px]"
+              <div key={col.value} className="space-y-2 min-h-[200px] shrink-0 w-[85vw] md:w-auto snap-start"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(e, col.value)}
               >
