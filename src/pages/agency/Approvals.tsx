@@ -7,6 +7,8 @@ import { Loader2, AlertTriangle, CheckCircle2, Clock, MessageSquareWarning, Time
 import { fetchApprovalKpis, ApprovalKpis, APPROVAL_STATUS_META } from "@/lib/approvals";
 import { ApprovalDetailDialog } from "@/components/approvals/ApprovalDetailDialog";
 import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+import { statusPillKind } from "@/lib/approvals";
 
 export default function Approvals() {
   const { agency } = useUser();
