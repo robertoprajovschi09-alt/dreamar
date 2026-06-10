@@ -92,8 +92,8 @@ export default function ClientPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
         <div>
-          <p className="text-muted-foreground">No client is assigned to your account yet.</p>
-          <Button onClick={async () => { await signOut(); navigate("/auth"); }} variant="outline" className="mt-4">Sign out</Button>
+          <p className="text-muted-foreground">Nu există încă niciun client asociat contului tău.</p>
+          <Button onClick={async () => { await signOut(); navigate("/auth"); }} variant="outline" className="mt-4">Deconectare</Button>
         </div>
       </div>
     );
@@ -130,11 +130,11 @@ export default function ClientPortal() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-2xl">
               <DropdownMenuLabel className="text-xs">
-                <div className="font-semibold truncate">{profile?.full_name || "Account"}</div>
+                <div className="font-semibold truncate">{profile?.full_name || "Cont"}</div>
                 <div className="text-muted-foreground truncate font-normal">{profile?.email}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async () => { await signOut(); navigate("/auth"); }}><LogOut className="h-4 w-4 mr-2" /> Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={async () => { await signOut(); navigate("/auth"); }}><LogOut className="h-4 w-4 mr-2" /> Deconectare</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -144,25 +144,25 @@ export default function ClientPortal() {
         <div className="flex items-center gap-3">
           <ClientLogoImg path={client.logo_url} name={client.name} />
           <div>
-            <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: "hsl(var(--brand))" }}>Client portal</div>
+            <div className="text-xs uppercase tracking-widest font-semibold mb-1 text-accent">Portal client</div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{client.name}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} · managed by <span className="text-foreground">{agency.name}</span>
+              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} · administrat de <span className="text-foreground">{agency.name}</span>
             </p>
           </div>
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="checkin">Check-in</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="approvals">Approvals</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="results">Results</TabsTrigger>
-            <TabsTrigger value="objectives">Objectives</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsList className="flex-wrap h-auto rounded-full bg-muted p-1 gap-1">
+            <TabsTrigger value="overview" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Sumar</TabsTrigger>
+            <TabsTrigger value="checkin" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Check-in</TabsTrigger>
+            <TabsTrigger value="calendar" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Calendar</TabsTrigger>
+            <TabsTrigger value="approvals" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Aprobări</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rapoarte</TabsTrigger>
+            <TabsTrigger value="results" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rezultate</TabsTrigger>
+            <TabsTrigger value="objectives" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Obiective</TabsTrigger>
+            <TabsTrigger value="documents" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Documente</TabsTrigger>
+            <TabsTrigger value="feedback" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Feedback</TabsTrigger>
           </TabsList>
           <TabsContent value="overview"><ClientDashboard
             agencyId={agency.id} clientId={client.id} clientName={client.name} userId={user!.id}
@@ -174,6 +174,7 @@ export default function ClientPortal() {
           <TabsContent value="checkin">
             <ClientQuickCheckIn
               agencyId={agency.id} clientId={client.id} niche={client.niche || ""} userId={user!.id}
+              isNewClient={isNewClient}
               onDone={() => setTab("overview")} onCancel={() => setTab("overview")}
             />
           </TabsContent>
