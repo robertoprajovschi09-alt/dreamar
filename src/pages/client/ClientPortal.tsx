@@ -206,17 +206,17 @@ function ObjectivesTab({ clientId }: { clientId: string }) {
     { table: "monthly_goals", filter: `client_id=eq.${clientId}` },
   ], load), [clientId]);
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No objectives set yet.</CardContent></Card>;
+  if (goals.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Niciun obiectiv setat încă.</CardContent></Card>;
   return (
-    <Card><CardContent className="pt-4">
+    <Card className="rounded-2xl md:rounded-3xl"><CardContent className="pt-4">
       <ul className="divide-y divide-border">
         {goals.map((g) => (
           <li key={g.id} className="py-3 flex items-center justify-between gap-2">
             <div>
               <div className="font-medium text-sm">{g.objective}</div>
-              <div className="text-xs text-muted-foreground">{g.metric || "—"} {g.target ? `· target ${g.target}` : ""} · {new Date(g.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
+              <div className="text-xs text-muted-foreground">{metricLabel(g.metric)} {g.target ? `· țintă ${g.target}` : ""} · {fmtMonthYearRO(g.month)}</div>
             </div>
-            <Badge variant="secondary" className="text-[10px] uppercase">{g.status.replace("_", " ")}</Badge>
+            <Badge variant="secondary" className="text-[10px]">{goalStatusLabel(g.status)}</Badge>
           </li>
         ))}
       </ul>
@@ -235,6 +235,7 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
   const [month, setMonth] = useState(new Date());
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
   const range = useMemo(() => {
     const s = new Date(month.getFullYear(), month.getMonth(), 1);
     const e = new Date(month.getFullYear(), month.getMonth() + 1, 1);
@@ -254,15 +255,79 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
       setItems((data || []) as any); setLoading(false);
     })();
   }, [clientId, range.start, range.end]);
-  const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  const monthLabel = fmtMonthYearRO(month);
+  // Only items inside the displayed month, for the agenda
+  const monthItems = useMemo(() => items.filter((it) => {
+    const d = new Date(it.scheduled_for);
+    return d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
+  }), [items, month]);
+
+  // Group by ISO day for the agenda view
+  const grouped = useMemo(() => {
+    const m = new Map<string, CalendarItem[]>();
+    monthItems.forEach((it) => {
+      const key = it.scheduled_for.slice(0, 10);
+      const arr = m.get(key) || [];
+      arr.push(it); m.set(key, arr);
+    });
+    return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [monthItems]);
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 justify-end">
-        <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
-        <div className="text-sm font-medium min-w-[160px] text-center">{monthLabel}</div>
-        <Button variant="outline" size="icon" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 justify-between">
+        <Button variant="outline" size="icon" className="rounded-full" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+        <div className="text-base font-semibold min-w-[180px] text-center capitalize">{monthLabel}</div>
+        <Button variant="outline" size="icon" className="rounded-full" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight className="h-4 w-4" /></Button>
       </div>
-      {loading ? <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div> : <MonthCalendar month={month} items={items} />}
+
+      {loading ? (
+        <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+      ) : monthItems.length === 0 ? (
+        <Card className="rounded-2xl md:rounded-3xl">
+          <CardContent className="py-12 text-center space-y-2">
+            <div className="mx-auto h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+              <ChevronLeft className="h-4 w-4 opacity-0" />
+            </div>
+            <p className="text-sm text-muted-foreground">Nicio postare programată în <span className="capitalize">{monthLabel}</span>.</p>
+          </CardContent>
+        </Card>
+      ) : isMobile ? (
+        <div className="space-y-4">
+          {grouped.map(([day, list]) => {
+            const d = new Date(day);
+            return (
+              <div key={day} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground capitalize">{fmtDayShortRO(d)}</div>
+                </div>
+                <Card className="rounded-2xl">
+                  <CardContent className="p-3 divide-y divide-border/60">
+                    {list.map((it) => {
+                      const m = statusMeta(it.status);
+                      return (
+                        <div key={it.id} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">{it.title}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                              {it.platform || "—"} · {new Date(it.scheduled_for).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          </div>
+                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${m.color}`}>{m.label}</span>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <MonthCalendar month={month} items={items} weekdayLabels={WEEKDAYS_RO_SHORT} />
+      )}
     </div>
   );
 }
