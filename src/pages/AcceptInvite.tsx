@@ -132,7 +132,7 @@ export default function AcceptInvite() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-3">
                   <div className="space-y-1.5"><Label>Numele tău</Label><Input required value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
-                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" required value={preview.email} readOnly disabled /><p className="text-xs text-muted-foreground">Această invitație este pentru acest email.</p></div>
                   <div className="space-y-1.5"><Label>Parolă</Label><Input type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Cel puțin 8 caractere" /></div>
                   <Button type="submit" disabled={busy} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Creează cont și acceptă"}
