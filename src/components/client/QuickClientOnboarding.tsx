@@ -121,7 +121,7 @@ export function QuickClientOnboarding({
 
         // --- Step 2: goals from KPI preset (first 3) ---
         const seedGoals: GoalDraft[] = (kpiFields.slice(0, 3)).map((k) => ({
-          objective: `Mai mulți ${k.label.toLowerCase()}`,
+          objective: goalTitleFor(k.key, k.label),
           metric: k.label,
           target: "",
         }));
