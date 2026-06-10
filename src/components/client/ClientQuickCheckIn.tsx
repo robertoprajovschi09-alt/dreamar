@@ -273,113 +273,129 @@ export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, isNewCli
     );
   }
 
+  const headTitle = isNewClient ? "Bine ai venit! Hai să pornim luna asta" : "Check-in lunar";
+  const headSub = isNewClient
+    ? "Spune-ne ce ne dorim luna aceasta — sub 2 minute"
+    : "Cum a mers și ce facem luna asta — sub 2 minute";
+  const q7Title = isNewClient ? "Ce direcție preferi pentru conținut?" : "Vrei să schimbăm ceva luna aceasta?";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-accent font-semibold">
-            <Sparkles className="h-3 w-3" /> Quick check-in · sub 2 minute
+            <Sparkles className="h-3 w-3" /> {headSub}
           </div>
-          <h2 className="text-xl font-semibold tracking-tight mt-1">Cum a fost luna aceasta?</h2>
+          <h2 className="text-xl md:text-2xl font-semibold tracking-tight mt-1">{headTitle}</h2>
         </div>
         {onCancel && (
-          <Button variant="ghost" size="sm" onClick={onCancel}>
+          <Button variant="ghost" size="sm" onClick={onCancel} className="rounded-full">
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Înapoi
           </Button>
         )}
       </div>
 
-      <Card>
-        <CardContent className="p-5 md:p-6 space-y-6">
-          <Section n={1} title="Care este prioritatea principală pentru luna aceasta?">
-            <ChipGroup options={PRIORITIES.map((p) => ({ key: p.key, label: p.label }))} value={priority} onChange={setPriority} />
-            {priority === "other" && (
-              <Input className="mt-2" placeholder="Spune-ne mai multe…" value={priorityOther}
-                onChange={(e) => setPriorityOther(e.target.value)} maxLength={200} />
-            )}
-          </Section>
+      <Card className="rounded-2xl md:rounded-3xl">
+        <CardContent className="p-5 md:p-7 space-y-7">
+          <div className="space-y-5">
+            <div className="text-[11px] font-semibold uppercase tracking-widest text-accent">Planul lunii</div>
 
-          <Section n={2} title="Ce vrei să promovăm prioritar luna aceasta?">
-            <Input
-              placeholder="ex: un serviciu, un produs, o ofertă, un eveniment, o proprietate, un meniu…"
-              value={promoteFocus} onChange={(e) => setPromoteFocus(e.target.value)} maxLength={300}
-            />
-          </Section>
+            <Section n={1} title="Care este prioritatea principală pentru luna aceasta?">
+              <ChipGroup options={PRIORITIES.map((p) => ({ key: p.key, label: p.label }))} value={priority} onChange={setPriority} />
+              {priority === "other" && (
+                <Input className="mt-2" placeholder="Spune-ne mai multe…" value={priorityOther}
+                  onChange={(e) => setPriorityOther(e.target.value)} maxLength={200} />
+              )}
+            </Section>
 
-          <Section n={3} title="Impact business">
-            <BusinessImpactSection
-              config={impactConfig}
-              values={impactValues}
-              onChange={setImpact}
-            />
-          </Section>
+            <Section n={2} title="Ce vrei să promovăm prioritar luna aceasta?">
+              <Input
+                placeholder="ex: un serviciu, un produs, o ofertă, un eveniment, o proprietate, un meniu…"
+                value={promoteFocus} onChange={(e) => setPromoteFocus(e.target.value)} maxLength={300}
+              />
+            </Section>
 
-          {nicheCfg && (
-            <div className="space-y-4 p-4 rounded-md border border-accent/30 bg-accent/5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-accent">{nicheCfg.checkin_section_title}</div>
-              {nicheCfg.checkin_extras.map((f) => (
-                <div key={f.key} className="space-y-1.5">
-                  <Label className="text-xs">{f.label}</Label>
-                  {f.kind === "number" && (
-                    <Input type="number" min={0} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder="—" />
-                  )}
-                  {f.kind === "text" && (
-                    f.long
-                      ? <Textarea rows={2} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={500} />
-                      : <Input value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={300} />
-                  )}
-                  {f.kind === "choice" && (
-                    <ChipGroup options={f.options} value={nicheExtras[f.key] ?? ""} onChange={(v) => setExtra(f.key, v)} />
-                  )}
+            <Section n={3} title="Există ceva important ce trebuie să știe agenția luna aceasta?">
+              <Textarea rows={2} value={importantNote} onChange={(e) => setImportantNote(e.target.value)} maxLength={500}
+                placeholder="ex: schimbăm orarul, lansăm un produs nou, suntem în concediu pe 10–18…" />
+            </Section>
+
+            <Section n={4} title={q7Title}>
+              <div className="space-y-1.5">
+                {DIRECTIONS.map((d) => (
+                  <button key={d.key} type="button" onClick={() => setDirectionChange(d.key)}
+                    className={`w-full text-left px-3 py-2 rounded-xl border text-sm transition ${
+                      directionChange === d.key ? "border-accent bg-accent/5" : "border-border hover:border-foreground/40"
+                    }`}>
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+              {directionChange === "other" && (
+                <Input className="mt-2" placeholder="Spune-ne ce ai schimba…" value={directionChangeOther}
+                  onChange={(e) => setDirectionChangeOther(e.target.value)} maxLength={200} />
+              )}
+            </Section>
+          </div>
+
+          {!isNewClient && (
+            <div className="space-y-5 pt-2 border-t border-border/60">
+              <div className="text-[11px] font-semibold uppercase tracking-widest text-accent pt-4">Cum a mers până acum</div>
+
+              <Section n={5} title="Impact business">
+                <BusinessImpactSection
+                  config={impactConfig}
+                  values={impactValues}
+                  onChange={setImpact}
+                />
+              </Section>
+
+              {nicheCfg && (
+                <div className="space-y-4 p-4 rounded-2xl border border-accent/30 bg-accent/5">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-accent">{nicheCfg.checkin_section_title}</div>
+                  {nicheCfg.checkin_extras.map((f) => (
+                    <div key={f.key} className="space-y-1.5">
+                      <Label className="text-xs">{f.label}</Label>
+                      {f.kind === "number" && (
+                        <Input type="number" min={0} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder="—" />
+                      )}
+                      {f.kind === "text" && (
+                        f.long
+                          ? <Textarea rows={2} value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={500} />
+                          : <Input value={nicheExtras[f.key] ?? ""} onChange={(e) => setExtra(f.key, e.target.value)} placeholder={f.placeholder} maxLength={300} />
+                      )}
+                      {f.kind === "choice" && (
+                        <ChipGroup options={f.options} value={nicheExtras[f.key] ?? ""} onChange={(v) => setExtra(f.key, v)} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              <Section n={6} title="Ce feedback ai primit de la clienții tăi?">
+                <Textarea rows={2} value={customerFeedback} onChange={(e) => setCustomerFeedback(e.target.value)} maxLength={500}
+                  placeholder="ex: clienții au menționat reel-ul de marți, oamenii au sunat după postul cu oferta…" />
+              </Section>
+
+              <Section n={7} title="Cât de mulțumit ești de direcția actuală a conținutului?">
+                <div className="flex gap-2 items-center flex-wrap">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => setSatisfaction(n)}
+                      className={`h-10 w-10 rounded-full border text-sm font-semibold transition ${
+                        satisfaction === n ? "bg-accent text-accent-foreground border-accent" : "border-border hover:border-foreground/40"
+                      }`}>
+                      {n}
+                    </button>
+                  ))}
+                  <div className="ml-2 text-xs text-muted-foreground">1 = deloc · 5 = foarte mulțumit</div>
+                </div>
+              </Section>
             </div>
           )}
 
-          <Section n={4} title="Ce feedback ai primit de la clienții tăi?">
-            <Textarea rows={2} value={customerFeedback} onChange={(e) => setCustomerFeedback(e.target.value)} maxLength={500}
-              placeholder="ex: clienții au menționat reel-ul de marți, oamenii au sunat după postul cu oferta…" />
-          </Section>
-
-          <Section n={5} title="Există ceva important ce trebuie să știe agenția luna aceasta?">
-            <Textarea rows={2} value={importantNote} onChange={(e) => setImportantNote(e.target.value)} maxLength={500}
-              placeholder="ex: schimbăm orarul, lansăm un produs nou, suntem în concediu pe 10–18…" />
-          </Section>
-
-          <Section n={6} title="Cât de mulțumit ești de direcția actuală a conținutului?">
-            <div className="flex gap-2 items-center flex-wrap">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} type="button" onClick={() => setSatisfaction(n)}
-                  className={`h-10 w-10 rounded-md border text-sm font-semibold transition ${
-                    satisfaction === n ? "bg-accent text-accent-foreground border-accent" : "border-border hover:border-foreground/40"
-                  }`}>
-                  {n}
-                </button>
-              ))}
-              <div className="ml-2 text-xs text-muted-foreground">1 = deloc · 5 = foarte mulțumit</div>
-            </div>
-          </Section>
-
-          <Section n={7} title="Vrei să schimbăm ceva luna aceasta?">
-            <div className="space-y-1.5">
-              {DIRECTIONS.map((d) => (
-                <button key={d.key} type="button" onClick={() => setDirectionChange(d.key)}
-                  className={`w-full text-left px-3 py-2 rounded-md border text-sm transition ${
-                    directionChange === d.key ? "border-accent bg-accent/5" : "border-border hover:border-foreground/40"
-                  }`}>
-                  {d.label}
-                </button>
-              ))}
-            </div>
-            {directionChange === "other" && (
-              <Input className="mt-2" placeholder="Spune-ne ce ai schimba…" value={directionChangeOther}
-                onChange={(e) => setDirectionChangeOther(e.target.value)} maxLength={200} />
-            )}
-          </Section>
-
           <div className="flex items-center justify-between pt-2">
-            <Badge variant="outline" className="text-[10px]">Sub 2 minute</Badge>
-            <Button onClick={submit} disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Badge variant="outline" className="text-[10px] rounded-full">Sub 2 minute</Badge>
+            <Button onClick={submit} disabled={saving} className="rounded-full bg-accent hover:bg-accent/90 text-accent-foreground">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 mr-1.5" /> Trimite check-in</>}
             </Button>
           </div>
