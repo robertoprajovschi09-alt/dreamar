@@ -8,6 +8,9 @@ import { aiSuggestClarifications, APPROVAL_STATUS_META, resendForApproval } from
 import { Loader2, Sparkles, RotateCw, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+import { statusPillKind } from "@/lib/approvals";
+import { ApprovalVideoPlayer } from "./ApprovalVideoPlayer";
 
 interface Props {
   open: boolean;
