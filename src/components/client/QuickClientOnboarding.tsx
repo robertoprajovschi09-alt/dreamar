@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getClientBrief, saveClientBrief, BRAND_TONES, type ClientBrief } from "@/lib/brief";
 import { PLATFORMS } from "@/lib/niches";
 import { getNichePreset, type KpiField, type Question } from "@/lib/nichePresets";
+import { goalTitleFor } from "@/lib/i18nLabels";
 
 type Props = {
   agencyId: string;
