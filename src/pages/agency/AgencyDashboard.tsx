@@ -131,7 +131,20 @@ export default function AgencyDashboard() {
 
       setLoading(false);
     })();
-  }, [agency]);
+  }, [agency, tick]);
+
+  // Realtime: refresh dashboard on any live signal from clients
+  useEffect(() => {
+    if (!agency) return;
+    const filter = `agency_id=eq.${agency.id}`;
+    const ch = supabase.channel(`agency-dash-${agency.id}`)
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "client_feedback", filter } as any, () => setTick((t) => t + 1))
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "monthly_goals", filter } as any, () => setTick((t) => t + 1))
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "content_approvals", filter } as any, () => setTick((t) => t + 1))
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "client_briefs", filter } as any, () => setTick((t) => t + 1))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [agency?.id]);
 
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
 
