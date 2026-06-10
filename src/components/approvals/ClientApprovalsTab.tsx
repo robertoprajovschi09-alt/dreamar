@@ -21,7 +21,7 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
     setLoading(true);
     const { data } = await supabase
       .from("content_approvals")
-      .select("id,status,feedback,comment,due_date,requested_at,content_posts(id,title,hook,caption,script,thumbnail_url,platform,content_type,scheduled_for,post_url)")
+      .select("id,status,feedback,comment,due_date,requested_at,responded_at,content_posts(id,title,hook,caption,script,thumbnail_url,video_url,assets,platform,content_type,scheduled_for,post_url)")
       .eq("client_id", clientId)
       .in("status", ["pending_approval", "approved", "changes_requested", "rejected"])
       .order("requested_at", { ascending: false });
