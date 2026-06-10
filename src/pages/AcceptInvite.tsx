@@ -60,7 +60,7 @@ export default function AcceptInvite() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: preview?.email || email, password });
     setBusy(false);
     if (error) toast.error(error.message);
   };
@@ -69,10 +69,10 @@ export default function AcceptInvite() {
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.signUp({
-      email, password,
+      email: preview?.email || email, password,
       options: {
         emailRedirectTo: `${window.location.origin}/accept-invite?token=${token}`,
-        data: { full_name: fullName, invite_token: token },
+        data: { full_name: fullName, invite_token: token, signup_type: 'client_invite' },
       },
     });
     setBusy(false);
