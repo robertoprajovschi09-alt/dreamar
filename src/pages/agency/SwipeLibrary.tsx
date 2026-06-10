@@ -78,7 +78,7 @@ export default function SwipeLibrary() {
 
   if (!enabled) {
     return (
-      <div className="p-6 md:p-8 max-w-3xl">
+      <div className="p-4 md:p-8 max-w-3xl">
         <Card className="p-8 text-center">
           <Lock className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
           <h2 className="text-lg font-semibold">Biblioteca de idei este o funcție premium</h2>
@@ -89,7 +89,7 @@ export default function SwipeLibrary() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-4 max-w-[1400px]">
+    <div className="p-4 md:p-8 space-y-4 max-w-[1400px]">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">

@@ -80,7 +80,7 @@ export default function Analytics() {
 
   if (loading) return <div className="p-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
   if (error) return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analitice</h1>
         <p className="text-sm text-muted-foreground mt-1">Performanță agregată pentru toți clienții.</p>
@@ -92,7 +92,7 @@ export default function Analytics() {
   );
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Analitice</h1>
         <p className="text-sm text-muted-foreground mt-1">Performanță agregată pentru toți clienții.</p>

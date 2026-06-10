@@ -69,7 +69,7 @@ export default function Reports() {
   const openEditor = (r: Report | null) => { setEditing(r); setEditorOpen(true); };
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <PageHeader
         title="Rapoarte"
         subtitle="Rapoarte lunare generate cu AI pentru clienții tăi."

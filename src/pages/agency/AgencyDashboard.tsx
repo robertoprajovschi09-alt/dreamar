@@ -155,7 +155,7 @@ export default function AgencyDashboard() {
   const atRisk = scoredHealth.filter((h) => h.score_status === "at_risk").length;
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl">
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Panou</h1>
