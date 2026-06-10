@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       nicheData = data || [];
     }
 
-    const sysPrompt = `You are a senior ${nicheLabel} social media strategist generating a concise monthly client report. Output ONLY valid JSON via the requested tool. Be specific, data-driven, actionable. Reference the client's niche specifics. Default language: same as client notes/objectives, else English.`;
+    const sysPrompt = `You are a senior ${nicheLabel} social media strategist generating a concise monthly client report. Output ONLY valid JSON via the requested tool. Be specific, data-driven, actionable. Reference the client's niche specifics. Respond ONLY in Romanian (limba română) — summary, highlights, and recommendations must all be in Romanian, in a natural conversational tone.`;
 
     const userPrompt = `Client: ${client.name}
 Niche: ${nicheLabel}
