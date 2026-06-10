@@ -59,7 +59,7 @@ export function AssetUploader({ agencyId, postId, value, onChange }: Props) {
     const added: AssetItem[] = [];
     for (const file of Array.from(files)) {
       const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, "_");
-      const path = `content/${agencyId}/${folder}/${Date.now()}-${safe}`;
+      const path = `${agencyId}/content/${folder}/${Date.now()}-${safe}`;
       const { error } = await supabase.storage.from("agency-files").upload(path, file, {
         contentType: file.type || "application/octet-stream",
         upsert: false,

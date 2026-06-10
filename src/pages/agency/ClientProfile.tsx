@@ -33,6 +33,7 @@ import { DashboardContextCard } from "@/components/client/DashboardContextCard";
 import { ContentBoard } from "@/components/content/ContentBoard";
 import { subscribeTables } from "@/lib/realtime";
 import { brandStyle, brandInitials } from "@/lib/brandTheme";
+import { useSignedUrl } from "@/lib/storage";
 
 export default function ClientProfile() {
   const { id } = useParams<{ id: string }>();
@@ -99,14 +100,7 @@ export default function ClientProfile() {
     <div className="p-6 md:p-8 space-y-6 max-w-5xl" style={brandStyle(client.brand_color)}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          {client.logo_url ? (
-            <img src={client.logo_url} alt={client.name} className="h-12 w-12 rounded-full object-cover border border-border shrink-0" />
-          ) : (
-            <div className="h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border border-border shrink-0"
-                 style={{ background: "hsl(var(--brand) / 0.12)", color: "hsl(var(--brand))" }}>
-              {brandInitials(client.name)}
-            </div>
-          )}
+          <ClientLogo logoPath={client.logo_url} name={client.name} />
           <div className="min-w-0">
             <Link to="/agency/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1">
               <ArrowLeft className="h-3 w-3" /> Clienți
@@ -773,6 +767,19 @@ function ClientContentTab({ client }: any) {
         <Link to={`/agency/content?client=${client.id}`}><Button size="sm" variant="outline">Deschide hub-ul</Button></Link>
       </div>
       <ContentBoard clientId={client.id} showNewButton />
+    </div>
+  );
+}
+
+function ClientLogo({ logoPath, name }: { logoPath: string | null; name: string }) {
+  const url = useSignedUrl(logoPath);
+  if (logoPath) {
+    return <img src={url ?? undefined} alt={name} className="h-12 w-12 rounded-full object-cover border border-border shrink-0 bg-muted" />;
+  }
+  return (
+    <div className="h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border border-border shrink-0"
+         style={{ background: "hsl(var(--brand) / 0.12)", color: "hsl(var(--brand))" }}>
+      {brandInitials(name)}
     </div>
   );
 }

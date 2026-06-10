@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { formatPeriod, formatMetricKey, type Report } from "@/lib/reports";
+import { useSignedUrl } from "@/lib/storage";
 
 export default function ReportPrint() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,12 @@ export default function ReportPrint() {
   if (notFound) return <div className="p-10 text-center text-sm text-muted-foreground">Raportul nu a fost găsit sau nu îl poți vedea.</div>;
   if (!r) return <div className="p-10 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>;
 
+  return <ReportPrintInner r={r} client={client} agency={agency} />;
+}
+
+function ReportPrintInner({ r, client, agency }: { r: Report; client: { name: string; logo_url: string | null } | null; agency: { name: string; logo_url: string | null } | null }) {
+  const agencyLogo = useSignedUrl(agency?.logo_url ?? null);
+  const clientLogo = useSignedUrl(client?.logo_url ?? null);
   return (
     <div className="max-w-3xl mx-auto p-8 print:p-0 text-foreground bg-background">
       <style>{`
@@ -44,12 +51,12 @@ export default function ReportPrint() {
       <header className="mb-8 pb-5 border-b border-border">
         <div className="flex items-center justify-between gap-4 flex-wrap mb-5">
           <div className="flex items-center gap-3">
-            {agency?.logo_url && <img src={agency.logo_url} alt="" className="h-10 w-10 rounded-md object-cover" />}
+            {agency?.logo_url && <img src={agencyLogo ?? undefined} alt="" className="h-10 w-10 rounded-md object-cover bg-muted" />}
             <div className="text-sm font-semibold">{agency?.name || ""}</div>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-sm font-semibold text-right">{client?.name || ""}</div>
-            {client?.logo_url && <img src={client.logo_url} alt="" className="h-10 w-10 rounded-md object-cover" />}
+            {client?.logo_url && <img src={clientLogo ?? undefined} alt="" className="h-10 w-10 rounded-md object-cover bg-muted" />}
           </div>
         </div>
         <div className="text-xs uppercase tracking-widest text-accent">Raport lunar</div>

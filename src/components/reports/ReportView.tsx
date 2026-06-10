@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Download, Pencil, Eye, EyeOff } from "lucide-react";
 import { formatPeriod, formatMetricKey, statusKind, statusLabel, type Report } from "@/lib/reports";
+import { useSignedUrl } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export function ReportView({ open, onOpenChange, report, clientName, agencyLogoUrl, clientLogoUrl, printHref, onEdit }: Props) {
+  const agencyLogo = useSignedUrl(agencyLogoUrl ?? null);
+  const clientLogo = useSignedUrl(clientLogoUrl ?? null);
   if (!report) return null;
   const r = report;
 
@@ -32,12 +35,12 @@ export function ReportView({ open, onOpenChange, report, clientName, agencyLogoU
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 {agencyLogoUrl && (
-                  <img src={agencyLogoUrl} alt="" className="h-9 w-9 rounded-md object-cover bg-muted" />
+                  <img src={agencyLogo ?? undefined} alt="" className="h-9 w-9 rounded-md object-cover bg-muted" />
                 )}
                 {clientLogoUrl && (
                   <>
                     <span className="text-muted-foreground">×</span>
-                    <img src={clientLogoUrl} alt="" className="h-9 w-9 rounded-md object-cover bg-muted" />
+                    <img src={clientLogo ?? undefined} alt="" className="h-9 w-9 rounded-md object-cover bg-muted" />
                   </>
                 )}
               </div>

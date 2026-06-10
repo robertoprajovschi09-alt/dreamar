@@ -28,6 +28,7 @@ import { getClientBrief } from "@/lib/brief";
 import { ClientDashboard } from "@/components/client/ClientDashboard";
 import { ClientQuickCheckIn } from "@/components/client/ClientQuickCheckIn";
 import { brandStyle } from "@/lib/brandTheme";
+import { useSignedUrl } from "@/lib/storage";
 import { subscribeTables } from "@/lib/realtime";
 
 
@@ -119,9 +120,7 @@ export default function ClientPortal() {
 
       <main className="max-w-5xl mx-auto p-6 md:p-8 space-y-6">
         <div className="flex items-center gap-3">
-          {client.logo_url && (
-            <img src={client.logo_url} alt={client.name} className="h-14 w-14 rounded-full object-cover border border-border" />
-          )}
+          <ClientLogoImg path={client.logo_url} name={client.name} />
           <div>
             <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: "hsl(var(--brand))" }}>Client portal</div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{client.name}</h1>
@@ -455,4 +454,10 @@ function FeedbackTab({ clientId, agencyId, userId }: { clientId: string; agencyI
 }
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return <div className="space-y-1.5"><Label>{label}</Label><Input type="number" min="0" value={value} onChange={(e) => onChange(Number(e.target.value) || 0)} /></div>;
+}
+
+function ClientLogoImg({ path, name }: { path: string | null; name: string }) {
+  const url = useSignedUrl(path);
+  if (!path) return null;
+  return <img src={url ?? undefined} alt={name} className="h-14 w-14 rounded-full object-cover border border-border bg-muted" />;
 }

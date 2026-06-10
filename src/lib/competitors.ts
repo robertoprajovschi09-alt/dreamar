@@ -110,10 +110,11 @@ export async function uploadScreenshot(agencyId: string, clientId: string, compe
   return path;
 }
 
-export function screenshotUrl(path: string | null) {
+export async function screenshotUrl(path: string | null): Promise<string | null> {
   if (!path) return null;
-  const { data } = supabase.storage.from("agency-files").getPublicUrl(path);
-  return data.publicUrl;
+  if (/^https?:\/\//i.test(path)) return path;
+  const { data } = await supabase.storage.from("agency-files").createSignedUrl(path.replace(/^\/+/, ""), 3600);
+  return data?.signedUrl ?? null;
 }
 
 export async function aiInsights(client_id: string) {

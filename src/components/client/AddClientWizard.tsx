@@ -17,6 +17,7 @@ import { useAgencyNiches, type NicheRow } from "@/hooks/useAgencyNiches";
 import { Loader2, Check, ArrowLeft, ArrowRight, Copy, X, Sparkles, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { uploadAgencyFile, useSignedUrl } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -111,6 +112,12 @@ function mapKpiTypeToLegacy(t?: string): "number" | "currency" | "percent" | "te
   if (t === "percentage") return "percent";
   if (t === "text" || t === "boolean") return "text";
   return "number";
+}
+
+function LogoPreview({ path }: { path: string | null }) {
+  const url = useSignedUrl(path);
+  if (!path) return null;
+  return <img src={url ?? undefined} alt="logo" className="h-10 w-10 rounded object-cover border bg-muted" />;
 }
 
 export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Props) {
@@ -318,16 +325,17 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
 
   // ----- Logo upload -----
   const onLogoFile = async (file: File) => {
-    if (!file) return;
+    if (!file || !agencyId) return;
     setLogoUploading(true);
     try {
-      // Temporary path; will be moved/renamed once we have client id. For simplicity store in agency-files/staging/<uid>/...
-      const ext = file.name.split(".").pop() || "png";
-      const path = `staging/${user?.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("agency-files").upload(path, file, { upsert: true });
-      if (error) { toast.error(error.message); return; }
-      const { data } = await supabase.storage.from("agency-files").createSignedUrl(path, 60 * 60 * 24 * 365);
-      set("logo_url", data?.signedUrl || path);
+      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = await uploadAgencyFile(
+        agencyId,
+        `clients/staging/${user?.id || "anon"}/${Date.now()}.${ext}`,
+        file,
+        { upsert: true },
+      );
+      if (path) set("logo_url", path);
     } finally { setLogoUploading(false); }
   };
 
@@ -646,7 +654,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
                       Încarcă
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && onLogoFile(e.target.files[0])} />
                     </label>
-                    {form.logo_url && <img src={form.logo_url} alt="logo" className="h-10 w-10 rounded object-cover border" />}
+                    <LogoPreview path={form.logo_url} />
                   </div>
                 </div>
                 <div className="space-y-1.5">
