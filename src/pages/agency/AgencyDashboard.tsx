@@ -33,6 +33,7 @@ export default function AgencyDashboard() {
   const [hasPlatforms, setHasPlatforms] = useState(false);
   const [hasAnalytics, setHasAnalytics] = useState(false);
   const [hasReports, setHasReports] = useState(false);
+  const [tick, setTick] = useState(0);
 
 
   useEffect(() => {
