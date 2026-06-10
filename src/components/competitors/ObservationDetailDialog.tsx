@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Bookmark, Loader2, ExternalLink } from "lucide-react";
-import { aiAnalyzeObservation, screenshotUrl, type CompetitorObservation } from "@/lib/competitors";
+import { aiAnalyzeObservation, type CompetitorObservation } from "@/lib/competitors";
+import { useSignedUrl } from "@/lib/storage";
 import { toast } from "@/hooks/use-toast";
 import { SwipeFormDialog } from "@/components/swipe/SwipeFormDialog";
 
@@ -18,7 +19,7 @@ export function ObservationDetailDialog({ open, onOpenChange, observation, onUpd
   const [analyzing, setAnalyzing] = useState(false);
   const [swipeOpen, setSwipeOpen] = useState(false);
   if (!observation) return null;
-  const img = screenshotUrl(observation.screenshot_url);
+  const img = useSignedUrl(observation.screenshot_url);
   const a = observation.ai_analysis || {};
 
   const analyze = async () => {

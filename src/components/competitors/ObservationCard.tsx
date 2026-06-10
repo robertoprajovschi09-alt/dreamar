@@ -2,7 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Sparkles, Bookmark, Pencil, Trash2, ExternalLink } from "lucide-react";
-import { screenshotUrl, type CompetitorObservation } from "@/lib/competitors";
+import { type CompetitorObservation } from "@/lib/competitors";
+import { useSignedUrl } from "@/lib/storage";
 
 type Props = {
   obs: CompetitorObservation;
@@ -15,7 +16,7 @@ type Props = {
 };
 
 export function ObservationCard({ obs, onView, onAnalyze, onSaveSwipe, onEdit, onDelete, analyzing }: Props) {
-  const img = screenshotUrl(obs.screenshot_url);
+  const img = useSignedUrl(obs.screenshot_url);
   return (
     <Card className="overflow-hidden">
       {img && <div className="aspect-video bg-muted overflow-hidden cursor-pointer" onClick={onView}><img src={img} alt={obs.title} className="w-full h-full object-cover" /></div>}
