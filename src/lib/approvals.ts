@@ -60,8 +60,69 @@ export const APPROVAL_STATUS_META: Record<ApprovalStatus, { label: string; color
 
 export const PENDING_POST_STATUSES = ["pending_approval", "sent_for_approval"];
 
+// ---------- Asset / video helpers ----------
+
+export type PostAssetLike = {
+  video_url?: string | null;
+  thumbnail_url?: string | null;
+  assets?: any;
+  script?: string | null;
+};
+
+function pickAssetUrl(asset: any): string | null {
+  if (!asset) return null;
+  if (typeof asset === "string") return asset;
+  return asset.url || asset.signed_url || asset.public_url || asset.path || null;
+}
+
+function isVideoAsset(asset: any): boolean {
+  if (!asset) return false;
+  const type = (asset.type || asset.mime || asset.kind || "").toString().toLowerCase();
+  if (type.startsWith("video") || type === "video") return true;
+  const url = pickAssetUrl(asset) || "";
+  return /\.(mp4|mov|webm|m4v|avi|mkv)(\?|$)/i.test(url);
+}
+
+/** Returns a playable video URL (signed if it's a storage path) or null. */
+export async function getPostVideoUrl(post: PostAssetLike | null | undefined): Promise<string | null> {
+  if (!post) return null;
+  let raw: string | null = post.video_url || null;
+  if (!raw && Array.isArray(post.assets)) {
+    const vid = post.assets.find(isVideoAsset) || post.assets.find((a: any) => pickAssetUrl(a));
+    raw = pickAssetUrl(vid);
+  } else if (!raw && post.assets && typeof post.assets === "object") {
+    raw = pickAssetUrl(post.assets);
+  }
+  if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const { data } = await supabase.storage
+    .from("agency-files")
+    .createSignedUrl(raw.replace(/^\/+/, ""), 3600);
+  return data?.signedUrl || null;
+}
+
+export function hasReviewableAsset(post: PostAssetLike | null | undefined): boolean {
+  if (!post) return false;
+  if (post.video_url) return true;
+  if (post.script && post.script.trim()) return true;
+  if (Array.isArray(post.assets) && post.assets.length > 0) return true;
+  return false;
+}
+
+export function statusPillKind(status: string): "pending" | "success" | "warning" | "danger" | "muted" {
+  switch (status) {
+    case "pending_approval": return "pending";
+    case "approved": return "success";
+    case "changes_requested": return "warning";
+    case "rejected": return "danger";
+    default: return "muted";
+  }
+}
+
+// ---------- Send / respond ----------
+
 export interface SendForApprovalArgs {
-  post: { id: string; agency_id: string; client_id: string; title: string };
+  post: { id: string; agency_id: string; client_id: string; title: string } & PostAssetLike;
   dueDate?: string | null;
   assignedToClientUser?: string | null;
   message?: string | null;
@@ -71,6 +132,10 @@ export async function sendForApproval({ post, dueDate, assignedToClientUser, mes
   const { data: u } = await supabase.auth.getUser();
   const uid = u.user?.id;
   if (!uid) throw new Error("Not authenticated");
+
+  if (!hasReviewableAsset(post)) {
+    throw new Error("Attach a video or script to this post before sending it for approval.");
+  }
 
   // Close any prior pending row (shouldn't exist but safety)
   await supabase
