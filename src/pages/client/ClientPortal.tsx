@@ -30,6 +30,11 @@ import { ClientQuickCheckIn } from "@/components/client/ClientQuickCheckIn";
 import { brandStyle } from "@/lib/brandTheme";
 import { useSignedUrl } from "@/lib/storage";
 import { subscribeTables } from "@/lib/realtime";
+import {
+  fmtMonthYearRO, fmtDateRO, fmtDayShortRO,
+  WEEKDAYS_RO_SHORT, goalStatusLabel, metricLabel,
+} from "@/lib/i18nLabels";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 const monthInputDefault = () => {
