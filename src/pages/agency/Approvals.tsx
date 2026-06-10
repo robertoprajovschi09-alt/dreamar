@@ -35,6 +35,21 @@ export default function Approvals() {
 
   useEffect(() => { load(); }, [agency, tab]);
 
+  // Realtime: refetch on any change to this agency's approvals
+  useEffect(() => {
+    if (!agency) return;
+    const channel = supabase
+      .channel(`approvals-${agency.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "content_approvals", filter: `agency_id=eq.${agency.id}` },
+        () => load(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency?.id]);
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[1400px]">
       <div>
