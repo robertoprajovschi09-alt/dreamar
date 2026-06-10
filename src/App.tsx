@@ -29,6 +29,7 @@ import Approvals from "./pages/agency/Approvals";
 import Strategies from "./pages/agency/Strategies";
 import StrategyDetail from "./pages/agency/StrategyDetail";
 import StrategyPrint from "./pages/agency/StrategyPrint";
+import ReportPrint from "./pages/agency/ReportPrint";
 import Analytics from "./pages/agency/Analytics";
 import Competitors from "./pages/agency/Competitors";
 import Team from "./pages/agency/Team";
@@ -83,6 +84,7 @@ const App = () => (
                   <Route path="analytics" element={<Analytics />} />
                   <Route path="campaigns" element={<Campaigns />} />
                   <Route path="reports" element={<Reports />} />
+                  <Route path="reports/:id/print" element={<ReportPrint />} />
                   <Route path="strategies" element={<Strategies />} />
                   <Route path="strategies/:id" element={<StrategyDetail />} />
                   <Route path="strategies/:id/print" element={<StrategyPrint />} />
@@ -112,6 +114,15 @@ const App = () => (
                     </RoleRoute>
                   }
                 />
+                <Route
+                  path="/client/reports/:id/print"
+                  element={
+                    <RoleRoute allow={["client_viewer"]}>
+                      <ReportPrint />
+                    </RoleRoute>
+                  }
+                />
+
 
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
