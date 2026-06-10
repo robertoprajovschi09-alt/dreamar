@@ -103,11 +103,11 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
         {/* Active members */}
         <section>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            Members ({activeUsers.length})
+            Membri ({activeUsers.length})
           </h4>
           {activeUsers.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 border border-dashed border-border rounded-lg text-center">
-              No active members yet.
+              Niciun membru activ încă.
             </div>
           ) : (
             <ul className="divide-y divide-border border border-border rounded-lg">
