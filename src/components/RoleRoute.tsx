@@ -6,6 +6,8 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Role = Database["public"]["Enums"]["app_role"];
 
+const AGENCY_ROLES: Role[] = ["agency_owner", "agency_team", "content_creator", "saas_admin"];
+
 export function RoleRoute({ allow, children }: { allow: Role[]; children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: userLoading } = useUser();
@@ -17,17 +19,20 @@ export function RoleRoute({ allow, children }: { allow: Role[]; children: React.
   if (!user) return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
 
   const role = profile?.role;
+  const isAdmin = !!profile?.is_saas_admin;
+
+  // SaaS admins go anywhere (don't get blocked even if role missing or not in allow list).
+  if (isAdmin) return <>{children}</>;
 
   if (!role) {
     // Logged in but no role yet — likely a brand-new account whose trigger is still finishing,
-    // or an invitee who hasn't accepted any invite. Send to /auth which will route them.
+    // or an invitee who hasn't accepted any invite.
     return <Navigate to="/auth" replace />;
   }
 
   if (!allow.includes(role)) {
     if (role === "client_viewer") return <Navigate to="/client" replace />;
-    if (role === "agency_owner" || role === "agency_team") return <Navigate to="/agency" replace />;
-    if (role === "saas_admin") return <Navigate to="/agency" replace />;
+    if (AGENCY_ROLES.includes(role)) return <Navigate to="/agency" replace />;
     return <Navigate to="/auth" replace />;
   }
 
@@ -36,6 +41,6 @@ export function RoleRoute({ allow, children }: { allow: Role[]; children: React.
 
 export function roleHome(role: Role | null | undefined): string {
   if (role === "client_viewer") return "/client";
-  if (role === "agency_owner" || role === "agency_team" || role === "saas_admin") return "/agency";
+  if (role && AGENCY_ROLES.includes(role)) return "/agency";
   return "/auth";
 }

@@ -70,7 +70,7 @@ const App = () => (
                 <Route
                   path="/agency"
                   element={
-                    <RoleRoute allow={["agency_owner", "agency_team", "saas_admin"]}>
+                    <RoleRoute allow={["agency_owner", "agency_team", "content_creator", "saas_admin"]}>
                       <AgencyLayout />
                     </RoleRoute>
                   }
