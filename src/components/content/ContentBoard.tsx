@@ -26,6 +26,11 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<any>(null);
+  const [approvalDialog, setApprovalDialog] = useState<{
+    open: boolean;
+    post: { id: string; agency_id: string; client_id: string; title: string } | null;
+    previousStatus: string | null;
+  }>({ open: false, post: null, previousStatus: null });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -34,7 +39,7 @@ export function ContentBoard({ clientId, search, platform, showNewButton = false
     setLoading(true);
     let q = supabase
       .from("content_posts")
-      .select("id,title,platform,status,scheduled_for,deadline,content_type,hook,thumbnail_url,assets,assigned_to,client_id,clients(name)")
+      .select("id,title,platform,status,scheduled_for,deadline,content_type,hook,script,video_url,thumbnail_url,assets,assigned_to,client_id,agency_id,clients(name)")
       .eq("agency_id", agency.id)
       .order("scheduled_for", { ascending: true, nullsFirst: false });
     if (clientId) q = q.eq("client_id", clientId);
