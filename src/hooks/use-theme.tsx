@@ -6,13 +6,15 @@ const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({ theme: "d
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === "undefined") return "dark";
-    return (localStorage.getItem("agencyos-theme") as Theme) || "dark";
+    return (localStorage.getItem("dreamar-theme") as Theme)
+      || (localStorage.getItem("agencyos-theme") as Theme)
+      || "dark";
   });
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("agencyos-theme", theme);
+    localStorage.setItem("dreamar-theme", theme);
   }, [theme]);
 
   return (

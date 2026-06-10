@@ -63,7 +63,7 @@ export default function Index() {
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-2">Everything in one place</div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Stop duct-taping 12 tools together.</h2>
-          <p className="text-muted-foreground mt-3">From client onboarding to monthly reports, AgencyOS replaces your spreadsheets, docs, calendars, and trackers.</p>
+          <p className="text-muted-foreground mt-3">From client onboarding to monthly reports, Dreamar replaces your spreadsheets, docs, calendars, and trackers.</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {modules.map((m) => (
@@ -119,7 +119,7 @@ export default function Index() {
           <Logo size="sm" />
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> Secure multi-tenant workspaces</span>
-            <span>© {new Date().getFullYear()} AgencyOS AI</span>
+            <span>© {new Date().getFullYear()} Dreamar</span>
             <Link to="/admin-login" className="text-muted-foreground/50 hover:text-foreground transition-colors">Admin</Link>
           </div>
         </div>
