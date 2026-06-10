@@ -90,13 +90,13 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
         <div>
-          <CardTitle className="text-base">Client portal access</CardTitle>
+          <CardTitle className="text-base">Acces portal client</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Invite the client into their workspace. They'll only see this client.
+            Invită clientul în spațiul lui de lucru. Vede doar acest client.
           </p>
         </div>
         <Button onClick={() => setInviteOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <UserPlus className="h-4 w-4 mr-1.5" /> Invite client
+          <UserPlus className="h-4 w-4 mr-1.5" /> Invită client
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
