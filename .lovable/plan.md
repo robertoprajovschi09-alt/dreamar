@@ -1,107 +1,62 @@
-# Plan: Conexiune client↔agenție + fix-uri Clienți
+# Plan: Invitații 100% funcționale + verificare dashboard client
 
-Fără modificări AI/Gemini. Migrări ca fișiere în `supabase/migrations`. Kit soft-UI, copy în română.
+## 1. Resend trimite efectiv email (client + echipă)
 
-## 1. Bug draft „Continuă" în AddClientWizard
+**Problemă:** `resend_client_invite` și `resend_team_invite` (RPC) doar updatează DB (`last_sent_at`, `send_count`, `expires_at`). Nu trimit nimic. `PortalSettingsCard.resend()` cheamă doar RPC-ul → emailul nu pleacă.
 
-Fișier: `src/components/client/AddClientWizard.tsx`
-
-Cauze probabile (defensiv le acoperim pe toate):
-- `continueDraft` parsează corect, dar dacă draftul vechi are shape diferit, merge-ul `{...empty, ...parsed.form}` poate lăsa câmpuri nested (logo, niche, kpis, custom_fields) într-o stare invalidă → render-ul aruncă silent și dialogul pare „înghețat".
-- `setStep` poate primi un index în afara range-ului dacă numărul de pași s-a schimbat.
-- Autosave-ul se reactivează imediat după click și poate suprascrie draftul cu starea pe jumătate aplicată dacă `setForm`/`setStep` sunt în loturi diferite.
-
-Fix:
-- Înfășor parsarea într-un helper `loadDraft()` care:
-  - face `JSON.parse` în try/catch; la eroare → `clearDraft()` + toast „Draft corupt, am pornit gol" + `setHasDraft(false)`, fără să blocheze deschiderea.
-  - validează shape-ul (chei obligatorii din `empty`, normalizează array-urile `kpis`, `custom_fields`, `platforms`).
-  - clamp pe `step` între 1 și numărul total de pași.
-- `continueDraft` aplică starea într-un singur `flushSync`-style: setForm + setStep + setDraftLoaded(true) + setHasDraft(false), apoi un `setTimeout(()=>autosave, 0)` evită race-ul cu efectul de autosave (sau adaug un `useRef` `skipNextAutosave` ca să sară un tick).
-- „Șterge" → `clearDraft()` + reset complet la `empty`/`step=1` (deja făcut, dar adaug toast „Draft șters").
-- Adaug `console.warn` în catch ca să nu mai treacă silențios.
-
-## 2. Brand color + logo pe dashboard client
+**Fix:** după RPC, cheamă și edge function-ul corespunzător (`send-client-invite` / `send-team-invite`) cu `token`. Pe lipsa `RESEND_API_KEY` (sau orice eroare 5xx de la Resend), edge-ul deja întoarce `{ ok: false, error }` — UI-ul trebuie să afișeze `toast.error` clar ("Emailul nu a putut fi trimis: <motiv>. Copiază linkul manual.") în loc de success.
 
 Fișiere:
-- `src/components/client/ClientDashboard.tsx` (vederea agenției)
-- `src/pages/client/ClientPortal.tsx` (portalul clientului)
-- helper nou: `src/lib/brandTheme.ts` cu `applyBrandTheme(brand_color?: string)` care setează variabile CSS scoped (`--brand`, `--brand-foreground`, `--brand-soft`) pe un wrapper, fallback `hsl(var(--primary))` (roșu brand).
+- `src/components/client/PortalSettingsCard.tsx` — funcția `resend(id, token)`: după RPC, `supabase.functions.invoke("send-client-invite", { body: { token } })`, verifică `data.ok`; pe fail → `toast.error` + nu mai zice "refreshed".
+- `src/pages/agency/Team.tsx` — există deja invoke după RPC (linia 109), dar nu se uită la `data.ok`. Adaugă verificare + `toast.error` pe fail.
 
-Aplicare:
-- Wrapper `<div style={brandStyle}>` în jurul dashboard-ului + portalului. Componentele KPI/secțiuni folosesc `var(--brand)` (înlocuiesc `text-primary`/`bg-primary` pe acele zone cu clase utilitare care citesc variabila — fără să schimb tokenii globali).
-- Header-ul afișează `logo_url` (rotund, 32–40px) lângă numele clientului, cu fallback la inițiale.
-- Convertesc hex → HSL în helper ca să rămânem compatibili cu design system.
+## 2. Fallback link copiabil + status + acțiuni în listă
 
-## 3. Real-time client↔agenție
+**Stadiu actual:** `PortalSettingsCard` deja are `copyLink`, `resend`, `revokeInvite` pentru invitații de client; `Team.tsx` are echivalentul pentru echipă. Verific că ambele afișează:
+- linkul `accept-invite?token=...` / `accept-team-invite?token=...` (sau buton "Copiază link")
+- status badge (sent / opened / accepted / expired / revoked) — soft pill RO
+- butoane Retrimite / Revocă / Copiază
 
-### 3a. Migrare publicație
-Fișier nou: `supabase/migrations/<ts>_realtime_client_sync.sql`
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.client_feedback;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.monthly_goals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.client_briefs;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.content_posts;
-ALTER TABLE public.client_feedback REPLICA IDENTITY FULL;
-ALTER TABLE public.monthly_goals   REPLICA IDENTITY FULL;
-ALTER TABLE public.client_briefs   REPLICA IDENTITY FULL;
-ALTER TABLE public.content_posts   REPLICA IDENTITY FULL;
-```
+Localizare toasturi/labels în română ("Invitație reîmprospătată", "Link copiat", "Invitație revocată", "Acces revocat"). Verific și Team.tsx la fel.
 
-### 3b. RLS pentru goals din partea clientului (în aceeași migrare)
-```sql
-CREATE POLICY "client viewers insert their goals"
-  ON public.monthly_goals FOR INSERT TO authenticated
-  WITH CHECK (public.is_client_viewer_of(auth.uid(), client_id));
-CREATE POLICY "client viewers update their goals"
-  ON public.monthly_goals FOR UPDATE TO authenticated
-  USING (public.is_client_viewer_of(auth.uid(), client_id))
-  WITH CHECK (public.is_client_viewer_of(auth.uid(), client_id));
-```
-(verific mai întâi cu `supabase--read_query` ce policies există ca să nu duplicăm)
+Fișiere: `PortalSettingsCard.tsx`, `src/pages/agency/Team.tsx`.
 
-### 3c. Subscripții realtime în UI
-Helper nou: `src/lib/realtime.ts` → `subscribeTable({table, filter, onChange})` care întoarce un cleanup. Folosit în:
-- `src/pages/agency/AgencyDashboard.tsx` — feedback + goals + approvals + briefs filtrate pe `agency_id`.
-- `src/pages/agency/Approvals.tsx` — `content_approvals` + `content_posts` pe `agency_id` (refetch la INSERT/UPDATE).
-- `src/pages/agency/ClientProfile.tsx` — toate cele 4 tabele filtrate pe `client_id`.
-- `src/pages/client/ClientPortal.tsx` — `content_posts`, `tasks`, `reports`, `monthly_goals` pe `client_id` (ce trimite agenția).
-- Componentele care listează feedback/goals refac fetch-ul prin callback.
+## 3. Edge function `send-team-invite`
 
-## 4. Onboarding brief — date exacte
+Există deja (`supabase/functions/send-team-invite/index.ts`) — nu trebuie creată. Verific doar că e listată în `supabase/config.toml` la fel ca `send-client-invite`. Dacă lipsește din config, o adaug (numai blocul funcției, nu setări globale).
 
-Fișiere: `src/components/client/BriefWizard.tsx`, `src/lib/brief.ts`, `src/pages/agency/ClientProfile.tsx`.
+## 4. Wizard pasul "Invitație" + QuickAdd
 
-- Verific maparea câmp ↔ coloană în `client_briefs` (24 coloane) și mă asigur că payload-ul de `upsert` include TOATE câmpurile din form (audience, goals, tone, do/don't, brand_values, competitors, channels, budget, etc.).
-- Pentru câmpuri array/jsonb folosesc `[]`/`{}` în loc de `null` ca să nu pierdem la roundtrip.
-- Pe profilul clientului (tab Brief) adaug afișarea completă a tuturor câmpurilor brief (read-only, soft-UI), nu doar un subset, plus timestamp `submitted_at`.
-- Unit test în `src/lib/__tests__/brief.test.ts`: `serializeBrief(form)` păstrează toate cheile.
+`AddClientWizard` (linia 537) și `QuickAddClientDialog` (185) cheamă deja `send-client-invite`. Verific că tratează `data.ok === false` și arată eroarea exactă (nu doar success). Localizez în RO.
 
-## Fișiere atinse
+## 5. Dashboard client per niche — verificare
 
-**Migrare nouă**
-- `supabase/migrations/<ts>_realtime_client_sync.sql`
+Inspectez `ClientDashboard.tsx`, `ClientPortal.tsx`, `RealEstateDashboardSection.tsx`, `NicheDashboardSection.tsx`, `CustomNicheDashboardSection.tsx`. Pentru fiecare:
+- empty state RO ("Încă nu sunt date pentru această secțiune.")
+- loading skeleton
+- error state cu retry
+- responsive (grid → stack pe mobil)
+- `brandStyle(client.brand_color)` aplicat pe wrapper + `logo_url` în header
 
-**Cod nou**
-- `src/lib/brandTheme.ts`
-- `src/lib/realtime.ts`
-- `src/lib/__tests__/brief.test.ts`
+Vederea de agenție `ClientProfile.tsx` — verific că tab-urile Brief, Feedback, Obiective, Aprobări încarcă datele și au error/empty state.
 
-**Editate**
-- `src/components/client/AddClientWizard.tsx` (draft)
-- `src/components/client/ClientDashboard.tsx` (brand)
-- `src/pages/client/ClientPortal.tsx` (brand + realtime)
-- `src/pages/agency/AgencyDashboard.tsx` (realtime)
-- `src/pages/agency/Approvals.tsx` (realtime)
-- `src/pages/agency/ClientProfile.tsx` (realtime + brief tab complet)
-- `src/components/client/BriefWizard.tsx` + `src/lib/brief.ts` (salvare exactă)
+Doar diff-uri minimale acolo unde lipsesc statele sau brandingul. Nu rescriu logica de afișare a metricilor.
 
-## Teste manuale (2 sesiuni)
-1. Draft: deschid wizard, completez până la pasul 3, închid → redeschid → „Continuă" reia pe pasul 3 cu datele. „Șterge" → pornește gol.
-2. Brand: setez `brand_color=#1E88E5` pe un client → dashboard agenție + portal client se colorează; logo apare în header.
-3. Realtime: în sesiunea client → aprob un post / scriu feedback / propun un goal / completez brief; agenția vede live fără refresh. Invers: agenția creează un goal/post → apare live la client.
-4. RLS: clientul nu poate scrie goals pentru alt client (verific cu un al doilea client_id).
+## 6. Migrări
 
-## Non-goals
-- Nu ating ai-* edge functions, nu schimb providerul AI.
-- Nu modific schema `content_approvals` (deja în publicație).
-- Nu touchez tokenii globali din `index.css`.
+Nu sunt necesare migrări noi pentru aceste fix-uri (RPC + edge functions există). Dacă descopăr policy lipsă pe `team_invites` în timpul implementării, voi adăuga migrare separată ca fișier în `supabase/migrations/`.
+
+## Teste
+
+1. Creare invitație client din wizard → email primit SAU link copiat → cont nou Google → `/accept-invite?token=...` → portal client_viewer, `client_users` populat, `client_invites.status='accepted'`.
+2. La fel pentru team_invite (`agency_team`, `content_creator`) → `/agency` cu rol corect.
+3. Resend: apăs "Retrimite" → email nou ajunge (verific în Resend logs SAU log toast).
+4. Resend cu `RESEND_API_KEY` invalid → toast roșu cu motiv, nu success.
+5. Dashboard client cu niche=real_estate / restaurant / dental / fitness / custom → cardurile fiecărui niche se randează; brand_color colorează accent.
+
+## Atinse / Ne-atinse
+
+- ✅ UI (PortalSettingsCard, Team, AddClientWizard, QuickAddClientDialog, dashboard niches)
+- ✅ Edge config (dacă lipsește send-team-invite din config.toml)
+- ❌ AI/Gemini — neatins
+- ❌ RPC-uri DB existente — neatins (doar UI-ul cheamă edge după ele)

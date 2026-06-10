@@ -24,15 +24,15 @@ type Props = {
 };
 
 function formatRelative(d?: string | null) {
-  if (!d) return "Never";
+  if (!d) return "Niciodată";
   const ms = Date.now() - new Date(d).getTime();
   const min = Math.floor(ms / 60000);
-  if (min < 1) return "Just now";
-  if (min < 60) return `${min}m ago`;
+  if (min < 1) return "Acum";
+  if (min < 60) return `acum ${min}m`;
   const h = Math.floor(min / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `acum ${h}h`;
   const days = Math.floor(h / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `acum ${days}z`;
   return new Date(d).toLocaleDateString();
 }
 
@@ -45,32 +45,39 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
     const url = `${window.location.origin}/accept-invite?token=${token}`;
     await navigator.clipboard.writeText(url);
     setCopiedId(id);
-    toast.success("Link copied");
+    toast.success("Link copiat");
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const resend = async (id: string) => {
+  const resend = async (id: string, token: string) => {
     const { error } = await supabase.rpc("resend_client_invite", { _invite_id: id });
     if (error) return toast.error(error.message);
-    toast.success("Invite refreshed (expires in 7 days)");
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("send-client-invite", { body: { token } });
+      if (fnErr) toast.error(`Emailul nu a putut fi trimis: ${fnErr.message}. Copiază linkul manual.`);
+      else if ((data as any)?.ok) toast.success("Invitație retrimisă pe email");
+      else toast.error(`Emailul nu a putut fi trimis: ${(data as any)?.error || "eroare necunoscută"}. Copiază linkul manual.`);
+    } catch (e: any) {
+      toast.error(`Emailul nu a putut fi trimis: ${e?.message || "eroare necunoscută"}. Copiază linkul manual.`);
+    }
     reload();
   };
 
   const revokeInvite = async (id: string) => {
-    if (!confirm("Revoke this invitation?")) return;
+    if (!confirm("Revoci această invitație?")) return;
     const { error } = await supabase.rpc("revoke_client_invite", { _invite_id: id });
     if (error) return toast.error(error.message);
-    toast.success("Invitation revoked");
+    toast.success("Invitație revocată");
     reload();
   };
 
   const removeUser = async (id: string) => {
-    if (!confirm("Revoke portal access for this user?")) return;
+    if (!confirm("Revoci accesul acestui utilizator?")) return;
     const { error } = await supabase.from("client_users")
       .update({ status: "revoked", revoked_at: new Date().toISOString() } as any)
       .eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Access revoked");
+    toast.success("Acces revocat");
     reload();
   };
 
@@ -83,24 +90,24 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
         <div>
-          <CardTitle className="text-base">Client portal access</CardTitle>
+          <CardTitle className="text-base">Acces portal client</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Invite the client into their workspace. They'll only see this client.
+            Invită clientul în spațiul lui de lucru. Vede doar acest client.
           </p>
         </div>
         <Button onClick={() => setInviteOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <UserPlus className="h-4 w-4 mr-1.5" /> Invite client
+          <UserPlus className="h-4 w-4 mr-1.5" /> Invită client
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Active members */}
         <section>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            Members ({activeUsers.length})
+            Membri ({activeUsers.length})
           </h4>
           {activeUsers.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 border border-dashed border-border rounded-lg text-center">
-              No active members yet.
+              Niciun membru activ încă.
             </div>
           ) : (
             <ul className="divide-y divide-border border border-border rounded-lg">
@@ -112,10 +119,10 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                       <span>{u.email}</span>
                       <span>·</span>
                       <Badge variant="outline" className="text-[10px] uppercase h-4 px-1">
-                        {u.role === "client_owner" ? "Owner" : "Viewer"}
+                        {u.role === "client_owner" ? "Owner" : "Vizualizator"}
                       </Badge>
                       <span>·</span>
-                      <span>Last login {formatRelative(u.last_login_at)}</span>
+                      <span>Ultima logare {formatRelative(u.last_login_at)}</span>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -124,11 +131,11 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setPermTarget({ kind: "user", id: u.id, email: u.email, role: u.role, permissions: u.permissions })}>
-                        <ShieldCheck className="h-4 w-4 mr-2" /> Edit permissions
+                        <ShieldCheck className="h-4 w-4 mr-2" /> Editează permisiuni
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onClick={() => removeUser(u.id)}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Revoke access
+                        <Trash2 className="h-4 w-4 mr-2" /> Revocă accesul
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -141,11 +148,11 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
         {/* Pending invitations */}
         <section>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            Invitations ({pendingInvites.length})
+            Invitații ({pendingInvites.length})
           </h4>
           {pendingInvites.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 border border-dashed border-border rounded-lg text-center">
-              No pending invitations.
+              Nicio invitație în așteptare.
             </div>
           ) : (
             <ul className="divide-y divide-border border border-border rounded-lg">
@@ -165,15 +172,15 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                           </span>
                           <span>·</span>
                           <Badge variant="outline" className="text-[10px] uppercase h-4 px-1">
-                            {i.portal_role === "client_owner" ? "Owner" : "Viewer"}
+                            {i.portal_role === "client_owner" ? "Owner" : "Vizualizator"}
                           </Badge>
                           <span>·</span>
-                          <span>{expired ? "Expired" : `Expires ${new Date(i.expires_at).toLocaleDateString()}`}</span>
-                          {i.send_count > 1 && <><span>·</span><span>Sent {i.send_count}×</span></>}
+                          <span>{expired ? "Expirată" : `Expiră ${new Date(i.expires_at).toLocaleDateString()}`}</span>
+                          {i.send_count > 1 && <><span>·</span><span>Trimisă de {i.send_count}×</span></>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(i.token, i.id)} title="Copy link">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(i.token, i.id)} title="Copiază link">
                           {copiedId === i.id ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                         </Button>
                         <DropdownMenu>
@@ -181,15 +188,15 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
                             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => resend(i.id)}>
-                              <RefreshCw className="h-4 w-4 mr-2" /> Resend / refresh link
+                            <DropdownMenuItem onClick={() => resend(i.id, i.token)}>
+                              <RefreshCw className="h-4 w-4 mr-2" /> Retrimite / reîmprospătează link
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setPermTarget({ kind: "invite", id: i.id, email: i.email, role: i.portal_role, permissions: i.permissions })}>
-                              <ShieldCheck className="h-4 w-4 mr-2" /> Edit permissions
+                              <ShieldCheck className="h-4 w-4 mr-2" /> Editează permisiuni
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => revokeInvite(i.id)}>
-                              <Trash2 className="h-4 w-4 mr-2" /> Revoke invite
+                              <Trash2 className="h-4 w-4 mr-2" /> Revocă invitația
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -207,13 +214,13 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
 
         {(acceptedInvites.length > 0 || revokedUsers.length > 0) && (
           <section>
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">History</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Istoric</h4>
             <ul className="text-xs text-muted-foreground space-y-1">
               {acceptedInvites.map((i) => (
-                <li key={i.id}>✓ {i.email} accepted {i.accepted_at ? new Date(i.accepted_at).toLocaleDateString() : ""}</li>
+                <li key={i.id}>✓ {i.email} a acceptat {i.accepted_at ? new Date(i.accepted_at).toLocaleDateString() : ""}</li>
               ))}
               {revokedUsers.map((u) => (
-                <li key={u.id}>⊘ {u.email} access revoked</li>
+                <li key={u.id}>⊘ {u.email} — acces revocat</li>
               ))}
             </ul>
           </section>
@@ -221,7 +228,7 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
 
         <p className="text-[11px] text-muted-foreground border-t border-border pt-3 flex items-start gap-1.5">
           <Mail className="h-3 w-3 mt-0.5 shrink-0" />
-          To send invitations by email, configure an email domain in your workspace. Until then, share the secure invite link directly.
+          Pentru a trimite invitații pe email, configurează un domeniu de email. Până atunci, partajează linkul de invitație direct.
         </p>
       </CardContent>
 

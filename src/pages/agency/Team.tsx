@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -106,10 +107,13 @@ export default function Team() {
     const { error } = await supabase.rpc("resend_team_invite", { _invite_id: id });
     if (error) return toast.error(error.message);
     try {
-      const { data } = await supabase.functions.invoke("send-team-invite", { body: { token } });
-      if (data?.ok) toast.success("Invitație retrimisă");
-      else toast.warning("Emailul nu a putut fi trimis.");
-    } catch { toast.warning("Emailul nu a putut fi trimis."); }
+      const { data, error: fnErr } = await supabase.functions.invoke("send-team-invite", { body: { token } });
+      if (fnErr) toast.error(`Emailul nu a putut fi trimis: ${fnErr.message}. Copiază linkul manual.`);
+      else if ((data as any)?.ok) toast.success("Invitație retrimisă pe email");
+      else toast.error(`Emailul nu a putut fi trimis: ${(data as any)?.error || "eroare necunoscută"}. Copiază linkul manual.`);
+    } catch (e: any) {
+      toast.error(`Emailul nu a putut fi trimis: ${e?.message || "eroare necunoscută"}. Copiază linkul manual.`);
+    }
     load();
   };
 
@@ -219,25 +223,36 @@ export default function Team() {
             <div className="p-6 text-sm text-muted-foreground">Nicio invitație activă.</div>
           ) : (
             <ul className="divide-y divide-border">
-              {invites.map((i) => (
-                <li key={i.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{i.email}</div>
-                    <div className="text-xs text-muted-foreground">
-                      <Badge variant="outline" className="mr-1.5">{i.role === "agency_owner" ? "Owner" : "Membru"}</Badge>
-                      <Badge variant="secondary" className="mr-1.5">{i.status}</Badge>
-                      Expiră {new Date(i.expires_at).toLocaleDateString()}
+              {invites.map((i) => {
+                const url = `${window.location.origin}/accept-team-invite?token=${i.token}`;
+                const statusRO: Record<string, string> = { pending: "În așteptare", sent: "Trimisă", opened: "Deschisă", accepted: "Acceptată", expired: "Expirată", revoked: "Revocată" };
+                const expired = new Date(i.expires_at).getTime() < Date.now();
+                return (
+                  <li key={i.id} className="px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{i.email}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <Badge variant="outline">{i.role === "agency_owner" ? "Owner" : "Membru"}</Badge>
+                          <Badge variant="secondary">{statusRO[i.status] || i.status}</Badge>
+                          <span>{expired ? "Expirată" : `Expiră ${new Date(i.expires_at).toLocaleDateString()}`}</span>
+                          {i.send_count > 1 && <span>· Trimisă de {i.send_count}×</span>}
+                        </div>
+                      </div>
+                      {isOwner && (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => copyLink(i.token)} title="Copiază link"><Copy className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => resend(i.id, i.token)} title="Retrimite"><RefreshCw className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => revoke(i.id)} title="Revocă"><X className="h-4 w-4" /></Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {isOwner && (
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => copyLink(i.token)}><Copy className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => resend(i.id, i.token)}><RefreshCw className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => revoke(i.id)}><X className="h-4 w-4" /></Button>
-                    </div>
-                  )}
-                </li>
-              ))}
+                    {!expired && i.status !== "accepted" && i.status !== "revoked" && (
+                      <Input readOnly value={url} className="font-mono text-[11px] h-7" onFocus={(e) => e.currentTarget.select()} />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
