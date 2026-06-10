@@ -27,6 +27,8 @@ import { QuickClientOnboarding } from "@/components/client/QuickClientOnboarding
 import { getClientBrief } from "@/lib/brief";
 import { ClientDashboard } from "@/components/client/ClientDashboard";
 import { ClientQuickCheckIn } from "@/components/client/ClientQuickCheckIn";
+import { brandStyle } from "@/lib/brandTheme";
+import { subscribeTables } from "@/lib/realtime";
 
 
 const monthInputDefault = () => {
@@ -89,7 +91,7 @@ export default function ClientPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" style={brandStyle(client.brand_color)}>
       <header className="h-20 flex items-center justify-between px-4 md:px-8 gap-3 bg-background/80 backdrop-blur sticky top-0 z-30">
         <Logo />
         <div className="flex items-center gap-2">
@@ -116,12 +118,17 @@ export default function ClientPortal() {
       </header>
 
       <main className="max-w-5xl mx-auto p-6 md:p-8 space-y-6">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">Client portal</div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{client.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} · managed by <span className="text-foreground">{agency.name}</span>
-          </p>
+        <div className="flex items-center gap-3">
+          {client.logo_url && (
+            <img src={client.logo_url} alt={client.name} className="h-14 w-14 rounded-full object-cover border border-border" />
+          )}
+          <div>
+            <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: "hsl(var(--brand))" }}>Client portal</div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{client.name}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} · managed by <span className="text-foreground">{agency.name}</span>
+            </p>
+          </div>
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
