@@ -111,16 +111,6 @@ export default function ClientProfile() {
               <span className="ml-1 uppercase tracking-wide text-xs">{client.status}</span>
             </p>
           </div>
-          <div className="min-w-0">
-            <Link to="/agency/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-1">
-              <ArrowLeft className="h-3 w-3" /> Clienți
-            </Link>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">{client.name}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} ·
-              <span className="ml-1 uppercase tracking-wide text-xs">{client.status}</span>
-            </p>
-          </div>
         </div>
         <Button onClick={() => setInviteOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground">
           <UserPlus className="h-4 w-4 mr-1.5" /> Invită client
