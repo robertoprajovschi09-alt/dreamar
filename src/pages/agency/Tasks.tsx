@@ -15,6 +15,8 @@ import { TaskEditor } from "@/components/operations/TaskEditor";
 import { QuickAddTaskInput } from "@/components/operations/QuickAddTaskInput";
 import { QuickEditTaskSheet } from "@/components/operations/QuickEditTaskSheet";
 import { TASK_STATUSES, TASK_PRIORITIES, statusFor } from "@/lib/operations";
+import { fetchAgencyMembers } from "@/lib/members";
+import { ErrorState } from "@/components/ui/error-state";
 
 const PRIORITY_BAR: Record<string, string> = {
   low: "bg-muted-foreground/40",
@@ -33,6 +35,7 @@ function initials(name?: string | null, email?: string | null) {
 export default function Tasks() {
   const { agency, profile } = useUser();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -49,14 +52,23 @@ export default function Tasks() {
   const load = async () => {
     if (!agency) return;
     setLoading(true);
-    const [{ data: t }, { data: c }, { data: m }] = await Promise.all([
-      supabase.from("tasks").select("*, clients(name)").eq("agency_id", agency.id).order("created_at", { ascending: false }),
-      supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
-      supabase.from("agency_members").select("user_id, profiles:user_id(full_name,email)").eq("agency_id", agency.id),
-    ]);
-    setTasks(t || []); setClients(c || []);
-    setMembers((m || []).map((x: any) => ({ user_id: x.user_id, full_name: x.profiles?.full_name, email: x.profiles?.email })));
-    setLoading(false);
+    setError(null);
+    try {
+      const [tRes, cRes, mList] = await Promise.all([
+        supabase.from("tasks").select("*, clients(name)").eq("agency_id", agency.id).order("created_at", { ascending: false }),
+        supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
+        fetchAgencyMembers(agency.id),
+      ]);
+      if (tRes.error) throw tRes.error;
+      if (cRes.error) throw cRes.error;
+      setTasks(tRes.data || []);
+      setClients(cRes.data || []);
+      setMembers(mList);
+    } catch (e: any) {
+      setError(e.message || "Nu am putut încărca sarcinile");
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, [agency]);
 
@@ -147,6 +159,8 @@ export default function Tasks() {
 
       {loading ? (
         <div className="py-16 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+      ) : error ? (
+        <Card><CardContent className="p-2"><ErrorState message={error} onRetry={load} /></CardContent></Card>
       ) : (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {TASK_STATUSES.map((col) => {
