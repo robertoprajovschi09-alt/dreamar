@@ -31,7 +31,7 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
     (async () => {
       const { data } = await supabase
         .from("content_approvals")
-        .select("*, content_posts(id,title,hook,caption,script,thumbnail_url,platform,content_type,scheduled_for,client_id,agency_id,status), clients(name)")
+        .select("*, content_posts(id,title,hook,caption,script,thumbnail_url,video_url,assets,platform,content_type,scheduled_for,client_id,agency_id,status), clients(name)")
         .eq("id", approvalId)
         .single();
       setRow(data);
