@@ -1,59 +1,70 @@
-# Rapoarte – funcțional + UX polish
+# Roluri + atribuire taskuri — fix
 
-Scop: pagina **Rapoarte** și editorul devin complet în română, capătă **vedere read** premium, **export PDF** prin route dedicată, și sunt cablate corect și în **portalul clientului**. Funcția edge `ai-report` și providerul AI rămân neatinse (Gemini).
+## Context confirmat
+- `agency_members.user_id` și `tasks.assigned_to`/`tasks.created_by` au FK doar către `auth.users`, nu către `public.profiles`. Embed-ul PostgREST `profiles:user_id(...)` din `Tasks.tsx`, `ClientProfile.tsx`, `ContentEditor.tsx` întoarce `null` → pickerul de responsabil e gol, avatarurile nu apar.
+- Zero orfani: toți `agency_members.user_id` au profil; toți assignee/creator de pe `tasks` au profil. FK-ul se poate adăuga curat (fără cleanup).
+- 3 profile cu `role IS NULL`:
+  - `rprajovschi08@gmail.com` (Prajovschi Roberto) — 2026-05-04
+  - `robertoprajovschi09@gmail.com` (Prajovschi Roberto) — 2026-05-04
+  - `mdxmedia78@gmail.com` (Sia) — 2026-05-08
+  → le listez, NU le ating până confirmi care-s reale vs test.
+- `content_creator` există în enum-ul `app_role` dar `RoleRoute` nu-l tratează → buclă spre `/auth`.
 
-## 1. Traduceri în română (ReportEditor + toasturi)
-În `src/components/reports/ReportEditor.tsx`:
-- Titluri sheet: "Raport nou" / "Editează raport".
-- Labels: Titlu, Client, Status, Început perioadă, Sfârșit perioadă, Rezumat, Momente cheie, Recomandări, Snapshot metrici.
-- Card "Vizibil pentru client" cu descriere conversațională ("Lasă clientul să-l vadă în portalul lui.").
-- Card "Generare cu AI" + buton **Generează**, descriere: "Trag metricile clientului și-ți pregătesc o schiță de raport pentru perioada aleasă."
-- Butoane: Salvează / Anulează / Șterge / Adaugă.
-- Toasturi: "Alege întâi clientul și perioada", "Raport generat", "N-am putut genera raportul", "Lipsesc câmpuri obligatorii", "Raport salvat", "Raport șters", confirm: "Ștergi raportul ăsta?".
-- Default title: "Raport lunar".
-- În `src/lib/reports.ts` traduc labelurile `REPORT_STATUSES` (Schiță / Gata / Trimis) — value-urile rămân la fel.
-- `formatPeriod` primește locale `ro-RO`.
+## Modificări
 
-## 2. Vedere de raport (read mode) — premium
-Nou: `src/components/reports/ReportView.tsx` — Sheet larg, layout curat:
-- Header: logo agenție (din `agency.logo_url`) + nume client + perioadă, separator subtil, StatusPill, badge "Vizibil pentru client".
-- Secțiuni: **Rezumat**, **Momente cheie** (listă cu bullets soft), **Recomandări**, **Snapshot metrici** (grid cu carduri soft-UI roșu brand).
-- Footer: butoane **Editează** (deschide `ReportEditor`) și **Descarcă PDF** (deschide `/agency/reports/:id/print` într-un tab nou; declanșează `window.print()` automat).
+### 1. Migrare (`supabase/migrations/<ts>_profiles_fk.sql`) — adaugă FK către profiles
+```sql
+ALTER TABLE public.agency_members
+  ADD CONSTRAINT agency_members_user_profile_fkey
+  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE
+  NOT VALID;
+ALTER TABLE public.agency_members VALIDATE CONSTRAINT agency_members_user_profile_fkey;
 
-Click pe card raport în Reports.tsx și ClientReportsTab.tsx → deschide **ReportView** (nu editorul direct).
+ALTER TABLE public.tasks
+  ADD CONSTRAINT tasks_assigned_profile_fkey
+  FOREIGN KEY (assigned_to) REFERENCES public.profiles(id) ON DELETE SET NULL
+  NOT VALID;
+ALTER TABLE public.tasks VALIDATE CONSTRAINT tasks_assigned_profile_fkey;
 
-## 3. Export PDF — print route
-Nou: `src/pages/agency/ReportPrint.tsx` (după pattern-ul `StrategyPrint.tsx`).
-- Route nouă: `/agency/reports/:id/print` în `src/App.tsx`.
-- Route portal client: `/client/reports/:id/print` (cu role guard `client_viewer`) — încarcă raportul cu `client_visible=true`.
-- Layout A4-friendly: header cu **logo agenție** + **logo client** (`clients.logo_url`), titlu, perioadă, rezumat, metrici, momente cheie, recomandări, footer cu data generării.
-- CSS print: `@media print` ascunde nav, padding 0, font legibil, page-breaks între secțiuni.
-- `setTimeout(window.print, 600)` ca în StrategyPrint.
+ALTER TABLE public.tasks
+  ADD CONSTRAINT tasks_created_profile_fkey
+  FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL
+  NOT VALID;
+ALTER TABLE public.tasks VALIDATE CONSTRAINT tasks_created_profile_fkey;
+```
+FK-urile existente către `auth.users` rămân — nu intră în conflict cu embed-ul fiindcă PostgREST rezolvă pe nume tabel (`profiles`).
 
-Buton "Descarcă PDF" disponibil în ReportView (agenție) și `ClientReportsView` (portal client).
+### 2. Fallback robust în code (defensive, în caz de cache stale al PostgREST)
+În `Tasks.tsx`, `ClientProfile.tsx`, `ContentEditor.tsx`: după ce iau `agency_members`, fac un al doilea fetch `profiles.select('id,full_name,email').in('id', userIds)` și fac merge în JS. Embed-ul stil `profiles:user_id(...)` rămâne ca primă încercare — dacă vine gol, completez din map. Practic, aliniez toate cele 3 locuri să facă explicit merge, ca să fie deterministic indiferent de cache PostgREST.
 
-## 4. Polish pagină Reports.tsx
-- Cards soft-UI (deja există kit-ul) + StatusPill în loc de Badge.
-- Filtre: client (există) + perioadă (last 3 / 6 / 12 luni / toate) + status.
-- Loading skeleton (3 carduri), error state cu `ErrorState` + buton Reîncearcă, empty state RO conversațional.
-- Click card → ReportView (nu editor).
-- Responsive: grid 1/2/3 coloane (deja ok), filtre wrap pe mobil.
+### 3. `src/components/RoleRoute.tsx`
+- Adaug `content_creator` în lista permisă pe `/agency` (în `App.tsx`).
+- În `RoleRoute`: dacă `profile.is_saas_admin === true`, las acces (nu-l blochez când `role` lipsește sau nu e în `allow`).
+- `roleHome`: `content_creator` → `/agency`.
+- Fallback redirect interior pentru `content_creator` → `/agency`.
 
-## 5. Portal client (`ClientReportsView.tsx`)
-- Trad RO complet ("Rapoartele tale", "Niciun raport încă", "Rapoartele trimise de agenția ta apar aici.").
-- Click pe card → deschide o vedere read frumoasă (același `ReportView` reused, fără butonul Editează, doar Descarcă PDF).
-- Loading & error states.
+### 4. `App.tsx`
+- Pe `path="/agency"`: `allow={["agency_owner","agency_team","content_creator","saas_admin"]}`.
 
-## 6. (Opțional) AI — limba RO
-În `supabase/functions/ai-report/index.ts` adaug **o singură linie** în system prompt: "Răspunde DOAR în limba română."  
-Nu schimb providerul/modelul.
+### 5. Hardening `Tasks.tsx`
+- `load()` cu `try/catch/finally`, `error` state + `<ErrorState onRetry={load} />` (la fel ca în Analytics).
 
-## 7. Teste
-- Unit nou: `src/lib/__tests__/reports.test.ts` — `formatPeriod` (format ro-RO, interval valid), `defaultPeriod` (luna trecută completă).
-- Manual E2E în tenantul de test: client cu videoclipuri → generez raport → văd rezumat/highlights/recomandări → salvez → apare în listă → deschid vederea → "Descarcă PDF" → toggle "Vizibil pentru client" → login client_viewer → văd raportul + descarc PDF.
+## NU schimb
+- Funcțiile/edge AI Gemini.
+- Profilurile cu `role IS NULL` — așteptăm decizia ta (listate mai sus).
+- Nu restrâng nav-ul pentru `content_creator` în acest pass (prioritar e deblocarea); pot reveni separat dacă vrei.
 
-## Detalii tehnice
-- Fișiere noi: `src/components/reports/ReportView.tsx`, `src/pages/agency/ReportPrint.tsx`, `src/lib/__tests__/reports.test.ts`.
-- Fișiere editate: `src/pages/agency/Reports.tsx`, `src/components/reports/ReportEditor.tsx`, `src/components/reports/ClientReportsTab.tsx`, `src/components/reports/ClientReportsView.tsx`, `src/lib/reports.ts`, `src/App.tsx`, opțional `supabase/functions/ai-report/index.ts`.
-- Fără tabele noi, fără migrări. RLS existent pe `reports` permite deja `client_visible=true` pentru `client_users` (verific la implementare; dacă nu, adaug policy SELECT — atunci, și doar atunci, fac migrare separată).
-- PDF prin `window.print()` în route dedicat (zero dep noi), exact ca StrategyPrint.
+## Teste
+- Unit: nimic nou (logica e DB + redirect — acoperit manual).
+- Manual în tenantul de test:
+  1. Login `content_creator` → aterizează direct pe `/agency` (fără buclă).
+  2. `/agency/tasks`: pickerul "Toți responsabilii" arată membrii cu nume/email; creezi task, atribui, apare avatarul; filtru pe responsabil funcționează; drag între coloane; "Sarcinile mele" și "Întârziate" merg.
+  3. Invit un al 2-lea membru → după accept, apare în picker și i se poate atribui un task.
+  4. Forțez un query error (offline) → apare `ErrorState` cu Reîncearcă, nu o pagină goală.
+
+## Fișiere
+- Nou: `supabase/migrations/<ts>_profiles_fk.sql`
+- Editate: `src/components/RoleRoute.tsx`, `src/App.tsx`, `src/pages/agency/Tasks.tsx`, `src/pages/agency/ClientProfile.tsx`, `src/components/content/ContentEditor.tsx`.
+
+## Decizii cerute
+Pentru cele 3 profile `role IS NULL`: vrei să le setez `agency_owner` (cu agenție nouă fiecare), să le ștergem, sau le lăsăm așa? (Default propus: le las până-mi spui.)
