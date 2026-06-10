@@ -18,6 +18,7 @@ type Props = {
   clientId: string;
   niche: string;
   userId: string;
+  isNewClient?: boolean;
   onDone: () => void;
   onCancel?: () => void;
 };
@@ -26,8 +27,8 @@ const PRIORITIES = [
   { key: "more_leads", label: "Mai multe lead-uri" },
   { key: "more_sales", label: "Mai multe vânzări" },
   { key: "more_bookings", label: "Mai multe rezervări/programări" },
-  { key: "more_awareness", label: "Mai mult awareness" },
-  { key: "more_engagement", label: "Mai mult engagement" },
+  { key: "more_awareness", label: "Mai multă notorietate" },
+  { key: "more_engagement", label: "Mai multă interacțiune" },
   { key: "promote_specific", label: "Promovarea unui produs/serviciu anume" },
   { key: "other", label: "Altceva" },
 ] as const;
@@ -37,11 +38,11 @@ const DIRECTIONS = [
   { key: "more_education", label: "Da, mai mult conținut educativ" },
   { key: "more_sales", label: "Da, mai mult conținut de vânzare" },
   { key: "more_premium", label: "Da, mai mult conținut premium" },
-  { key: "more_personal", label: "Da, mai mult conținut personal/behind the scenes" },
+  { key: "more_personal", label: "Da, mai mult conținut personal / din culise" },
   { key: "other", label: "Altceva" },
 ] as const;
 
-const Schema = z.object({
+const baseSchema = z.object({
   priority: z.string().min(1),
   priority_other: z.string().max(200).nullable(),
   promote_focus: z.string().trim().min(1, "Spune-ne ce vrei să promovăm").max(300),
@@ -52,7 +53,7 @@ const Schema = z.object({
   direction_change_other: z.string().max(200).nullable(),
 });
 
-export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, onDone, onCancel }: Props) {
+export function ClientQuickCheckIn({ agencyId, clientId, niche, userId, isNewClient = false, onDone, onCancel }: Props) {
   const monthDate = useMemo(() => {
     const d = new Date(); d.setDate(1);
     return d.toISOString().slice(0, 10);
