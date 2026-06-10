@@ -10,6 +10,7 @@ import { Loader2, AlertTriangle, TrendingUp, TrendingDown, Upload, Plus, Inbox }
 import { listAnalyticsEntries, totals, detectMissingData, type AnalyticsEntry } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { CsvImportDialog } from "@/components/analytics/CsvImportDialog";
+import { ErrorState } from "@/components/ui/error-state";
 import { AnalyticsEntryDialog } from "@/components/analytics/AnalyticsEntryDialog";
 
 
