@@ -222,25 +222,36 @@ export default function Team() {
             <div className="p-6 text-sm text-muted-foreground">Nicio invitație activă.</div>
           ) : (
             <ul className="divide-y divide-border">
-              {invites.map((i) => (
-                <li key={i.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">{i.email}</div>
-                    <div className="text-xs text-muted-foreground">
-                      <Badge variant="outline" className="mr-1.5">{i.role === "agency_owner" ? "Owner" : "Membru"}</Badge>
-                      <Badge variant="secondary" className="mr-1.5">{i.status}</Badge>
-                      Expiră {new Date(i.expires_at).toLocaleDateString()}
+              {invites.map((i) => {
+                const url = `${window.location.origin}/accept-team-invite?token=${i.token}`;
+                const statusRO: Record<string, string> = { pending: "În așteptare", sent: "Trimisă", opened: "Deschisă", accepted: "Acceptată", expired: "Expirată", revoked: "Revocată" };
+                const expired = new Date(i.expires_at).getTime() < Date.now();
+                return (
+                  <li key={i.id} className="px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{i.email}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <Badge variant="outline">{i.role === "agency_owner" ? "Owner" : "Membru"}</Badge>
+                          <Badge variant="secondary">{statusRO[i.status] || i.status}</Badge>
+                          <span>{expired ? "Expirată" : `Expiră ${new Date(i.expires_at).toLocaleDateString()}`}</span>
+                          {i.send_count > 1 && <span>· Trimisă de {i.send_count}×</span>}
+                        </div>
+                      </div>
+                      {isOwner && (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => copyLink(i.token)} title="Copiază link"><Copy className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => resend(i.id, i.token)} title="Retrimite"><RefreshCw className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => revoke(i.id)} title="Revocă"><X className="h-4 w-4" /></Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {isOwner && (
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => copyLink(i.token)}><Copy className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => resend(i.id, i.token)}><RefreshCw className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => revoke(i.id)}><X className="h-4 w-4" /></Button>
-                    </div>
-                  )}
-                </li>
-              ))}
+                    {!expired && i.status !== "accepted" && i.status !== "revoked" && (
+                      <Input readOnly value={url} className="font-mono text-[11px] h-7" onFocus={(e) => e.currentTarget.select()} />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>
