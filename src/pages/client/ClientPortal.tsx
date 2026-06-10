@@ -521,18 +521,18 @@ function FeedbackTab({ clientId, agencyId, userId }: { clientId: string; agencyI
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Your previous submissions</CardTitle></CardHeader>
+      <Card className="rounded-2xl md:rounded-3xl">
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Trimiterile tale anterioare</CardTitle></CardHeader>
         <CardContent>
           {pastLoading ? <div className="py-6 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
-            : past.length === 0 ? <div className="py-6 text-center text-sm text-muted-foreground">No submissions yet.</div>
+            : past.length === 0 ? <div className="py-6 text-center text-sm text-muted-foreground">Nicio trimitere încă.</div>
             : <ul className="divide-y divide-border">{past.map((f) => (
                 <li key={f.id} className="py-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium">{new Date(f.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
-                    <div className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString()}</div>
+                    <div className="font-medium capitalize">{fmtMonthYearRO(f.month)}</div>
+                    <div className="text-xs text-muted-foreground">{fmtDateRO(f.created_at)}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{f.calls_received} calls · {f.messages_received} messages · {f.bookings} bookings{f.sales_estimate ? ` · €${f.sales_estimate}` : ""}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{f.calls_received} apeluri · {f.messages_received} mesaje · {f.bookings} rezervări{f.sales_estimate ? ` · €${f.sales_estimate}` : ""}</div>
                 </li>
               ))}</ul>}
         </CardContent>
