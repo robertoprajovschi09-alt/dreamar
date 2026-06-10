@@ -11,6 +11,7 @@ import { useAgencyNiches, type NicheRow } from "@/hooks/useAgencyNiches";
 import { getNichePreset, type KpiField, type Question } from "@/lib/nichePresets";
 import { Loader2, Upload, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { uploadAgencyFile, useSignedUrl } from "@/lib/storage";
 
 type Props = {
   open: boolean;
@@ -62,17 +63,20 @@ export function QuickAddClientDialog({ open, onOpenChange, agencyId, onCreated, 
   };
 
   const onLogoFile = async (file: File) => {
-    if (!file || !user) return;
+    if (!file || !user || !agencyId) return;
     setLogoUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `staging/${user.id}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("agency-files").upload(path, file, { upsert: true });
-      if (error) { toast.error(error.message); return; }
-      const { data } = await supabase.storage.from("agency-files").createSignedUrl(path, 60 * 60 * 24 * 365);
-      setLogoUrl(data?.signedUrl || path);
+      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = await uploadAgencyFile(
+        agencyId,
+        `clients/staging/${user.id}/${Date.now()}.${ext}`,
+        file,
+        { upsert: true },
+      );
+      if (path) setLogoUrl(path);
     } finally { setLogoUploading(false); }
   };
+  const logoPreviewUrl = useSignedUrl(logoUrl);
 
   const handleManual = () => {
     onOpenChange(false);
@@ -259,7 +263,7 @@ export function QuickAddClientDialog({ open, onOpenChange, agencyId, onCreated, 
                   <span>Încarcă</span>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onLogoFile(e.target.files[0])} />
                 </label>
-                {logoUrl && <img src={logoUrl} alt="logo" className="h-9 w-9 rounded object-cover border" />}
+                {logoUrl && <img src={logoPreviewUrl ?? undefined} alt="logo" className="h-9 w-9 rounded object-cover border bg-muted" />}
               </div>
             </div>
             <div className="space-y-1.5">
