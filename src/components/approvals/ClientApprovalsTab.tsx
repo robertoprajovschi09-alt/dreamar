@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Check, X, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
-import { respondToApproval, APPROVAL_STATUS_META } from "@/lib/approvals";
+import { respondToApproval, APPROVAL_STATUS_META, statusPillKind } from "@/lib/approvals";
 import { cn } from "@/lib/utils";
+import { StatusPill } from "@/components/ui/status-pill";
+import { ApprovalVideoPlayer } from "./ApprovalVideoPlayer";
 
 export function ClientApprovalsTab({ clientId }: { clientId: string }) {
   const [items, setItems] = useState<any[]>([]);
