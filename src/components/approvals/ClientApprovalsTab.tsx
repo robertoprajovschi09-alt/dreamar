@@ -94,7 +94,7 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
         const isPending = approval.status === "pending_approval";
         return (
           <Card key={approval.id} className="overflow-hidden">
-            {p.thumbnail_url && <img src={p.thumbnail_url} alt={p.title} className="w-full max-h-72 object-cover bg-muted" />}
+            <ApprovalVideoPlayer post={p} poster={p.thumbnail_url} className="rounded-none rounded-t-3xl" />
             <CardContent className="pt-5 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -105,7 +105,7 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
                     {approval.due_date ? ` · due ${new Date(approval.due_date).toLocaleDateString()}` : ""}
                   </div>
                 </div>
-                <span className={cn("px-2 py-0.5 rounded text-[11px] font-medium", m?.color)}>{m?.label}</span>
+                <StatusPill kind={statusPillKind(approval.status)}>{m?.label}</StatusPill>
               </div>
 
               {p.hook && <Block label="Hook" value={p.hook} />}
@@ -113,7 +113,7 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
               {p.script && <details><summary className="text-xs uppercase tracking-wide text-muted-foreground cursor-pointer">Script</summary><div className="text-sm whitespace-pre-wrap mt-1">{p.script}</div></details>}
 
               {!isPending && (approval.feedback || approval.comment) && (
-                <div className="text-xs p-2 rounded bg-muted">
+                <div className="text-xs p-3 rounded-2xl bg-muted">
                   Your feedback: "{approval.feedback || approval.comment}"
                 </div>
               )}
@@ -125,8 +125,8 @@ export function ClientApprovalsTab({ clientId }: { clientId: string }) {
                     {hist.map((h) => {
                       const hm = APPROVAL_STATUS_META[h.status as keyof typeof APPROVAL_STATUS_META];
                       return (
-                        <div key={h.id} className="text-xs p-2 rounded bg-muted/40">
-                          <span className={cn("px-1.5 py-0.5 rounded text-[10px] mr-2", hm?.color)}>{hm?.label}</span>
+                        <div key={h.id} className="text-xs p-2 rounded-2xl bg-muted/40">
+                          <StatusPill kind={statusPillKind(h.status)} className="mr-2">{hm?.label}</StatusPill>
                           {new Date(h.requested_at).toLocaleString()}
                           {(h.feedback || h.comment) && <div className="mt-0.5">"{h.feedback || h.comment}"</div>}
                         </div>
