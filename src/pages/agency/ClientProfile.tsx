@@ -580,12 +580,12 @@ function ClientTasksTab({ client }: any) {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: t }, { data: m }] = await Promise.all([
+    const [{ data: t }, mList] = await Promise.all([
       supabase.from("tasks").select("*").eq("client_id", client.id).order("created_at", { ascending: false }),
-      supabase.from("agency_members").select("user_id, profiles:user_id(full_name,email)").eq("agency_id", client.agency_id),
+      (await import("@/lib/members")).fetchAgencyMembers(client.agency_id),
     ]);
     setTasks(t || []);
-    setMembers((m || []).map((x: any) => ({ user_id: x.user_id, full_name: x.profiles?.full_name, email: x.profiles?.email })));
+    setMembers(mList);
     setLoading(false);
   };
   useEffect(() => { load(); }, [client.id]);

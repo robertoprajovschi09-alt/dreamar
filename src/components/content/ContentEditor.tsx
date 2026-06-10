@@ -77,21 +77,13 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
   useEffect(() => {
     if (!open || !agency) return;
     (async () => {
-      const [{ data: cls }, { data: mems }] = await Promise.all([
+      const { fetchAgencyMembers } = await import("@/lib/members");
+      const [{ data: cls }, mList] = await Promise.all([
         supabase.from("clients").select("id,name").eq("agency_id", agency.id).order("name"),
-        supabase
-          .from("agency_members")
-          .select("user_id, profiles:user_id(full_name,email)")
-          .eq("agency_id", agency.id),
+        fetchAgencyMembers(agency.id),
       ]);
       setClients(cls || []);
-      setMembers(
-        (mems || []).map((m: any) => ({
-          user_id: m.user_id,
-          full_name: m.profiles?.full_name ?? null,
-          email: m.profiles?.email ?? null,
-        })),
-      );
+      setMembers(mList);
     })();
   }, [open, agency]);
 
