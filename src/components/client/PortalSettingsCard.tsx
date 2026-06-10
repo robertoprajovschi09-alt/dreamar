@@ -24,15 +24,15 @@ type Props = {
 };
 
 function formatRelative(d?: string | null) {
-  if (!d) return "Never";
+  if (!d) return "Niciodată";
   const ms = Date.now() - new Date(d).getTime();
   const min = Math.floor(ms / 60000);
-  if (min < 1) return "Just now";
-  if (min < 60) return `${min}m ago`;
+  if (min < 1) return "Acum";
+  if (min < 60) return `acum ${min}m`;
   const h = Math.floor(min / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `acum ${h}h`;
   const days = Math.floor(h / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `acum ${days}z`;
   return new Date(d).toLocaleDateString();
 }
 
@@ -45,32 +45,39 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
     const url = `${window.location.origin}/accept-invite?token=${token}`;
     await navigator.clipboard.writeText(url);
     setCopiedId(id);
-    toast.success("Link copied");
+    toast.success("Link copiat");
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const resend = async (id: string) => {
+  const resend = async (id: string, token: string) => {
     const { error } = await supabase.rpc("resend_client_invite", { _invite_id: id });
     if (error) return toast.error(error.message);
-    toast.success("Invite refreshed (expires in 7 days)");
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("send-client-invite", { body: { token } });
+      if (fnErr) toast.error(`Emailul nu a putut fi trimis: ${fnErr.message}. Copiază linkul manual.`);
+      else if ((data as any)?.ok) toast.success("Invitație retrimisă pe email");
+      else toast.error(`Emailul nu a putut fi trimis: ${(data as any)?.error || "eroare necunoscută"}. Copiază linkul manual.`);
+    } catch (e: any) {
+      toast.error(`Emailul nu a putut fi trimis: ${e?.message || "eroare necunoscută"}. Copiază linkul manual.`);
+    }
     reload();
   };
 
   const revokeInvite = async (id: string) => {
-    if (!confirm("Revoke this invitation?")) return;
+    if (!confirm("Revoci această invitație?")) return;
     const { error } = await supabase.rpc("revoke_client_invite", { _invite_id: id });
     if (error) return toast.error(error.message);
-    toast.success("Invitation revoked");
+    toast.success("Invitație revocată");
     reload();
   };
 
   const removeUser = async (id: string) => {
-    if (!confirm("Revoke portal access for this user?")) return;
+    if (!confirm("Revoci accesul acestui utilizator?")) return;
     const { error } = await supabase.from("client_users")
       .update({ status: "revoked", revoked_at: new Date().toISOString() } as any)
       .eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Access revoked");
+    toast.success("Acces revocat");
     reload();
   };
 
