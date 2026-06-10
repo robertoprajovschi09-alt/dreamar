@@ -97,8 +97,8 @@ export default function Approvals() {
                           {r.feedback && ` · "${(r.feedback as string).slice(0, 60)}"`}
                         </div>
                       </div>
-                      {overdue && <span className="px-2 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300">Întârziat</span>}
-                      <span className={cn("px-2 py-0.5 rounded text-[11px] font-medium", m?.color)}>{m?.label}</span>
+                      {overdue && <StatusPill kind="danger">Întârziat</StatusPill>}
+                      <StatusPill kind={statusPillKind(r.status)}>{m?.label}</StatusPill>
                     </li>
                   );
                 })}
