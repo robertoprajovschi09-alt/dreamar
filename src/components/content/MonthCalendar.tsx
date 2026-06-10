@@ -67,7 +67,7 @@ function MoreChipsPopover({
           onClick={(e) => { e.stopPropagation(); setOpen(true); }}
           className="text-[10px] text-muted-foreground hover:text-foreground px-1 text-left"
         >
-          +{items.length} more
+          +{items.length} în plus
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2 space-y-1" align="start">
