@@ -57,12 +57,12 @@ export function normalizePermissions(input: any, role: "client_owner" | "client_
 export type InviteStatus = "pending" | "sent" | "opened" | "accepted" | "expired" | "revoked";
 
 export const INVITE_STATUS_LABEL: Record<InviteStatus, string> = {
-  pending: "Not sent",
-  sent: "Sent",
-  opened: "Opened",
-  accepted: "Accepted",
-  expired: "Expired",
-  revoked: "Revoked",
+  pending: "În așteptare",
+  sent: "Trimisă",
+  opened: "Deschisă",
+  accepted: "Acceptată",
+  expired: "Expirată",
+  revoked: "Revocată",
 };
 
 export function inviteStatusVariant(status: string): { bg: string; fg: string } {
