@@ -214,13 +214,13 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
 
         {(acceptedInvites.length > 0 || revokedUsers.length > 0) && (
           <section>
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">History</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Istoric</h4>
             <ul className="text-xs text-muted-foreground space-y-1">
               {acceptedInvites.map((i) => (
-                <li key={i.id}>✓ {i.email} accepted {i.accepted_at ? new Date(i.accepted_at).toLocaleDateString() : ""}</li>
+                <li key={i.id}>✓ {i.email} a acceptat {i.accepted_at ? new Date(i.accepted_at).toLocaleDateString() : ""}</li>
               ))}
               {revokedUsers.map((u) => (
-                <li key={u.id}>⊘ {u.email} access revoked</li>
+                <li key={u.id}>⊘ {u.email} — acces revocat</li>
               ))}
             </ul>
           </section>
@@ -228,7 +228,7 @@ export function PortalSettingsCard({ agencyId, clientId, users, invites, reload 
 
         <p className="text-[11px] text-muted-foreground border-t border-border pt-3 flex items-start gap-1.5">
           <Mail className="h-3 w-3 mt-0.5 shrink-0" />
-          To send invitations by email, configure an email domain in your workspace. Until then, share the secure invite link directly.
+          Pentru a trimite invitații pe email, configurează un domeniu de email. Până atunci, partajează linkul de invitație direct.
         </p>
       </CardContent>
 
