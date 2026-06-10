@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Loader2, Save, Trash2, Sparkles, ChevronDown, Film, Megaphone, Wand2 } from "lucide-react";
+import { Loader2, Save, Trash2, Sparkles, ChevronDown, Film, Megaphone, Wand2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { POST_STATUSES, PLATFORM_OPTIONS, CONTENT_TYPES, type PostStatus } from "@/lib/content";
+import { PENDING_POST_STATUSES, hasReviewableAsset } from "@/lib/approvals";
+import { SendForApprovalDialog } from "@/components/approvals/SendForApprovalDialog";
 import { AssetUploader, type AssetItem } from "./AssetUploader";
 
 type Props = {
