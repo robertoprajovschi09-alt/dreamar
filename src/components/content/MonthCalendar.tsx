@@ -20,6 +20,8 @@ type Props = {
   onDayClick?: (date: string, anchor: { x: number; y: number }) => void;
   onItemClick?: (item: CalendarItem) => void;
   onItemDrop?: (itemId: string, newDate: string) => void;
+  weekdayLabels?: string[];
+  moreLabel?: (n: number) => string;
 };
 
 function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
@@ -78,7 +80,7 @@ function MoreChipsPopover({
   );
 }
 
-export function MonthCalendar({ month, items, onDayClick, onItemClick, onItemDrop }: Props) {
+export function MonthCalendar({ month, items, onDayClick, onItemClick, onItemDrop, weekdayLabels, moreLabel }: Props) {
   const days = useMemo(() => {
     const start = startOfGrid(month);
     return Array.from({ length: 42 }, (_, i) => {
@@ -99,11 +101,12 @@ export function MonthCalendar({ month, items, onDayClick, onItemClick, onItemDro
   }, [items]);
 
   const today = fmtDay(new Date());
+  const weekdays = weekdayLabels && weekdayLabels.length === 7 ? weekdayLabels : ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
   return (
     <div className="border border-border rounded-lg overflow-hidden bg-card">
       <div className="grid grid-cols-7 text-[11px] uppercase tracking-wide text-muted-foreground border-b border-border">
-        {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d) => (
+        {weekdays.map((d) => (
           <div key={d} className="px-2 py-2 text-center font-semibold">{d}</div>
         ))}
       </div>
