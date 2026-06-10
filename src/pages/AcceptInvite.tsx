@@ -142,7 +142,7 @@ export default function AcceptInvite() {
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-3">
-                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+                  <div className="space-y-1.5"><Label>Email</Label><Input type="email" required value={preview.email} readOnly disabled /><p className="text-xs text-muted-foreground">Trebuie să te conectezi cu emailul invitat.</p></div>
                   <div className="space-y-1.5"><Label>Parolă</Label><Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></div>
                   <Button type="submit" disabled={busy} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conectează-te și acceptă"}
