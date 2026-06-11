@@ -253,7 +253,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 }
 
 /* ---------------- Calendar ---------------- */
-function ClientCalendarTab({ clientId }: { clientId: string }) {
+function ClientCalendarTab({ clientId, onOpenPost }: { clientId: string; onOpenPost: (id: string) => void }) {
   const [month, setMonth] = useState(new Date());
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
