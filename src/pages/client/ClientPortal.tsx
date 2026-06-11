@@ -330,7 +330,11 @@ function ClientCalendarTab({ clientId, onOpenPost }: { clientId: string; onOpenP
                     {list.map((it) => {
                       const m = statusMeta(it.status);
                       return (
-                        <div key={it.id} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
+                        <button
+                          key={it.id}
+                          onClick={() => onOpenPost(it.id)}
+                          className="w-full py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3 text-left min-h-[44px] hover:bg-muted/40 rounded-lg px-1 -mx-1"
+                        >
                           <div className="min-w-0">
                             <div className="text-sm font-medium truncate">{it.title}</div>
                             <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -338,7 +342,7 @@ function ClientCalendarTab({ clientId, onOpenPost }: { clientId: string; onOpenP
                             </div>
                           </div>
                           <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${m.color}`}>{m.label}</span>
-                        </div>
+                        </button>
                       );
                     })}
                   </CardContent>
