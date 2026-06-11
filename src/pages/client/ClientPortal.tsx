@@ -35,6 +35,8 @@ import {
   WEEKDAYS_RO_SHORT, goalStatusLabel, metricLabel,
 } from "@/lib/i18nLabels";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PostDetailDialog } from "@/components/client/PostDetailDialog";
+import { ClientContentPipelineTab } from "@/components/client/ClientContentPipelineTab";
 
 
 const monthInputDefault = () => {
@@ -55,6 +57,8 @@ export default function ClientPortal() {
 
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
   const [tab, setTab] = useState<string>("overview");
+  const [openPostId, setOpenPostId] = useState<string | null>(null);
+  const openPost = (id: string) => setOpenPostId(id);
 
   const [isNewClient, setIsNewClient] = useState<boolean>(false);
 
@@ -166,6 +170,7 @@ export default function ClientPortal() {
           >
             <TabsTrigger value="overview" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Sumar</TabsTrigger>
             <TabsTrigger value="checkin" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Check-in</TabsTrigger>
+            <TabsTrigger value="content" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Conținut</TabsTrigger>
             <TabsTrigger value="calendar" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Calendar</TabsTrigger>
             <TabsTrigger value="approvals" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Aprobări</TabsTrigger>
             <TabsTrigger value="reports" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rapoarte</TabsTrigger>
@@ -188,7 +193,8 @@ export default function ClientPortal() {
               onDone={() => setTab("overview")} onCancel={() => setTab("overview")}
             />
           </TabsContent>
-          <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
+          <TabsContent value="content"><ClientContentPipelineTab clientId={client.id} onOpenPost={openPost} /></TabsContent>
+          <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} onOpenPost={openPost} /></TabsContent>
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
           <TabsContent value="results"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
@@ -197,6 +203,12 @@ export default function ClientPortal() {
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
         </Tabs>
       </main>
+      <PostDetailDialog
+        open={!!openPostId}
+        onOpenChange={(v) => { if (!v) setOpenPostId(null); }}
+        postId={openPostId}
+        onGoToApprovals={() => setTab("approvals")}
+      />
     </div>
   );
 }
@@ -241,7 +253,7 @@ function StatCard({ label, value, accent }: { label: string; value: number; acce
 }
 
 /* ---------------- Calendar ---------------- */
-function ClientCalendarTab({ clientId }: { clientId: string }) {
+function ClientCalendarTab({ clientId, onOpenPost }: { clientId: string; onOpenPost: (id: string) => void }) {
   const [month, setMonth] = useState(new Date());
   const [items, setItems] = useState<CalendarItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -318,7 +330,11 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
                     {list.map((it) => {
                       const m = statusMeta(it.status);
                       return (
-                        <div key={it.id} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
+                        <button
+                          key={it.id}
+                          onClick={() => onOpenPost(it.id)}
+                          className="w-full py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3 text-left min-h-[44px] hover:bg-muted/40 rounded-lg px-1 -mx-1"
+                        >
                           <div className="min-w-0">
                             <div className="text-sm font-medium truncate">{it.title}</div>
                             <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -326,7 +342,7 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
                             </div>
                           </div>
                           <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium ${m.color}`}>{m.label}</span>
-                        </div>
+                        </button>
                       );
                     })}
                   </CardContent>
@@ -336,7 +352,7 @@ function ClientCalendarTab({ clientId }: { clientId: string }) {
           })}
         </div>
       ) : (
-        <MonthCalendar month={month} items={items} weekdayLabels={WEEKDAYS_RO_SHORT} />
+        <MonthCalendar month={month} items={items} weekdayLabels={WEEKDAYS_RO_SHORT} onItemClick={(it) => onOpenPost(it.id)} />
       )}
     </div>
   );

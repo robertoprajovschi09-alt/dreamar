@@ -160,7 +160,11 @@ export function ContentEditor({ open, onOpenChange, postId, defaultClientId, def
   };
 
   const remove = async () => {
-    if (!postId || !confirm("Ștergi această piesă de conținut?")) return;
+    if (!postId) return;
+    const ok = confirm(
+      "Ștergi definitiv această postare?\n\nSe vor șterge și aprobările, metricile și fișierele atașate. Acțiunea NU poate fi anulată.",
+    );
+    if (!ok) return;
     const { error } = await supabase.from("content_posts").delete().eq("id", postId);
     if (error) return toast.error(error.message);
     toast.success("Șters");

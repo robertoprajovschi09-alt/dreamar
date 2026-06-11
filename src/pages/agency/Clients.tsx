@@ -15,6 +15,7 @@ import { AddClientWizard } from "@/components/client/AddClientWizard";
 import { QuickAddClientDialog } from "@/components/client/QuickAddClientDialog";
 import { fetchCollectingClientIds } from "@/lib/clientStatus";
 import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
+import { DeleteClientDialog } from "@/components/client/DeleteClientDialog";
 
 type Client = {
   id: string; name: string; niche: string; custom_niche: string | null; niche_id: string | null; city: string | null;
@@ -34,6 +35,7 @@ export default function Clients() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState<Client | null>(null);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
 
   const load = async () => {
@@ -81,13 +83,8 @@ export default function Clients() {
     load();
   };
 
-  const handleDelete = async (c: Client) => {
-    if (!confirm(`Ștergi "${c.name}"? Această acțiune nu poate fi anulată.`)) return;
-    const { error } = await supabase.from("clients").delete().eq("id", c.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Client șters");
-    load();
-  };
+  const handleDelete = (c: Client) => setDeleting(c);
+
 
 
   return (
@@ -164,6 +161,15 @@ export default function Clients() {
             </form>
           </DialogContent>
         </Dialog>
+        {deleting && (
+          <DeleteClientDialog
+            open={!!deleting}
+            onOpenChange={(v) => { if (!v) setDeleting(null); }}
+            clientId={deleting.id}
+            clientName={deleting.name}
+            onDeleted={load}
+          />
+        )}
       </div>
 
       <Card>

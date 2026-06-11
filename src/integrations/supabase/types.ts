@@ -2433,6 +2433,7 @@ export type Database = {
           thumbnail_url: string | null
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           agency_id: string
@@ -2458,6 +2459,7 @@ export type Database = {
           thumbnail_url?: string | null
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           agency_id?: string
@@ -2483,6 +2485,7 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
