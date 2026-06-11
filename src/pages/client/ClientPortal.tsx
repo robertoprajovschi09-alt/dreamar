@@ -193,7 +193,8 @@ export default function ClientPortal() {
               onDone={() => setTab("overview")} onCancel={() => setTab("overview")}
             />
           </TabsContent>
-          <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} /></TabsContent>
+          <TabsContent value="content"><ClientContentPipelineTab clientId={client.id} onOpenPost={openPost} /></TabsContent>
+          <TabsContent value="calendar"><ClientCalendarTab clientId={client.id} onOpenPost={openPost} /></TabsContent>
           <TabsContent value="approvals"><ClientApprovalsTab clientId={client.id} /></TabsContent>
           <TabsContent value="reports"><ClientReportsView clientId={client.id} /></TabsContent>
           <TabsContent value="results"><ClientPortalAnalyticsTab clientId={client.id} /></TabsContent>
