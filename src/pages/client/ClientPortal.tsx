@@ -352,7 +352,7 @@ function ClientCalendarTab({ clientId, onOpenPost }: { clientId: string; onOpenP
           })}
         </div>
       ) : (
-        <MonthCalendar month={month} items={items} weekdayLabels={WEEKDAYS_RO_SHORT} />
+        <MonthCalendar month={month} items={items} weekdayLabels={WEEKDAYS_RO_SHORT} onItemClick={(it) => onOpenPost(it.id)} />
       )}
     </div>
   );
