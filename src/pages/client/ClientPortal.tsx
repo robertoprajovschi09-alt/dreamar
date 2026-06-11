@@ -203,6 +203,12 @@ export default function ClientPortal() {
           <TabsContent value="feedback"><FeedbackTab clientId={client.id} agencyId={agency.id} userId={user!.id} /></TabsContent>
         </Tabs>
       </main>
+      <PostDetailDialog
+        open={!!openPostId}
+        onOpenChange={(v) => { if (!v) setOpenPostId(null); }}
+        postId={openPostId}
+        onGoToApprovals={() => setTab("approvals")}
+      />
     </div>
   );
 }
