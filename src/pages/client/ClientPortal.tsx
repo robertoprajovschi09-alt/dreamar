@@ -170,6 +170,7 @@ export default function ClientPortal() {
           >
             <TabsTrigger value="overview" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Sumar</TabsTrigger>
             <TabsTrigger value="checkin" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Check-in</TabsTrigger>
+            <TabsTrigger value="content" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Conținut</TabsTrigger>
             <TabsTrigger value="calendar" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Calendar</TabsTrigger>
             <TabsTrigger value="approvals" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Aprobări</TabsTrigger>
             <TabsTrigger value="reports" data-tab-trigger className="snap-start shrink-0 min-h-[40px] rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Rapoarte</TabsTrigger>
