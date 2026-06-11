@@ -35,6 +35,8 @@ import {
   WEEKDAYS_RO_SHORT, goalStatusLabel, metricLabel,
 } from "@/lib/i18nLabels";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PostDetailDialog } from "@/components/client/PostDetailDialog";
+import { ClientContentPipelineTab } from "@/components/client/ClientContentPipelineTab";
 
 
 const monthInputDefault = () => {
