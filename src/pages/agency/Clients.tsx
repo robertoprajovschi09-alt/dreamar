@@ -35,6 +35,7 @@ export default function Clients() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState<Client | null>(null);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
 
   const load = async () => {
