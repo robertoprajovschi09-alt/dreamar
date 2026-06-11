@@ -57,6 +57,8 @@ export default function ClientPortal() {
 
   const [briefStatus, setBriefStatus] = useState<"loading" | "missing" | "done">("loading");
   const [tab, setTab] = useState<string>("overview");
+  const [openPostId, setOpenPostId] = useState<string | null>(null);
+  const openPost = (id: string) => setOpenPostId(id);
 
   const [isNewClient, setIsNewClient] = useState<boolean>(false);
 
