@@ -83,13 +83,8 @@ export default function Clients() {
     load();
   };
 
-  const handleDelete = async (c: Client) => {
-    if (!confirm(`Ștergi "${c.name}"? Această acțiune nu poate fi anulată.`)) return;
-    const { error } = await supabase.from("clients").delete().eq("id", c.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Client șters");
-    load();
-  };
+  const handleDelete = (c: Client) => setDeleting(c);
+
 
 
   return (
