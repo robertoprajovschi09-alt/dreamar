@@ -15,6 +15,7 @@ import { AddClientWizard } from "@/components/client/AddClientWizard";
 import { QuickAddClientDialog } from "@/components/client/QuickAddClientDialog";
 import { fetchCollectingClientIds } from "@/lib/clientStatus";
 import { CollectingDataBadge } from "@/components/health/CollectingDataBadge";
+import { DeleteClientDialog } from "@/components/client/DeleteClientDialog";
 
 type Client = {
   id: string; name: string; niche: string; custom_niche: string | null; niche_id: string | null; city: string | null;
