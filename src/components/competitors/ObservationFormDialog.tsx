@@ -115,7 +115,7 @@ export function ObservationFormDialog({ open, onOpenChange, agencyId, clientId, 
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{observation ? "Edit observation" : "New observation"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Title</Label><Input value={form.title || ""} onChange={(e) => set("title", e.target.value)} /></div>
+          <div><Label>Titlu</Label><Input value={form.title || ""} onChange={(e) => set("title", e.target.value)} /></div>
           <div className="grid grid-cols-3 gap-3">
             <div><Label>Platform</Label>
               <Select value={form.platform || ""} onValueChange={(v) => set("platform", v)}>
@@ -123,7 +123,7 @@ export function ObservationFormDialog({ open, onOpenChange, agencyId, clientId, 
                 <SelectContent>{COMP_PLATFORMS.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Content type</Label>
+            <div><Label>Tip de conținut</Label>
               <Select value={form.content_type || ""} onValueChange={(v) => set("content_type", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{COMP_CONTENT_TYPES.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}</SelectContent>
@@ -131,29 +131,29 @@ export function ObservationFormDialog({ open, onOpenChange, agencyId, clientId, 
             </div>
             <div><Label>Date</Label><Input type="date" value={form.observed_date || ""} onChange={(e) => set("observed_date", e.target.value)} /></div>
           </div>
-          <div><Label>Content URL</Label><Input value={form.content_url || ""} onChange={(e) => set("content_url", e.target.value)} placeholder="https://" /></div>
+          <div><Label>URL conținut</Label><Input value={form.content_url || ""} onChange={(e) => set("content_url", e.target.value)} placeholder="https://" /></div>
           <div>
             <Label>Screenshot</Label>
             <div className="flex items-center gap-2">
               <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-              {form.screenshot_url && !file && <span className="text-xs text-muted-foreground">Existing image kept</span>}
-              {file && <span className="text-xs text-muted-foreground"><Upload className="h-3 w-3 inline mr-1" />Will replace</span>}
+              {form.screenshot_url && !file && <span className="text-xs text-muted-foreground">Imaginea existentă e păstrată</span>}
+              {file && <span className="text-xs text-muted-foreground"><Upload className="h-3 w-3 inline mr-1" />Va înlocui</span>}
             </div>
           </div>
           <div><Label>Hook</Label><Textarea rows={2} value={form.hook || ""} onChange={(e) => set("hook", e.target.value)} /></div>
           <div><Label>Caption</Label><Textarea rows={2} value={form.caption || ""} onChange={(e) => set("caption", e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Offer</Label><Input value={form.offer || ""} onChange={(e) => set("offer", e.target.value)} /></div>
-            <div><Label>Content angle</Label><Input value={form.content_angle || ""} onChange={(e) => set("content_angle", e.target.value)} /></div>
+            <div><Label>Unghi de conținut</Label><Input value={form.content_angle || ""} onChange={(e) => set("content_angle", e.target.value)} /></div>
           </div>
           <div>
-            <Label>Estimated performance</Label>
+            <Label>Performanță estimată</Label>
             <Select value={form.estimated_performance || ""} onValueChange={(v) => set("estimated_performance", v)}>
               <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{COMP_PERFORMANCE.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div><Label>Notes</Label><Textarea rows={2} value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} /></div>
+          <div><Label>Note</Label><Textarea rows={2} value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} /></div>
           <div>
             <Label>Tags</Label>
             <div className="flex gap-2">
@@ -171,8 +171,8 @@ export function ObservationFormDialog({ open, onOpenChange, agencyId, clientId, 
           <div className="flex items-center gap-3 pt-2 border-t">
             <Switch checked={!!form.visible_to_client} onCheckedChange={(v) => set("visible_to_client", v)} />
             <div>
-              <Label>Visible to client</Label>
-              <p className="text-[11px] text-muted-foreground">If on, this observation appears in the client portal under Market Insights.</p>
+              <Label>Vizibil pentru client</Label>
+              <p className="text-[11px] text-muted-foreground">Dacă e activ, observația apare în portalul clientului la Insight-uri de piață.</p>
             </div>
           </div>
         </div>

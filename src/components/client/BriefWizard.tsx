@@ -185,7 +185,7 @@ export function BriefWizard({ agencyId, agencyName, clientId, clientName, userId
                       <SelectContent>{POSTING_FREQUENCIES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                     </Select>
                   </Field>
-                  <Field label="Monthly ad budget">
+                  <Field label="Buget lunar de reclame">
                     <Select value={brief.budget_range || ""} onValueChange={(v) => update({ budget_range: v })}>
                       <SelectTrigger><SelectValue placeholder="Pick one" /></SelectTrigger>
                       <SelectContent>{BUDGET_RANGES.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>

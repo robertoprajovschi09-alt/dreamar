@@ -66,7 +66,7 @@ export function GenerateStrategyDialog({
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Month</Label>
+              <Label>Luna</Label>
               <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>

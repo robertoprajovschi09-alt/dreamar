@@ -12,21 +12,21 @@ interface Props {
 
 export function VideosTable({ videos, onEdit, showClient }: Props) {
   if (videos.length === 0) {
-    return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No videos tracked yet.</CardContent></Card>;
+    return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Niciun video urmărit încă.</CardContent></Card>;
   }
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
-            <th className="text-left p-2.5">Hook / Date</th>
+            <th className="text-left p-2.5">Hook / Dată</th>
             {showClient && <th className="text-left p-2.5">Client</th>}
             <th className="text-left p-2.5">Platform</th>
-            <th className="text-right p-2.5">Views</th>
-            <th className="text-right p-2.5">Reach</th>
+            <th className="text-right p-2.5">Vizualizări</th>
+            <th className="text-right p-2.5">Acoperire</th>
             <th className="text-right p-2.5">ER</th>
             <th className="text-right p-2.5">Comp.</th>
-            <th className="text-right p-2.5">Calls/DMs</th>
+            <th className="text-right p-2.5">Apeluri/Mesaje</th>
             <th className="text-left p-2.5">Reco</th>
             <th className="text-right p-2.5"></th>
           </tr>

@@ -119,7 +119,7 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>Title</Label>
+            <Label>Titlu</Label>
             <Input value={form.title || ""} onChange={(e) => set("title", e.target.value)} placeholder="e.g. 3 mistakes that cost you sales" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -140,15 +140,15 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Niche (optional)</Label>
+              <Label>Nișă (opțional)</Label>
               <Input value={form.niche || ""} onChange={(e) => set("niche", e.target.value)} placeholder="real estate, restaurant…" />
             </div>
             <div>
-              <Label>Client (optional)</Label>
+              <Label>Client (opțional)</Label>
               <Select value={form.client_id || "none"} onValueChange={(v) => set("client_id", v === "none" ? null : v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No client</SelectItem>
+                  <SelectItem value="none">Fără client</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -168,7 +168,7 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Content angle</Label>
+              <Label>Unghi de conținut</Label>
               <Input value={form.content_angle || ""} onChange={(e) => set("content_angle", e.target.value)} placeholder="pain → solution" />
             </div>
             <div>
@@ -181,7 +181,7 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
             <Textarea rows={2} value={form.performance_notes || ""} onChange={(e) => set("performance_notes", e.target.value)} placeholder="What metric/result told you it worked?" />
           </div>
           <div>
-            <Label>Source URL</Label>
+            <Label>URL sursă</Label>
             <Input value={form.source_url || ""} onChange={(e) => set("source_url", e.target.value)} placeholder="https://…" />
           </div>
           <div>
@@ -199,7 +199,7 @@ export function SwipeFormDialog({ open, onOpenChange, swipe, defaults, onSaved }
             )}
           </div>
           <div>
-            <Label>Visibility</Label>
+            <Label>Vizibilitate</Label>
             <Select value={form.visibility} onValueChange={(v) => set("visibility", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>

@@ -54,7 +54,7 @@ export function ClientAnalyticsTab({ clientId, agencyId }: { clientId: string; a
 
   const remove = async (id: string) => {
     if (!confirm("Delete this entry?")) return;
-    try { await deleteAnalyticsEntry(id); toast.success("Deleted"); load(); }
+    try { await deleteAnalyticsEntry(id); toast.success("Șters"); load(); }
     catch (e: any) { toast.error(e.message); }
   };
 
@@ -62,12 +62,12 @@ export function ClientAnalyticsTab({ clientId, agencyId }: { clientId: string; a
     <div className="space-y-4">
       <Card><CardContent className="pt-5 flex flex-wrap items-end gap-3">
         <div><Label className="text-xs">Year</Label><Input type="number" className="w-24" value={year} onChange={(e) => setYear(Number(e.target.value))} /></div>
-        <div><Label className="text-xs">Month</Label><Input type="number" min={1} max={12} className="w-20" value={month} onChange={(e) => setMonth(Number(e.target.value))} /></div>
+        <div><Label className="text-xs">Luna</Label><Input type="number" min={1} max={12} className="w-20" value={month} onChange={(e) => setMonth(Number(e.target.value))} /></div>
         <div><Label className="text-xs">Platform</Label>
           <Select value={platform || "__all"} onValueChange={(v) => setPlatform(v === "__all" ? "" : v)}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all">All platforms</SelectItem>
+              <SelectItem value="__all">Toate platformele</SelectItem>
               {PLATFORMS.map((p) => <SelectItem key={p} value={p}>{PLATFORM_LABEL[p]}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -109,12 +109,12 @@ export function ClientAnalyticsTab({ clientId, agencyId }: { clientId: string; a
           <Card>
             <CardContent className="pt-5">
               <div className="text-sm font-semibold mb-3">Period entries ({entries.length})</div>
-              {entries.length === 0 ? <p className="text-sm text-muted-foreground">No entries for this period.</p> : (
+              {entries.length === 0 ? <p className="text-sm text-muted-foreground">Nicio intrare în această perioadă.</p> : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead><tr className="text-left text-muted-foreground border-b border-border">
-                      <th className="py-1.5 pr-2">Platform</th><th className="py-1.5 px-2">Views</th><th className="py-1.5 px-2">Reach</th>
-                      <th className="py-1.5 px-2">Eng.</th><th className="py-1.5 px-2">Leads</th><th className="py-1.5 px-2">Revenue</th>
+                      <th className="py-1.5 pr-2">Platform</th><th className="py-1.5 px-2">Vizualizări</th><th className="py-1.5 px-2">Acoperire</th>
+                      <th className="py-1.5 px-2">Eng.</th><th className="py-1.5 px-2">Lead-uri</th><th className="py-1.5 px-2">Venit</th>
                       <th className="py-1.5 px-2">Source</th><th className="py-1.5 pl-2"></th>
                     </tr></thead>
                     <tbody>

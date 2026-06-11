@@ -14,7 +14,7 @@ export function ClientMarketInsightsTab({ clientId }: { clientId: string }) {
   }, [clientId]);
 
   if (loading) return <p className="text-sm text-muted-foreground">Se încarcă…</p>;
-  if (!obs.length) return <p className="text-sm text-muted-foreground">No market insights shared yet.</p>;
+  if (!obs.length) return <p className="text-sm text-muted-foreground">Niciun insight de piață partajat încă.</p>;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

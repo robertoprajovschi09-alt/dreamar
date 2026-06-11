@@ -68,13 +68,13 @@ export function TaskEditor({ open, onOpenChange, agencyId, taskId, defaultClient
       : await supabase.from("tasks").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved"); onSaved?.(); onOpenChange(false);
+    toast.success("Salvat"); onSaved?.(); onOpenChange(false);
   };
   const remove = async () => {
     if (!taskId || !confirm("Delete task?")) return;
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
     if (error) return toast.error(error.message);
-    toast.success("Deleted"); onSaved?.(); onOpenChange(false);
+    toast.success("Șters"); onSaved?.(); onOpenChange(false);
   };
 
   return (
@@ -82,14 +82,14 @@ export function TaskEditor({ open, onOpenChange, agencyId, taskId, defaultClient
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader><SheetTitle>{taskId ? "Edit task" : "New task"}</SheetTitle></SheetHeader>
         <form onSubmit={save} className="space-y-4 mt-4">
-          <Field label="Title *"><Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
-          <Field label="Description"><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+          <Field label="Titlu *"><Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+          <Field label="Descriere"><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Client">
               <Select value={form.client_id || "_none"} onValueChange={(v) => setForm({ ...form, client_id: v === "_none" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="Internal" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="_none">Internal (no client)</SelectItem>
+                  <SelectItem value="_none">Intern (fără client)</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -114,13 +114,13 @@ export function TaskEditor({ open, onOpenChange, agencyId, taskId, defaultClient
                 <SelectContent>{TASK_PRIORITIES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
-            <Field label="Deadline"><Input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></Field>
+            <Field label="Termen"><Input type="datetime-local" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></Field>
           </div>
           <Field label="Assignee">
             <Select value={form.assigned_to || "_none"} onValueChange={(v) => setForm({ ...form, assigned_to: v === "_none" ? "" : v })}>
               <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="_none">Unassigned</SelectItem>
+                <SelectItem value="_none">Neasignat</SelectItem>
                 {members.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.full_name || m.email || m.user_id.slice(0, 8)}</SelectItem>)}
               </SelectContent>
             </Select>

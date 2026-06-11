@@ -46,9 +46,9 @@ export function ObservationDetailDialog({ open, onOpenChange, observation, onUpd
             {observation.caption && <Field label="Caption" value={observation.caption} />}
             {observation.offer && <Field label="Offer" value={observation.offer} />}
             {observation.content_angle && <Field label="Angle" value={observation.content_angle} />}
-            {observation.notes && <Field label="Notes" value={observation.notes} />}
+            {observation.notes && <Field label="Note" value={observation.notes} />}
             {observation.content_url && (
-              <a href={observation.content_url} target="_blank" rel="noreferrer" className="text-sm text-primary inline-flex items-center gap-1"><ExternalLink className="h-3 w-3" />Open original</a>
+              <a href={observation.content_url} target="_blank" rel="noreferrer" className="text-sm text-primary inline-flex items-center gap-1"><ExternalLink className="h-3 w-3" />Deschide originalul</a>
             )}
 
             <div className="pt-3 border-t space-y-2">
@@ -68,11 +68,11 @@ export function ObservationDetailDialog({ open, onOpenChange, observation, onUpd
               {typeof a.originality_score === "number" && <Field label="Originality score" value={`${a.originality_score}/10`} />}
               {Array.isArray(a.ideas_to_test) && a.ideas_to_test.length > 0 && (
                 <div>
-                  <div className="text-xs text-muted-foreground mb-1">Original ideas to test</div>
+                  <div className="text-xs text-muted-foreground mb-1">Idei originale de testat</div>
                   <ul className="list-disc pl-5 text-sm space-y-1">{a.ideas_to_test.map((i: string, k: number) => <li key={k}>{i}</li>)}</ul>
                 </div>
               )}
-              {!Object.keys(a).length && <p className="text-xs text-muted-foreground">No analysis yet. Click Analyze.</p>}
+              {!Object.keys(a).length && <p className="text-xs text-muted-foreground">Nicio analiză încă. Apasă Analizează.</p>}
             </div>
           </div>
         </DialogContent>

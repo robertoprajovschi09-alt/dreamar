@@ -81,7 +81,7 @@ export function BusinessImpactQuickForm({
         if (error) throw error;
         setEntryId((data as any).id);
       }
-      toast.success("Saved");
+      toast.success("Salvat");
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -92,8 +92,8 @@ export function BusinessImpactQuickForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Today's business impact</CardTitle>
-        <p className="text-xs text-muted-foreground">Quick numbers help your agency see what's actually working in real life.</p>
+        <CardTitle className="text-base">Impactul business de azi</CardTitle>
+        <p className="text-xs text-muted-foreground">Cifrele rapide ajută agenția să vadă ce funcționează cu adevărat.</p>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -121,7 +121,7 @@ export function BusinessImpactQuickForm({
               })}
             </div>
             <div className="mt-4 space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Anything qualitative? (optional)</Label>
+              <Label className="text-[11px] text-muted-foreground">Ceva calitativ? (opțional)</Label>
               <Textarea rows={2} value={values.qualitative_feedback || ""} onChange={(e) => update("qualitative_feedback", e.target.value)} placeholder="People mentioned the IG reel, calls picked up after Tuesday post…" />
             </div>
             <div className="mt-4 flex justify-end">

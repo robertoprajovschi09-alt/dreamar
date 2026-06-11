@@ -120,7 +120,7 @@ export default function AiPrompts() {
     load();
   }
 
-  if (!profile?.is_saas_admin) return <div className="p-6 text-sm">Admin only.</div>;
+  if (!profile?.is_saas_admin) return <div className="p-6 text-sm">Doar admin.</div>;
 
   return (
     <div className="p-6 space-y-4">
@@ -133,12 +133,12 @@ export default function AiPrompts() {
             <DialogContent className="max-w-2xl">
               <DialogHeader><DialogTitle>Versiune nouă de prompt</DialogTitle></DialogHeader>
               <div className="space-y-2">
-                <Input placeholder="feature key (e.g. agency_assistant)" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} />
-                <Input placeholder="version name (optional)" value={form.version_name} onChange={(e) => setForm({ ...form, version_name: e.target.value })} />
-                <Textarea rows={10} placeholder="System prompt content…" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
+                <Input placeholder="cheie funcție (ex. agency_assistant)" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} />
+                <Input placeholder="nume versiune (opțional)" value={form.version_name} onChange={(e) => setForm({ ...form, version_name: e.target.value })} />
+                <Textarea rows={10} placeholder="Conținutul promptului de sistem…" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} />
                 <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="model override (optional)" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
-                  <Input placeholder="temperature" value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })} />
+                  <Input placeholder="model (opțional)" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+                  <Input placeholder="temperatură" value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })} />
                 </div>
               </div>
               <DialogFooter><Button onClick={createNewVersion}>Creează</Button></DialogFooter>
@@ -182,8 +182,8 @@ export default function AiPrompts() {
                           {sc && <span className="text-xs text-muted-foreground">{sc.runs_count} runs · ⭐ {sc.avg_rating?.toFixed(2) ?? "—"} · 👍 {sc.useful_count} · ⚠ {sc.hallucinated_count}</span>}
                         </CardTitle>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setEvalOpen(p)}><FlaskConical className="h-3 w-3 mr-1" />Run Evaluation</Button>
-                          {!p.is_active && <Button size="sm" onClick={() => setActive(p)}>Set as Active</Button>}
+                          <Button size="sm" variant="outline" onClick={() => setEvalOpen(p)}><FlaskConical className="h-3 w-3 mr-1" />Rulează evaluarea</Button>
+                          {!p.is_active && <Button size="sm" onClick={() => setActive(p)}>Setează ca activ</Button>}
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -213,8 +213,8 @@ export default function AiPrompts() {
                 <CardHeader><CardTitle className="text-sm">{f}</CardTitle></CardHeader>
                 <CardContent className="text-xs space-y-1">
                   <div>Runs: <strong>{totalRuns}</strong> · Feedback: <strong>{totalFb}</strong> · Useful: <strong>{useful}</strong> · Hallucinated: <strong className={halluc > 0 ? "text-destructive" : ""}>{halluc}</strong></div>
-                  {best && <div>Best version: <Badge variant="secondary">v{best.version}</Badge> {best.acceptance_rate ?? "—"}% acceptance</div>}
-                  {worst && worst.prompt_id !== best?.prompt_id && <div>Worst version: <Badge variant="outline">v{worst.version}</Badge> {worst.acceptance_rate ?? "—"}% acceptance</div>}
+                  {best && <div>Cea mai bună versiune: <Badge variant="secondary">v{best.version}</Badge> {best.acceptance_rate ?? "—"}% acceptance</div>}
+                  {worst && worst.prompt_id !== best?.prompt_id && <div>Cea mai slabă versiune: <Badge variant="outline">v{worst.version}</Badge> {worst.acceptance_rate ?? "—"}% acceptance</div>}
                 </CardContent>
               </Card>
             );
@@ -223,7 +223,7 @@ export default function AiPrompts() {
 
         {/* Feedback */}
         <TabsContent value="feedback" className="space-y-2">
-          {feedback.length === 0 && <div className="text-sm text-muted-foreground">No feedback yet.</div>}
+          {feedback.length === 0 && <div className="text-sm text-muted-foreground">Niciun feedback încă.</div>}
           {feedback.map(f => (
             <Card key={f.id}>
               <CardContent className="pt-3 text-xs space-y-1">
@@ -234,7 +234,7 @@ export default function AiPrompts() {
                   <span className="text-muted-foreground ml-auto">{new Date(f.created_at).toLocaleString()}</span>
                 </div>
                 {f.comment && <div className="text-muted-foreground">{f.comment}</div>}
-                {f.correction && <div className="bg-muted/40 rounded p-2"><strong>Correction:</strong> {f.correction}</div>}
+                {f.correction && <div className="bg-muted/40 rounded p-2"><strong>Corecție:</strong> {f.correction}</div>}
               </CardContent>
             </Card>
           ))}
@@ -242,7 +242,7 @@ export default function AiPrompts() {
 
         {/* Failed */}
         <TabsContent value="failed" className="space-y-2">
-          {failed.length === 0 && <div className="text-sm text-muted-foreground">No failed outputs.</div>}
+          {failed.length === 0 && <div className="text-sm text-muted-foreground">Niciun output eșuat.</div>}
           {failed.map(r => (
             <Card key={r.id}>
               <CardContent className="pt-3 text-xs space-y-1">
@@ -260,7 +260,7 @@ export default function AiPrompts() {
 
         {/* Learning Events */}
         <TabsContent value="events" className="space-y-2">
-          {events.length === 0 && <div className="text-sm text-muted-foreground">No learning events.</div>}
+          {events.length === 0 && <div className="text-sm text-muted-foreground">Niciun eveniment de învățare.</div>}
           {events.map(ev => (
             <Card key={ev.id}>
               <CardContent className="pt-3 space-y-2">
@@ -271,13 +271,13 @@ export default function AiPrompts() {
                   <span className="text-muted-foreground ml-auto">{new Date(ev.created_at).toLocaleString()}</span>
                 </div>
                 {ev.summary && <div className="text-sm">{ev.summary}</div>}
-                {ev.recommended_change && <div className="text-xs text-muted-foreground"><strong>Recommended:</strong> {ev.recommended_change}</div>}
+                {ev.recommended_change && <div className="text-xs text-muted-foreground"><strong>Recomandat:</strong> {ev.recommended_change}</div>}
                 {ev.status === "new" && (
                   <div className="flex gap-2">
                     {ev.proposed_prompt_version_id && (
-                      <Button size="sm" onClick={() => approveEvent(ev)}><CheckCircle2 className="h-3 w-3 mr-1" />Approve & Apply</Button>
+                      <Button size="sm" onClick={() => approveEvent(ev)}><CheckCircle2 className="h-3 w-3 mr-1" />Aprobă și aplică</Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => rejectEvent(ev)}><XCircle className="h-3 w-3 mr-1" />Reject</Button>
+                    <Button size="sm" variant="ghost" onClick={() => rejectEvent(ev)}><XCircle className="h-3 w-3 mr-1" />Respinge</Button>
                   </div>
                 )}
               </CardContent>
@@ -291,7 +291,7 @@ export default function AiPrompts() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Run Evaluation — {evalOpen?.key} v{evalOpen?.version}</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">Provide a JSON array of test samples. Each: <code>{`{ test_name, input_sample, expected_behavior }`}</code></div>
+            <div className="text-xs text-muted-foreground">Oferă un array JSON de mostre de test. Fiecare: <code>{`{ test_name, input_sample, expected_behavior }`}</code></div>
             <Textarea rows={12} value={evalDataset} onChange={(e) => setEvalDataset(e.target.value)} className="font-mono text-xs" />
           </div>
           <DialogFooter>

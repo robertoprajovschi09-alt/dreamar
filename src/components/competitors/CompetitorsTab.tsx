@@ -91,12 +91,12 @@ export function CompetitorsTab({ agencyId, clientId }: Props) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedCompId(null)}><ArrowLeft className="h-4 w-4 mr-1" />Back to competitors</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedCompId(null)}><ArrowLeft className="h-4 w-4 mr-1" />Înapoi la concurenți</Button>
           <div className="flex gap-2">
             <Select value={platform} onValueChange={setPlatform}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All platforms</SelectItem>
+                <SelectItem value="all">Toate platformele</SelectItem>
                 {COMP_PLATFORMS.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
               </SelectContent>
             </Select>

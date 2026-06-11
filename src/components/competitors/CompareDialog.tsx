@@ -33,7 +33,7 @@ export function CompareDialog({ open, onOpenChange, clientId, competitors }: Pro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Compare competitors</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Compară concurenții</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             {competitors.map((c) => (

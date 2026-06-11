@@ -67,7 +67,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
       await supabase.storage.from("agency-files").remove([path]);
       return toast.error(dbErr.message);
     }
-    toast.success("Uploaded"); load();
+    toast.success("Încărcat"); load();
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -81,7 +81,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
     await supabase.storage.from("agency-files").remove([d.storage_path]);
     const { error } = await supabase.from("documents").delete().eq("id", d.id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted"); load();
+    toast.success("Șters"); load();
   };
   const toggleVisibility = async (d: any) => {
     const next = d.visibility === "client_visible" ? "internal" : "client_visible";
@@ -107,7 +107,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
               <Select value={uploadClient || "_none"} onValueChange={(v) => setUploadClient(v === "_none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="No client" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="_none">No client</SelectItem>
+                  <SelectItem value="_none">Fără client</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -115,8 +115,8 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
               <Select value={uploadVisibility} onValueChange={setUploadVisibility}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="internal">Internal only</SelectItem>
-                  <SelectItem value="client_visible">Visible to client</SelectItem>
+                  <SelectItem value="internal">Doar intern</SelectItem>
+                  <SelectItem value="client_visible">Vizibil pentru client</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -130,7 +130,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
         <Select value={folder} onValueChange={setFolder}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All folders</SelectItem>
+            <SelectItem value="all">Toate folderele</SelectItem>
             {DOCUMENT_FOLDERS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -139,7 +139,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
       {loading ? (
         <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
       ) : filtered.length === 0 ? (
-        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No documents.</CardContent></Card>
+        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Niciun document.</CardContent></Card>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
@@ -148,7 +148,7 @@ export function DocumentsList({ agencyId, clientId, clients, showVisibilityToggl
                 <th className="text-left p-2.5">Name</th>
                 <th className="text-left p-2.5">Folder</th>
                 {!clientId && <th className="text-left p-2.5">Client</th>}
-                <th className="text-left p-2.5">Visibility</th>
+                <th className="text-left p-2.5">Vizibilitate</th>
                 <th className="text-right p-2.5">Size</th>
                 <th className="text-left p-2.5">Uploaded</th>
                 <th></th>

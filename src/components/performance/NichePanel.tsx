@@ -97,7 +97,7 @@ function NicheTable({ schema, agencyId, clientId }: { schema: Schema; agencyId: 
     schema.numericFields.forEach((f) => { if (form[f.key] !== "" && form[f.key] != null) payload[f.key] = Number(form[f.key]); });
     const { error } = await (supabase as any).from(schema.table).insert(payload);
     if (error) return toast.error(error.message);
-    toast.success("Added"); setForm({ [schema.nameField]: "" }); setAdding(false); load();
+    toast.success("Adăugat"); setForm({ [schema.nameField]: "" }); setAdding(false); load();
   };
   const updateCell = async (id: string, key: string, value: any) => {
     const v = value === "" ? null : Number(value);
@@ -141,7 +141,7 @@ function NicheTable({ schema, agencyId, clientId }: { schema: Schema; agencyId: 
       )}
 
       {rows.length === 0 ? (
-        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No entries yet.</CardContent></Card>
+        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">Nicio intrare încă.</CardContent></Card>
       ) : (
         <>
           <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
@@ -209,7 +209,7 @@ function CustomMetricsPanel({ agencyId, clientId }: { agencyId: string; clientId
       notes: form.notes || null,
     });
     if (error) return toast.error(error.message);
-    toast.success("Added"); setForm({ label: "", value: "", unit: "", notes: "" }); setAdding(false); load();
+    toast.success("Adăugat"); setForm({ label: "", value: "", unit: "", notes: "" }); setAdding(false); load();
   };
   const remove = async (id: string) => {
     if (!confirm("Delete?")) return;

@@ -90,7 +90,7 @@ export default function AiMaintainer() {
 
   async function approveSuggestion(s: Suggestion) {
     await updateSuggestion(s.id, { status: "approved", approved_at: new Date().toISOString(), approved_by: profile?.id } as any);
-    toast.success("Approved");
+    toast.success("Aprobat");
   }
   async function rejectSuggestion(s: Suggestion) {
     await updateSuggestion(s.id, { status: "rejected" });
@@ -128,7 +128,7 @@ export default function AiMaintainer() {
     toast.success("Prompt copiat");
   }
 
-  if (!isOwner) return <div className="p-6 text-sm">Admin or Agency Owner only.</div>;
+  if (!isOwner) return <div className="p-6 text-sm">Doar admin sau owner de agenție.</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -174,7 +174,7 @@ export default function AiMaintainer() {
             </Select>
           </div>
           {loading && <div className="text-sm text-muted-foreground">Se încarcă…</div>}
-          {!loading && filteredSuggestions.length === 0 && <div className="text-sm text-muted-foreground">No suggestions yet. Run an AI Audit to generate some.</div>}
+          {!loading && filteredSuggestions.length === 0 && <div className="text-sm text-muted-foreground">Nicio sugestie încă. Rulează un audit AI ca să generezi câteva.</div>}
           {filteredSuggestions.map(s => (
             <Card key={s.id}>
               <CardContent className="pt-4 space-y-3">
@@ -198,17 +198,17 @@ export default function AiMaintainer() {
                   <div className="bg-muted/30 rounded p-2 text-xs whitespace-pre-wrap font-mono">{s.suggested_prompt_for_lovable}</div>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => copyPrompt(s.suggested_prompt_for_lovable)}><Copy className="h-3 w-3 mr-1" />Copy prompt</Button>
-                  <Button size="sm" variant="outline" onClick={() => generateFixPrompt(s)}><Sparkles className="h-3 w-3 mr-1" />Generate Lovable Fix Prompt</Button>
+                  <Button size="sm" variant="outline" onClick={() => copyPrompt(s.suggested_prompt_for_lovable)}><Copy className="h-3 w-3 mr-1" />Copiază promptul</Button>
+                  <Button size="sm" variant="outline" onClick={() => generateFixPrompt(s)}><Sparkles className="h-3 w-3 mr-1" />Generează prompt de fix Lovable</Button>
                   <Button size="sm" variant="outline" onClick={() => createTask(s)}><ListPlus className="h-3 w-3 mr-1" />Creează sarcină</Button>
                   {s.status !== "approved" && s.status !== "implemented" && (
                     <Button size="sm" onClick={() => approveSuggestion(s)}><CheckCircle2 className="h-3 w-3 mr-1" />Approve</Button>
                   )}
                   {s.status !== "rejected" && s.status !== "implemented" && (
-                    <Button size="sm" variant="ghost" onClick={() => rejectSuggestion(s)}><XCircle className="h-3 w-3 mr-1" />Reject</Button>
+                    <Button size="sm" variant="ghost" onClick={() => rejectSuggestion(s)}><XCircle className="h-3 w-3 mr-1" />Respinge</Button>
                   )}
                   {s.status !== "implemented" && (
-                    <Button size="sm" variant="secondary" onClick={() => markImplemented(s)}><FlaskConical className="h-3 w-3 mr-1" />Mark Implemented</Button>
+                    <Button size="sm" variant="secondary" onClick={() => markImplemented(s)}><FlaskConical className="h-3 w-3 mr-1" />Marchează implementat</Button>
                   )}
                 </div>
               </CardContent>
@@ -218,7 +218,7 @@ export default function AiMaintainer() {
 
         {/* Audits */}
         <TabsContent value="audits" className="space-y-3">
-          {audits.length === 0 && <div className="text-sm text-muted-foreground">No audits yet.</div>}
+          {audits.length === 0 && <div className="text-sm text-muted-foreground">Niciun audit încă.</div>}
           {audits.map(a => (
             <Card key={a.id}>
               <CardHeader>
@@ -245,7 +245,7 @@ export default function AiMaintainer() {
                 )}
                 {Array.isArray(a.recommended_actions) && a.recommended_actions.length > 0 && (
                   <div>
-                    <div className="text-xs font-medium mb-1">Recommended actions</div>
+                    <div className="text-xs font-medium mb-1">Acțiuni recomandate</div>
                     <ul className="text-xs list-disc pl-4 space-y-1">
                       {a.recommended_actions.map((r: any, i: number) => <li key={i}>{typeof r === "string" ? r : JSON.stringify(r)}</li>)}
                     </ul>
@@ -258,7 +258,7 @@ export default function AiMaintainer() {
 
         {/* Tasks */}
         <TabsContent value="tasks" className="space-y-3">
-          {tasks.length === 0 && <div className="text-sm text-muted-foreground">No tasks yet.</div>}
+          {tasks.length === 0 && <div className="text-sm text-muted-foreground">Nicio sarcină încă.</div>}
           {tasks.map(t => (
             <Card key={t.id}>
               <CardContent className="pt-4 flex items-center gap-3 flex-wrap">
@@ -288,7 +288,7 @@ export default function AiMaintainer() {
           <DialogHeader><DialogTitle>Run AI Audit</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-muted-foreground">Audit type</label>
+              <label className="text-xs text-muted-foreground">Tip de audit</label>
               <Select value={auditType} onValueChange={setAuditType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -298,27 +298,27 @@ export default function AiMaintainer() {
             </div>
             {isAdmin && (
               <div>
-                <label className="text-xs text-muted-foreground">Scope</label>
+                <label className="text-xs text-muted-foreground">Domeniu</label>
                 <Select value={scope} onValueChange={(v) => setScope(v as any)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="agency">Current agency</SelectItem>
+                    <SelectItem value="agency">Agenția curentă</SelectItem>
                     <SelectItem value="global">Global (Super Admin)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div>
-              <label className="text-xs text-muted-foreground">Page name (optional)</label>
-              <Input value={pageName} onChange={(e) => setPageName(e.target.value)} placeholder="e.g. Agency Dashboard" />
+              <label className="text-xs text-muted-foreground">Nume pagină (opțional)</label>
+              <Input value={pageName} onChange={(e) => setPageName(e.target.value)} placeholder="ex. Panoul agenției" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">Page URL (optional)</label>
+              <label className="text-xs text-muted-foreground">URL pagină (opțional)</label>
               <Input value={pageUrl} onChange={(e) => setPageUrl(e.target.value)} placeholder="/agency/dashboard" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">Extra context (optional)</label>
-              <Textarea value={extraCtx} onChange={(e) => setExtraCtx(e.target.value)} placeholder="Notes, complaints, screenshots descriptions, etc." />
+              <label className="text-xs text-muted-foreground">Context suplimentar (opțional)</label>
+              <Textarea value={extraCtx} onChange={(e) => setExtraCtx(e.target.value)} placeholder="Note, plângeri, descrieri de capturi etc." />
             </div>
           </div>
           <DialogFooter>

@@ -50,7 +50,7 @@ export function QuickEditTaskSheet({ open, onOpenChange, task, members, onChange
     if (!confirm("Delete task?")) return;
     const { error } = await supabase.from("tasks").delete().eq("id", task.id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted"); onChanged(); onOpenChange(false);
+    toast.success("Șters"); onChanged(); onOpenChange(false);
   };
 
   const deadline = form.deadline ? new Date(form.deadline) : null;

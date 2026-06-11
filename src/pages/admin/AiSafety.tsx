@@ -45,7 +45,7 @@ export default function AiSafety() {
     load();
   }
 
-  if (!profile?.is_saas_admin) return <div className="p-6 text-sm">Admin only.</div>;
+  if (!profile?.is_saas_admin) return <div className="p-6 text-sm">Doar admin.</div>;
 
   return (
     <div className="p-6 space-y-4">
@@ -56,14 +56,14 @@ export default function AiSafety() {
             <DialogHeader><DialogTitle>Regulă nouă de siguranță</DialogTitle></DialogHeader>
             <div className="space-y-2">
               <Input placeholder="rule_key" value={form.rule_key} onChange={(e) => setForm({ ...form, rule_key: e.target.value })} />
-              <Input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-              <Input placeholder="Regex pattern" value={form.pattern} onChange={(e) => setForm({ ...form, pattern: e.target.value })} />
+              <Input placeholder="Descriere" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <Input placeholder="Tipar regex" value={form.pattern} onChange={(e) => setForm({ ...form, pattern: e.target.value })} />
               <Select value={form.action} onValueChange={(v) => setForm({ ...form, action: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="warn">Warn (log only)</SelectItem>
+                  <SelectItem value="warn">Avertizează (doar log)</SelectItem>
                   <SelectItem value="block">Block</SelectItem>
-                  <SelectItem value="require_approval">Require approval</SelectItem>
+                  <SelectItem value="require_approval">Necesită aprobare</SelectItem>
                 </SelectContent>
               </Select>
             </div>

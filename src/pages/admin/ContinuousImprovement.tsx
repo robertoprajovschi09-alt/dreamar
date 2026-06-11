@@ -57,7 +57,7 @@ export default function ContinuousImprovement() {
   async function measure(r: CieRun) {
     try {
       await measureRunAgain(r.id, sinceDays);
-      toast.success("Re-measured");
+      toast.success("Re-măsurat");
       load();
     } catch (e: any) { toast.error(e.message); }
   }
@@ -77,7 +77,7 @@ export default function ContinuousImprovement() {
               <Select value={scope} onValueChange={(v) => setScope(v as any)}>
                 <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="agency">This agency</SelectItem>
+                  <SelectItem value="agency">Această agenție</SelectItem>
                   <SelectItem value="platform">Platform-wide</SelectItem>
                 </SelectContent>
               </Select>
@@ -99,7 +99,7 @@ export default function ContinuousImprovement() {
       <div className="space-y-3">
         {loading && <p className="text-sm text-muted-foreground">Se încarcă…</p>}
         {!loading && runs.length === 0 && (
-          <Card><CardContent className="py-10 text-center text-muted-foreground">No runs yet. Click "Run Improvement Engine" to start.</CardContent></Card>
+          <Card><CardContent className="py-10 text-center text-muted-foreground">Nicio rulare încă. Apasă „Pornește motorul de îmbunătățire”.</CardContent></Card>
         )}
         {runs.map(r => (
           <Card key={r.id} className="cursor-pointer hover:bg-accent/30" onClick={() => setSelected(r)}>
@@ -133,11 +133,11 @@ export default function ContinuousImprovement() {
 
       <Sheet open={!!selected} onOpenChange={(v) => !v && setSelected(null)}>
         <SheetContent className="w-[640px] sm:max-w-none overflow-y-auto">
-          <SheetHeader><SheetTitle>Run details</SheetTitle></SheetHeader>
+          <SheetHeader><SheetTitle>Detalii rulare</SheetTitle></SheetHeader>
           {selected && (
             <div className="mt-4 space-y-4">
               <section>
-                <h4 className="font-semibold mb-2">Input summary</h4>
+                <h4 className="font-semibold mb-2">Rezumat input</h4>
                 <pre className="text-xs bg-muted p-3 rounded">{JSON.stringify(selected.input_summary, null, 2)}</pre>
               </section>
               <section>

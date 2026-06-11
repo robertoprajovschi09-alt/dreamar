@@ -69,7 +69,7 @@ export function UseInCalendarDialog({ open, onOpenChange, swipe, navigateAfter }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Use in content calendar</DialogTitle>
+          <DialogTitle>Folosește în calendarul de conținut</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -80,7 +80,7 @@ export function UseInCalendarDialog({ open, onOpenChange, swipe, navigateAfter }
             </Select>
           </div>
           <div>
-            <Label>Schedule for (optional)</Label>
+            <Label>Programează pentru (opțional)</Label>
             <Input type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} />
           </div>
         </div>

@@ -91,7 +91,7 @@ export function CompetitorFormDialog({ open, onOpenChange, clientId, competitor,
             <div><Label>YouTube</Label><Input value={form.youtube_url || ""} onChange={(e) => set("youtube_url", e.target.value)} placeholder="https://" /></div>
             <div className="col-span-2"><Label>LinkedIn</Label><Input value={form.linkedin_url || ""} onChange={(e) => set("linkedin_url", e.target.value)} placeholder="https://" /></div>
           </div>
-          <div><Label>Notes</Label><Textarea rows={3} value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} /></div>
+          <div><Label>Note</Label><Textarea rows={3} value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>

@@ -6,14 +6,14 @@ export function ContentRankingTable({ metrics, posts }: { metrics: ContentMetric
   const ranked = rankContent(metrics, posts);
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">Content ranking</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-base">Clasament conținut</CardTitle></CardHeader>
       <CardContent>
-        {ranked.length === 0 ? <p className="text-sm text-muted-foreground">No content metrics logged yet.</p> : (
+        {ranked.length === 0 ? <p className="text-sm text-muted-foreground">Nicio metrică de conținut înregistrată încă.</p> : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-left text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
-                <th className="py-2 pr-2">Title</th><th className="py-2 px-2">Platform</th>
-                <th className="py-2 px-2 text-right">Views</th><th className="py-2 px-2 text-right">Engagement</th>
+                <th className="py-2 pr-2">Titlu</th><th className="py-2 px-2">Platform</th>
+                <th className="py-2 px-2 text-right">Vizualizări</th><th className="py-2 px-2 text-right">Interacțiune</th>
                 <th className="py-2 pl-2">Tier</th>
               </tr></thead>
               <tbody>

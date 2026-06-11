@@ -51,7 +51,7 @@ export function CompetitorInsightsDialog({ open, onOpenChange, agencyId, clientI
               <>
                 {data.missing_data?.length > 0 && (
                   <div className="text-xs p-2 rounded bg-muted">
-                    <div className="font-semibold mb-1">Missing data</div>
+                    <div className="font-semibold mb-1">Date lipsă</div>
                     <ul className="list-disc pl-4">{data.missing_data.map((m: string, i: number) => <li key={i}>{m}</li>)}</ul>
                   </div>
                 )}
@@ -61,7 +61,7 @@ export function CompetitorInsightsDialog({ open, onOpenChange, agencyId, clientI
                 <Section title="Differentiation angles for you" items={data.differentiation_angles} />
 
                 <div>
-                  <h4 className="font-semibold text-sm mb-2">Original ideas (not copied)</h4>
+                  <h4 className="font-semibold text-sm mb-2">Idei originale (nu copiate)</h4>
                   <div className="space-y-2">
                     {(data.original_ideas || []).map((i: any, k: number) => (
                       <div key={k} className="border rounded p-3 space-y-1">

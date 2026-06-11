@@ -6,7 +6,7 @@ export function MonthlyComparisonChart({ entries }: { entries: AnalyticsEntry[] 
   const data = aggregateByMonth(entries);
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">Monthly trend</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-base">Trend lunar</CardTitle></CardHeader>
       <CardContent>
         {data.length === 0 ? <p className="text-sm text-muted-foreground">Nu există date încă.</p> : (
           <ResponsiveContainer width="100%" height={260}>

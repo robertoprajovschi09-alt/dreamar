@@ -111,7 +111,7 @@ export default function AiActionsApprovalQueue() {
         <TabsContent value={tab} className="mt-4 space-y-3">
           {loading && <Loader2 className="h-5 w-5 animate-spin" />}
           {!loading && items.length === 0 && (
-            <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No actions in this view.</CardContent></Card>
+            <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Nicio acțiune în această vedere.</CardContent></Card>
           )}
           {items.map((req) => (
             <Card key={req.id}>
@@ -157,7 +157,7 @@ export default function AiActionsApprovalQueue() {
                   </div>
                 )}
                 <details>
-                  <summary className="text-xs text-muted-foreground cursor-pointer">Payload preview</summary>
+                  <summary className="text-xs text-muted-foreground cursor-pointer">Previzualizare payload</summary>
                   <pre className="mt-2 text-xs bg-muted/30 p-2 rounded overflow-auto max-h-64">
 {JSON.stringify(req.edited_payload ?? req.payload ?? {}, null, 2)}
                   </pre>
@@ -183,11 +183,11 @@ export default function AiActionsApprovalQueue() {
 
       <Dialog open={!!rejectFor} onOpenChange={(o) => !o && setRejectFor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Reject action</DialogTitle></DialogHeader>
-          <Textarea placeholder="Reason (optional)" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <DialogHeader><DialogTitle>Respinge acțiunea</DialogTitle></DialogHeader>
+          <Textarea placeholder="Motiv (opțional)" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRejectFor(null)}>Anulează</Button>
-            <Button variant="destructive" onClick={() => { if (rejectFor) handle("reject", rejectFor, { rejection_reason: rejectReason }); setRejectFor(null); }}>Reject</Button>
+            <Button variant="destructive" onClick={() => { if (rejectFor) handle("reject", rejectFor, { rejection_reason: rejectReason }); setRejectFor(null); }}>Respinge</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

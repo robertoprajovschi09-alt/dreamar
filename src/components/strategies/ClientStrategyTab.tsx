@@ -20,7 +20,7 @@ export function ClientStrategyTab({ clientId }: { clientId: string }) {
   if (!items.length) return (
     <Card><CardContent className="p-10 text-center text-muted-foreground space-y-2">
       <Sparkles className="h-8 w-8 mx-auto text-accent" />
-      <div>No strategy has been shared with you yet.</div>
+      <div>Nicio strategie nu ți-a fost partajată încă.</div>
     </CardContent></Card>
   );
 
@@ -34,19 +34,19 @@ export function ClientStrategyTab({ clientId }: { clientId: string }) {
                 <CardTitle>{s.strategy_title}</CardTitle>
                 <div className="text-xs text-muted-foreground">{monthLabel(s.month, s.year)}</div>
               </div>
-              <Badge className="bg-accent/20 text-accent">Shared by your agency</Badge>
+              <Badge className="bg-accent/20 text-accent">Partajat de agenția ta</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             {s.executive_summary && <p className="whitespace-pre-line">{s.executive_summary}</p>}
             <Group title="Main focus" items={s.business_focus} />
-            <Group title="What worked last month" items={s.what_worked} />
+            <Group title="Ce a funcționat luna trecută" items={s.what_worked} />
             <Group title="What we'll try" items={s.new_tests} />
             <Group title="Hooks we'll use" items={s.recommended_hooks} />
-            <Group title="Content formats" items={s.recommended_content_formats} />
+            <Group title="Formate de conținut" items={s.recommended_content_formats} />
             {s.recommended_campaigns?.length > 0 && (
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Campaigns</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Campanii</div>
                 <div className="space-y-2">
                   {s.recommended_campaigns.map((c, i) => (
                     <div key={i} className="rounded-md border p-3">

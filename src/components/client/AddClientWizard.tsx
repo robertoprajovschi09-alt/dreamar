@@ -763,7 +763,7 @@ export function AddClientWizard({ open, onOpenChange, agencyId, onCreated }: Pro
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <Label>Active platforms</Label>
+                <Label>Platforme active</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {PLATFORMS.map((p) => {
                     const active = !!form.platforms.find((x) => x.platform === p.value);
@@ -1030,7 +1030,7 @@ function FieldEditor({
             <Button type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => onRemove(i)}><X className="h-4 w-4" /></Button>
           </div>
         ))}
-        {items.length === 0 && <p className="text-xs text-muted-foreground">No fields yet.</p>}
+        {items.length === 0 && <p className="text-xs text-muted-foreground">Niciun câmp încă.</p>}
       </div>
     </div>
   );
@@ -1093,7 +1093,7 @@ function KpiEditor({
                 <SelectTrigger className="col-span-4"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="number">Number</SelectItem>
-                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="percentage">Procent</SelectItem>
                   <SelectItem value="currency">Currency</SelectItem>
                   <SelectItem value="text">Text</SelectItem>
                   <SelectItem value="boolean">Boolean</SelectItem>

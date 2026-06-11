@@ -57,7 +57,7 @@ export function ContentMetricDialog({ open, onOpenChange, agencyId, clientId, co
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Content metrics</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Metrici de conținut</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div><Label>Platform</Label>
             <Select value={form.platform} onValueChange={(v) => setForm({ ...form, platform: v })}>
@@ -72,7 +72,7 @@ export function ContentMetricDialog({ open, onOpenChange, agencyId, clientId, co
               </div>
             ))}
           </div>
-          <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          <div><Label>Note</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>

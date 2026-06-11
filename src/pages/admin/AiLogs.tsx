@@ -33,11 +33,11 @@ export default function AiLogs() {
     <div className="p-6 space-y-4">
       <PageHeader title="AI Logs & Monitoring" subtitle="Every AI request, with cost, latency and safety flags." />
       <div className="grid md:grid-cols-3 gap-3">
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs">Runs (last 200)</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">{runs.length}</CardContent></Card>
-        <Card><CardHeader className="pb-2"><CardTitle className="text-xs">Total cost</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">${total.toFixed(4)}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs">Rulări (ultimele 200)</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">{runs.length}</CardContent></Card>
+        <Card><CardHeader className="pb-2"><CardTitle className="text-xs">Cost total</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">${total.toFixed(4)}</CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-xs">Errors</CardTitle></CardHeader><CardContent className="text-2xl font-semibold">{runs.filter(r => r.status !== "success").length}</CardContent></Card>
       </div>
-      <Input placeholder="Filter by prompt_key, model, status…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
+      <Input placeholder="Filtrează după prompt_key, model, status…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
       <Card>
         <CardContent className="p-0">
           <Table>

@@ -62,7 +62,7 @@ export function AnalyticsEntryDialog({ open, onOpenChange, agencyId, clientId, d
       }
       if (form.id) payload.id = form.id;
       await upsertAnalyticsEntry(payload);
-      toast.success("Saved");
+      toast.success("Salvat");
       onSaved?.(); onOpenChange(false);
     } catch (e: any) { toast.error(e.message || "Failed to save"); }
     finally { setSaving(false); }
@@ -86,12 +86,12 @@ export function AnalyticsEntryDialog({ open, onOpenChange, agencyId, clientId, d
                 <SelectContent>
                   <SelectItem value="day">Day</SelectItem>
                   <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="month">Luna</SelectItem>
                   <SelectItem value="custom">Custom</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Month</Label><Input type="number" min={1} max={12} value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} /></div>
+            <div><Label>Luna</Label><Input type="number" min={1} max={12} value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} /></div>
             <div><Label>Year</Label><Input type="number" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} /></div>
             <div><Label>Date start</Label><Input type="date" value={form.date_start} onChange={(e) => setForm({ ...form, date_start: e.target.value })} /></div>
             <div><Label>Date end</Label><Input type="date" value={form.date_end} onChange={(e) => setForm({ ...form, date_end: e.target.value })} /></div>
@@ -103,7 +103,7 @@ export function AnalyticsEntryDialog({ open, onOpenChange, agencyId, clientId, d
               </div>
             ))}
           </div>
-          <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          <div><Label>Note</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Anulează</Button>

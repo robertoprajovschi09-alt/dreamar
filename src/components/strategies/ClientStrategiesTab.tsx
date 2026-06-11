@@ -21,13 +21,13 @@ export function ClientStrategiesTab({ clientId, agencyId: _agencyId }: { clientI
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">AI-generated strategies for this client.</div>
+        <div className="text-sm text-muted-foreground">Strategii generate de AI pentru acest client.</div>
         <Button onClick={() => setOpen(true)}><Sparkles className="h-4 w-4 mr-2" /> Generate next month</Button>
       </div>
       {loading ? (
         <div className="py-10 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-accent" /></div>
       ) : items.length === 0 ? (
-        <Card><CardContent className="p-10 text-center text-muted-foreground">No strategies yet for this client.</CardContent></Card>
+        <Card><CardContent className="p-10 text-center text-muted-foreground">Nicio strategie încă pentru acest client.</CardContent></Card>
       ) : (
         <div className="space-y-2">
           {items.map((s) => {

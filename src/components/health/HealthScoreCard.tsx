@@ -61,7 +61,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
       setPrev(hist.find((h) => h.id !== next.id) || null);
       if (!silent) toast.success("Scor actualizat");
     } catch (e: any) {
-      if (!silent) toast.error(e.message || "Could not compute score");
+      if (!silent) toast.error(e.message || "Nu am putut calcula scorul");
     } finally {
       setComputing(false);
     }
@@ -91,7 +91,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
     return (
       <Card>
         <CardContent className="py-8 text-center space-y-3">
-          <p className="text-sm text-muted-foreground">No health score for this month yet.</p>
+          <p className="text-sm text-muted-foreground">Niciun scor de sănătate pentru luna asta încă.</p>
           {!readOnly && (
             <Button onClick={() => runCompute()} disabled={computing} size="sm">
               {computing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />} Compute now
@@ -156,7 +156,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
                     {COMPONENT_LABELS[c.key]} <span className="text-muted-foreground">· {COMPONENT_WEIGHTS[c.key]}%</span>
                   </span>
                   {isMissing ? (
-                    <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-dashed">Missing data</Badge>
+                    <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-dashed">Date lipsă</Badge>
                   ) : (
                     <span className="font-mono">{Math.round(Number(c.value || 0))}</span>
                   )}
@@ -169,7 +169,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
 
         <div className="border-t border-border pt-3">
           <button onClick={() => setShowWhy((v) => !v)} className="text-xs font-medium text-accent hover:underline">
-            {showWhy ? "Hide explanation" : "Why this score?"}
+            {showWhy ? "Ascunde explicația" : "De ce acest scor?"}
           </button>
           {showWhy && (
             <div className="mt-2 space-y-2">
@@ -177,7 +177,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
               {(score.missing_data || []).length > 0 && (
                 <div className="text-xs flex items-start gap-1.5 text-amber-600 dark:text-amber-400">
                   <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>Missing data for: {(score.missing_data as string[]).map((m) => COMPONENT_LABELS[m]).join(", ")}. Components without data use a neutral 50.</span>
+                  <span>Date lipsă pentru: {(score.missing_data as string[]).map((m) => COMPONENT_LABELS[m]).join(", ")}. Componentele fără date primesc un scor neutru de 50.</span>
                 </div>
               )}
             </div>
@@ -196,7 +196,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
           {score.ai_recommendation && (
             <div className="space-y-3 bg-muted/40 rounded-md p-3">
               {score.ai_recommendation.why_this_score && (
-                <Section title="Why this score">{score.ai_recommendation.why_this_score}</Section>
+                <Section title="De ce acest scor">{score.ai_recommendation.why_this_score}</Section>
               )}
               {score.ai_recommendation.whats_working?.length ? (
                 <Section title="What's working">
@@ -213,7 +213,7 @@ export function HealthScoreCard({ clientId, readOnly = false, compact = false }:
                 </Section>
               ) : null}
               {score.ai_recommendation.next_month_actions?.length ? (
-                <Section title="Next month actions">
+                <Section title="Acțiuni pentru luna viitoare">
                   <ul className="list-disc pl-5 space-y-1">
                     {score.ai_recommendation.next_month_actions.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>

@@ -133,7 +133,7 @@ export default function AdminDashboard() {
           {rows === null ? (
             <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
           ) : rows.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">No agencies yet.</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">Nicio agenție încă.</div>
           ) : (
             <div className="overflow-auto">
               <table className="w-full text-sm">
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
                       <td className="p-3 text-right font-mono">{a.member_count}</td>
                       <td className="p-3 text-right font-mono">{a.price_eur}</td>
                       <td className="p-3">
-                        {a.suspended ? <Badge variant="destructive">Suspended</Badge> : <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15">Active</Badge>}
+                        {a.suspended ? <Badge variant="destructive">Suspendat</Badge> : <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15">Active</Badge>}
                       </td>
                       <td className="p-3 text-muted-foreground text-xs">{new Date(a.created_at).toLocaleDateString()}</td>
                       <td className="p-3 text-right">
@@ -224,8 +224,8 @@ export default function AdminDashboard() {
       <Dialog open={!!renameTarget} onOpenChange={(o) => { if (!o) { setRenameTarget(null); setRenameValue(""); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename agency</DialogTitle>
-            <DialogDescription>Update the display name for this agency.</DialogDescription>
+            <DialogTitle>Redenumește agenția</DialogTitle>
+            <DialogDescription>Actualizează numele afișat al agenției.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="agency-name">Name</Label>

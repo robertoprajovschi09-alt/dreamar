@@ -107,14 +107,14 @@ export default function AiMemory() {
   }
   async function remove(m: AiMemoryItem) {
     if (!confirm(`Delete memory "${m.title}"?`)) return;
-    try { await deleteMemory(m.id); toast.success("Deleted"); load(); }
+    try { await deleteMemory(m.id); toast.success("Șters"); load(); }
     catch (e: any) { toast.error(e.message); }
   }
 
   async function runIngest() {
     if (!agency) return;
     if (!ingest.source_id.trim() || !ingest.title.trim() || !ingest.raw_content.trim()) {
-      toast.error("Title, source id and content are required"); return;
+      toast.error("Titlul, ID-ul sursei și conținutul sunt obligatorii"); return;
     }
     try {
       const res: any = await ingestKnowledgeSource({
@@ -159,22 +159,22 @@ export default function AiMemory() {
               <Select value={filterType} onValueChange={setFilterType}>
                 <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
+                  <SelectItem value="all">Toate tipurile</SelectItem>
                   {MEMORY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filterClient} onValueChange={setFilterClient}>
                 <SelectTrigger><SelectValue placeholder="Client" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All clients</SelectItem>
-                  <SelectItem value="_none">Agency-wide</SelectItem>
+                  <SelectItem value="all">Toți clienții</SelectItem>
+                  <SelectItem value="_none">La nivel de agenție</SelectItem>
                   {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filterVisibility} onValueChange={setFilterVisibility}>
                 <SelectTrigger><SelectValue placeholder="Visibility" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All visibility</SelectItem>
+                  <SelectItem value="all">Toată vizibilitatea</SelectItem>
                   {VISIBILITIES.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -188,7 +188,7 @@ export default function AiMemory() {
           <div className="space-y-3">
             {loading && <p className="text-sm text-muted-foreground">Se încarcă…</p>}
             {!loading && filtered.length === 0 && (
-              <Card><CardContent className="py-10 text-center text-muted-foreground">No memories match the filters.</CardContent></Card>
+              <Card><CardContent className="py-10 text-center text-muted-foreground">Nicio memorie nu se potrivește cu filtrele.</CardContent></Card>
             )}
             {filtered.map(m => (
               <Card key={m.id} className={m.is_active ? "" : "opacity-60"}>
@@ -219,7 +219,7 @@ export default function AiMemory() {
 
         <TabsContent value="sources" className="space-y-3">
           {sources.length === 0 && (
-            <Card><CardContent className="py-10 text-center text-muted-foreground">No knowledge sources ingested yet.</CardContent></Card>
+            <Card><CardContent className="py-10 text-center text-muted-foreground">Nicio sursă de cunoștințe importată încă.</CardContent></Card>
           )}
           {sources.map(s => (
             <Card key={s.id}>
@@ -275,7 +275,7 @@ export default function AiMemory() {
                 <Select value={editing.client_id || "_none"} onValueChange={(v) => setEditing({ ...editing, client_id: v === "_none" ? null : v })}>
                   <SelectTrigger><SelectValue placeholder="Scope" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="_none">Agency-wide</SelectItem>
+                    <SelectItem value="_none">La nivel de agenție</SelectItem>
                     {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -302,7 +302,7 @@ export default function AiMemory() {
       {/* Ingest dialog */}
       <Dialog open={openIngest} onOpenChange={setOpenIngest}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Ingest knowledge source</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Importă sursă de cunoștințe</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               The AI extracts structured facts and queues them as memory proposals — a human approves before they go live.
@@ -317,7 +317,7 @@ export default function AiMemory() {
               <Select value={ingest.client_id || "_none"} onValueChange={(v) => setIngest({ ...ingest, client_id: v === "_none" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="Scope" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="_none">Agency-wide</SelectItem>
+                  <SelectItem value="_none">La nivel de agenție</SelectItem>
                   {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>

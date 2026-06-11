@@ -56,7 +56,7 @@ export function CsvImportDialog({ open, onOpenChange, agencyId, clientId, target
 
         {step === "upload" && (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Upload a CSV file with a header row. We'll auto-detect columns.</p>
+            <p className="text-sm text-muted-foreground">Încarcă un fișier CSV cu rând de antet. Detectăm coloanele automat.</p>
             <input type="file" accept=".csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} className="block w-full text-sm" />
             {busy && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Parsing & analyzing…</div>}
           </div>

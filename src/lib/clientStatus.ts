@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const COLLECTING_DATA_LABEL = "Collecting data";
+export const COLLECTING_DATA_LABEL = "Colectăm date";
 export const COLLECTING_BADGE_CLASS =
   "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30";
 

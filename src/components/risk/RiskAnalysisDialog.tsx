@@ -86,7 +86,7 @@ export function RiskAnalysisDialog({
                     <Badge variant="outline" className="text-[10px] uppercase shrink-0">{r.severity}</Badge>
                   </li>
                 ))}
-                {reasons.length === 0 && <p className="text-sm text-muted-foreground">No signals.</p>}
+                {reasons.length === 0 && <p className="text-sm text-muted-foreground">Niciun semnal.</p>}
               </ul>
             </section>
 
@@ -99,7 +99,7 @@ export function RiskAnalysisDialog({
               <>
                 {actions.length > 0 && (
                   <section>
-                    <h4 className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Recovery plan</h4>
+                    <h4 className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Plan de recuperare</h4>
                     <ul className="space-y-2">
                       {actions.map((a, i) => (
                         <li key={i} className="rounded-md border border-border p-3">

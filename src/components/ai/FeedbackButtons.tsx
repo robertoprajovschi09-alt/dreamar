@@ -50,7 +50,7 @@ export function FeedbackButtons({ runId, feature }: { runId: string | null; feat
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 space-y-2">
-          <div className="text-xs font-medium">What was wrong?</div>
+          <div className="text-xs font-medium">Ce a fost greșit?</div>
           <Select value={feedbackType} onValueChange={setFeedbackType}>
             <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
             <SelectContent>

@@ -143,13 +143,13 @@ function CampaignEditor({ open, onOpenChange, agencyId, editing, clients, onSave
       : await supabase.from("campaigns").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved"); onSaved?.(); onOpenChange(false);
+    toast.success("Salvat"); onSaved?.(); onOpenChange(false);
   };
   const remove = async () => {
     if (!editing || !confirm("Delete campaign?")) return;
     const { error } = await supabase.from("campaigns").delete().eq("id", editing.id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted"); onSaved?.(); onOpenChange(false);
+    toast.success("Șters"); onSaved?.(); onOpenChange(false);
   };
 
   return (
@@ -157,14 +157,14 @@ function CampaignEditor({ open, onOpenChange, agencyId, editing, clients, onSave
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader><SheetTitle>{editing ? "Edit campaign" : "New campaign"}</SheetTitle></SheetHeader>
         <form onSubmit={save} className="space-y-4 mt-4">
-          <Field label="Name *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+          <Field label="Nume *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label="Client *">
             <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
               <SelectTrigger><SelectValue placeholder="Pick client" /></SelectTrigger>
               <SelectContent>{clients.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-          <Field label="Objective"><Input value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="e.g. Generate 50 leads" /></Field>
+          <Field label="Obiectiv"><Input value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="e.g. Generate 50 leads" /></Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Status">
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>

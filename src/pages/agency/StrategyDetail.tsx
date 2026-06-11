@@ -64,7 +64,7 @@ export default function StrategyDetail() {
         action_items: s.action_items,
         missing_data: s.missing_data,
       });
-      toast.success("Saved");
+      toast.success("Salvat");
     } catch (e: any) { toast.error(e.message || "Save failed"); }
     finally { setSaving(false); }
   };
@@ -75,7 +75,7 @@ export default function StrategyDetail() {
     setBusy(true);
     try {
       await generateStrategy(s.client_id, s.year, s.month);
-      toast.success("Regenerated");
+      toast.success("Regenerat");
       await load();
     } catch (e: any) { toast.error(e.message || "Failed"); }
     finally { setBusy(false); }
@@ -113,7 +113,7 @@ export default function StrategyDetail() {
   };
 
   if (loading) return <div className="p-10 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-accent" /></div>;
-  if (!s) return <div className="p-10 text-center text-muted-foreground">Strategy not found.</div>;
+  if (!s) return <div className="p-10 text-center text-muted-foreground">Strategia nu a fost găsită.</div>;
 
   const meta = STRATEGY_STATUS_META[s.status];
 
@@ -155,7 +155,7 @@ export default function StrategyDetail() {
         <Card className="border-yellow-500/40 bg-yellow-500/5">
           <CardHeader className="pb-2 flex-row items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
-            <CardTitle className="text-sm">Missing data flagged by AI</CardTitle>
+            <CardTitle className="text-sm">Date lipsă semnalate de AI</CardTitle>
           </CardHeader>
           <CardContent><BulletList items={s.missing_data} muted /></CardContent>
         </Card>
@@ -168,13 +168,13 @@ export default function StrategyDetail() {
       <div className="grid gap-4 md:grid-cols-2">
         <ListSection title="Business focus" items={s.business_focus} onChange={(v) => patch({ business_focus: v })} />
         <ListSection title="Key insights" items={s.key_insights} onChange={(v) => patch({ key_insights: v })} />
-        <ListSection title="What worked" items={s.what_worked} onChange={(v) => patch({ what_worked: v })} />
-        <ListSection title="What didn't work" items={s.what_did_not_work} onChange={(v) => patch({ what_did_not_work: v })} />
+        <ListSection title="Ce a funcționat" items={s.what_worked} onChange={(v) => patch({ what_worked: v })} />
+        <ListSection title="Ce nu a funcționat" items={s.what_did_not_work} onChange={(v) => patch({ what_did_not_work: v })} />
         <ListSection title="Content to repeat" items={s.content_to_repeat} onChange={(v) => patch({ content_to_repeat: v })} />
         <ListSection title="Content to stop" items={s.content_to_stop} onChange={(v) => patch({ content_to_stop: v })} />
         <ListSection title="New tests" items={s.new_tests} onChange={(v) => patch({ new_tests: v })} />
         <ListSection title="Recommended hooks" items={s.recommended_hooks} onChange={(v) => patch({ recommended_hooks: v })} />
-        <ListSection title="Content formats" items={s.recommended_content_formats} onChange={(v) => patch({ recommended_content_formats: v })} />
+        <ListSection title="Formate de conținut" items={s.recommended_content_formats} onChange={(v) => patch({ recommended_content_formats: v })} />
         <ListSection title="Risks" items={s.risks} onChange={(v) => patch({ risks: v })} />
       </div>
 
@@ -194,7 +194,7 @@ export default function StrategyDetail() {
                 }} placeholder="Goal" />
                 <Textarea value={c.description} onChange={(e) => {
                   const arr = [...s.recommended_campaigns]; arr[i] = { ...c, description: e.target.value }; patch({ recommended_campaigns: arr });
-                }} placeholder="Description" rows={2} />
+                }} placeholder="Descriere" rows={2} />
               </CardContent>
             </Card>
           ))}
@@ -214,7 +214,7 @@ export default function StrategyDetail() {
           ))}
         </div>
         <div className="mt-3">
-          <Label className="text-xs">Key dates (one per line)</Label>
+          <Label className="text-xs">Date cheie (una pe linie)</Label>
           <Textarea
             value={(s.suggested_calendar_plan?.key_dates || []).join("\n")}
             onChange={(e) => patch({ suggested_calendar_plan: { ...s.suggested_calendar_plan, key_dates: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) } })}
@@ -222,7 +222,7 @@ export default function StrategyDetail() {
           />
         </div>
         <div className="mt-3">
-          <Label className="text-xs">Notes</Label>
+          <Label className="text-xs">Note</Label>
           <Textarea value={s.suggested_calendar_plan?.notes || ""} onChange={(e) => patch({ suggested_calendar_plan: { ...s.suggested_calendar_plan, notes: e.target.value } })} rows={2} />
         </div>
       </Section>
@@ -244,7 +244,7 @@ export default function StrategyDetail() {
                   </Select>
                   <Button variant="ghost" size="icon" onClick={() => patch({ action_items: s.action_items.filter((_, j) => j !== i) })}><Trash2 className="h-4 w-4" /></Button>
                 </div>
-                <Textarea value={a.description} onChange={(e) => { const arr = [...s.action_items]; arr[i] = { ...a, description: e.target.value }; patch({ action_items: arr }); }} placeholder="Description" rows={2} />
+                <Textarea value={a.description} onChange={(e) => { const arr = [...s.action_items]; arr[i] = { ...a, description: e.target.value }; patch({ action_items: arr }); }} placeholder="Descriere" rows={2} />
               </CardContent>
             </Card>
           ))}

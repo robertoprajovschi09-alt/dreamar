@@ -15,7 +15,8 @@ import { ArrowLeft, Loader2, UserPlus, Trash2, Save, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { InviteClientDialog } from "./InviteClientDialog";
 import { PortalSettingsCard } from "@/components/client/PortalSettingsCard";
-import { NICHES, STATUSES, PLATFORMS, GOAL_STATUSES, nicheLabel } from "@/lib/niches";
+import { NICHES, STATUSES, PLATFORMS, GOAL_STATUSES, nicheLabel, statusLabel } from "@/lib/niches";
+import { inviteStatusLabel } from "@/lib/i18nLabels";
 import { PerformanceStats } from "@/components/performance/PerformanceStats";
 import { VideosTable } from "@/components/performance/VideosTable";
 import { VideoEditor } from "@/components/performance/VideoEditor";
@@ -108,7 +109,7 @@ export default function ClientProfile() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">{client.name}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {nicheLabel(client.niche)} {client.city ? `· ${client.city}` : ""} ·
-              <span className="ml-1 uppercase tracking-wide text-xs">{client.status}</span>
+              <span className="ml-1 uppercase tracking-wide text-xs">{statusLabel(client.status)}</span>
             </p>
           </div>
         </div>
@@ -140,7 +141,7 @@ export default function ClientProfile() {
                 <CardContent className="py-6 flex items-start gap-3">
                   <CollectingDataBadge />
                   <p className="text-sm text-muted-foreground">
-                    We'll start scoring health and risk after 30 days or once analytics / business-impact data is added.
+                    Începem scorarea sănătății și a riscului după 30 de zile sau imediat ce sunt adăugate date de analiză / impact business.
                   </p>
                 </CardContent>
               </Card>
@@ -199,23 +200,23 @@ function OverviewTab({ client, platforms, goals, feedback }: any) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
-        <CardHeader><CardTitle className="text-base">Snapshot</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Pe scurt</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <Row k="Niche" v={nicheLabel(client.niche)} />
-          <Row k="Status" v={<Badge variant="secondary" className="uppercase text-[10px]">{client.status}</Badge>} />
+          <Row k="Nișă" v={nicheLabel(client.niche)} />
+          <Row k="Status" v={<Badge variant="secondary" className="uppercase text-[10px]">{statusLabel(client.status)}</Badge>} />
           <Row k="Website" v={client.website ? <a className="text-accent underline" href={client.website} target="_blank" rel="noreferrer">{client.website}</a> : "—"} />
           <Row k="Contact" v={client.contact_person || "—"} />
           <Row k="Email" v={client.contact_email || "—"} />
-          <Row k="Active platforms" v={active.length ? active.map((p: any) => p.platform).join(", ") : "—"} />
+          <Row k="Platforme active" v={active.length ? active.map((p: any) => p.platform).join(", ") : "—"} />
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle className="text-base">Goals & feedback</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Obiective și feedback</CardTitle></CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <Row k="Open goals" v={goals.filter((g: any) => g.status === "in_progress").length} />
-          <Row k="Total goals" v={goals.length} />
-          <Row k="Feedback entries" v={feedback.length} />
-          <Row k="Last feedback" v={feedback[0] ? new Date(feedback[0].created_at).toLocaleDateString() : "—"} />
+          <Row k="Obiective deschise" v={goals.filter((g: any) => g.status === "in_progress").length} />
+          <Row k="Total obiective" v={goals.length} />
+          <Row k="Trimiteri de feedback" v={feedback.length} />
+          <Row k="Ultimul feedback" v={feedback[0] ? new Date(feedback[0].created_at).toLocaleDateString("ro-RO") : "—"} />
         </CardContent>
       </Card>
     </div>
@@ -239,18 +240,18 @@ function BrandTab({ client, reload }: any) {
     const { error } = await supabase.from("clients").update(form).eq("id", client.id);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved"); reload();
+    toast.success("Salvat"); reload();
   };
   return (
     <Card><CardContent className="pt-6"><form onSubmit={save} className="space-y-4 max-w-2xl">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Brand color"><Input type="color" value={form.brand_color} onChange={(e) => setForm({ ...form, brand_color: e.target.value })} className="h-10 w-20 p-1" /></Field>
+        <Field label="Culoarea brandului"><Input type="color" value={form.brand_color} onChange={(e) => setForm({ ...form, brand_color: e.target.value })} className="h-10 w-20 p-1" /></Field>
       </div>
-      <Field label="Target audience"><Textarea rows={2} value={form.target_audience} onChange={(e) => setForm({ ...form, target_audience: e.target.value })} /></Field>
-      <Field label="Tone of voice"><Textarea rows={2} value={form.tone_of_voice} onChange={(e) => setForm({ ...form, tone_of_voice: e.target.value })} /></Field>
-      <Field label="Competitors"><Textarea rows={2} value={form.competitors} onChange={(e) => setForm({ ...form, competitors: e.target.value })} /></Field>
-      <Field label="Main objectives"><Textarea rows={2} value={form.objectives} onChange={(e) => setForm({ ...form, objectives: e.target.value })} /></Field>
-      <Field label="Internal notes"><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
+      <Field label="Public țintă"><Textarea rows={2} value={form.target_audience} onChange={(e) => setForm({ ...form, target_audience: e.target.value })} /></Field>
+      <Field label="Tonul vocii"><Textarea rows={2} value={form.tone_of_voice} onChange={(e) => setForm({ ...form, tone_of_voice: e.target.value })} /></Field>
+      <Field label="Concurenți"><Textarea rows={2} value={form.competitors} onChange={(e) => setForm({ ...form, competitors: e.target.value })} /></Field>
+      <Field label="Obiective principale"><Textarea rows={2} value={form.objectives} onChange={(e) => setForm({ ...form, objectives: e.target.value })} /></Field>
+      <Field label="Note interne"><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
       <Button type="submit" disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
       </Button>
@@ -293,7 +294,7 @@ function PlatformsTab({ client, platforms, reload }: any) {
             <div className="col-span-3"><Input placeholder="@handle" defaultValue={row?.handle || ""} onBlur={(e) => updateHandle(p.value, e.target.value, row?.url || "")} /></div>
             <div className="col-span-4"><Input placeholder="https://" defaultValue={row?.url || ""} onBlur={(e) => updateHandle(p.value, row?.handle || "", e.target.value)} /></div>
             <div className="col-span-2 flex items-center justify-end gap-2">
-              <span className="text-xs text-muted-foreground">{row?.active ? "Active" : "Off"}</span>
+              <span className="text-xs text-muted-foreground">{row?.active ? "Activ" : "Oprit"}</span>
               <Switch checked={!!row?.active} onCheckedChange={(v) => toggle(p.value, v)} />
             </div>
           </div>
@@ -330,7 +331,7 @@ function GoalsTab({ client, goals, reload }: any) {
     reload();
   };
   const remove = async (id: string) => {
-    if (!confirm("Delete goal?")) return;
+    if (!confirm("Ștergi obiectivul?")) return;
     const { error } = await supabase.from("monthly_goals").delete().eq("id", id);
     if (error) return toast.error(error.message);
     reload();
@@ -339,16 +340,16 @@ function GoalsTab({ client, goals, reload }: any) {
     <div className="space-y-4">
       <Card><CardContent className="pt-4">
         {!adding ? (
-          <Button onClick={() => setAdding(true)} variant="outline"><Plus className="h-4 w-4 mr-1.5" /> Add goal</Button>
+          <Button onClick={() => setAdding(true)} variant="outline"><Plus className="h-4 w-4 mr-1.5" /> Adaugă obiectiv</Button>
         ) : (
           <form onSubmit={create} className="space-y-3">
-            <Field label="Objective *"><Input required value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="e.g. Generate 30 qualified leads" /></Field>
+            <Field label="Obiectiv *"><Input required value={form.objective} onChange={(e) => setForm({ ...form, objective: e.target.value })} placeholder="ex. Generează 30 de lead-uri calificate" /></Field>
             <div className="grid grid-cols-3 gap-3">
-              <Field label="Metric"><Input value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} placeholder="leads, sales..." /></Field>
-              <Field label="Target"><Input type="number" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} /></Field>
-              <Field label="Deadline"><Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></Field>
+              <Field label="Metrică"><Input value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} placeholder="lead-uri, vânzări..." /></Field>
+              <Field label="Țintă"><Input type="number" value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} /></Field>
+              <Field label="Termen"><Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></Field>
             </div>
-            <Field label="Notes"><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
+            <Field label="Note"><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
             <div className="flex gap-2">
               <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Salvează obiectiv</Button>
               <Button type="button" variant="outline" onClick={() => setAdding(false)}>Anulează</Button>
@@ -358,7 +359,7 @@ function GoalsTab({ client, goals, reload }: any) {
       </CardContent></Card>
 
       {goals.length === 0 ? (
-        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No goals yet.</CardContent></Card>
+        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">Niciun obiectiv încă.</CardContent></Card>
       ) : (
         <ul className="space-y-3">
           {goals.map((g: any) => (
@@ -367,7 +368,7 @@ function GoalsTab({ client, goals, reload }: any) {
                 <div className="space-y-1">
                   <div className="font-medium">{g.objective}</div>
                   <div className="text-xs text-muted-foreground">
-                    {g.metric || "—"} {g.target ? `· target ${g.target}` : ""} {g.deadline ? `· by ${new Date(g.deadline).toLocaleDateString()}` : ""}
+                    {g.metric || "—"} {g.target ? `· țintă ${g.target}` : ""} {g.deadline ? `· până la ${new Date(g.deadline).toLocaleDateString("ro-RO")}` : ""}
                   </div>
                   {g.notes && <div className="text-sm mt-1">{g.notes}</div>}
                 </div>
@@ -390,15 +391,15 @@ function GoalsTab({ client, goals, reload }: any) {
 /* --------- Users / Invites / Feedback --------- */
 function UsersTab({ users, reload }: any) {
   const remove = async (id: string) => {
-    if (!confirm("Remove access?")) return;
+    if (!confirm("Retragi accesul acestui cont?")) return;
     const { error } = await supabase.from("client_users").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Removed"); reload();
+    toast.success("Acces retras"); reload();
   };
   return (
     <Card><CardContent className="pt-6">
       {users.length === 0 ? (
-        <div className="py-6 text-center text-sm text-muted-foreground">No client users yet.</div>
+        <div className="py-6 text-center text-sm text-muted-foreground">Niciun cont de client încă.</div>
       ) : (
         <ul className="divide-y divide-border">
           {users.map((u: any) => (
@@ -417,15 +418,15 @@ function UsersTab({ users, reload }: any) {
 }
 function InvitesTab({ invites, reload }: any) {
   const revoke = async (id: string) => {
-    if (!confirm("Revoke?")) return;
+    if (!confirm("Revoci invitația?")) return;
     const { error } = await supabase.from("client_invites").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Revoked"); reload();
+    toast.success("Invitație revocată"); reload();
   };
   return (
     <Card><CardContent className="pt-6">
       {invites.length === 0 ? (
-        <div className="py-6 text-center text-sm text-muted-foreground">No invites.</div>
+        <div className="py-6 text-center text-sm text-muted-foreground">Nicio invitație.</div>
       ) : (
         <ul className="divide-y divide-border">
           {invites.map((i: any) => {
@@ -436,8 +437,8 @@ function InvitesTab({ invites, reload }: any) {
                   <div>
                     <div className="font-medium text-sm">{i.email}</div>
                     <div className="text-xs text-muted-foreground">
-                      <Badge variant="secondary" className="text-[10px] uppercase mr-1.5">{i.status}</Badge>
-                      expires {new Date(i.expires_at).toLocaleDateString()}
+                      <Badge variant="secondary" className="text-[10px] uppercase mr-1.5">{inviteStatusLabel(i.status)}</Badge>
+                      expiră {new Date(i.expires_at).toLocaleDateString("ro-RO")}
                     </div>
                   </div>
                   <Button variant="ghost" size="icon" className="text-destructive" onClick={() => revoke(i.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -455,25 +456,25 @@ function FeedbackTab({ feedback }: any) {
   return (
     <Card><CardContent className="pt-6">
       {feedback.length === 0 ? (
-        <div className="py-6 text-center text-sm text-muted-foreground">No feedback submitted yet.</div>
+        <div className="py-6 text-center text-sm text-muted-foreground">Niciun feedback trimis încă.</div>
       ) : (
         <ul className="space-y-4">
           {feedback.map((f: any) => (
             <li key={f.id} className="border border-border rounded-lg p-4 space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{new Date(f.month).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</span>
-                <span>Submitted {new Date(f.created_at).toLocaleString()}</span>
+                <span>{new Date(f.month).toLocaleDateString("ro-RO", { month: "long", year: "numeric" })}</span>
+                <span>Trimis {new Date(f.created_at).toLocaleString("ro-RO")}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <Stat label="Calls" value={f.calls_received} />
-                <Stat label="Messages" value={f.messages_received} />
-                <Stat label="Bookings" value={f.bookings} />
-                <Stat label="Sales est." value={f.sales_estimate ? `€${f.sales_estimate}` : "—"} />
+                <Stat label="Apeluri" value={f.calls_received} />
+                <Stat label="Mesaje" value={f.messages_received} />
+                <Stat label="Rezervări" value={f.bookings} />
+                <Stat label="Vânzări est." value={f.sales_estimate ? `€${f.sales_estimate}` : "—"} />
               </div>
               {f.feedback_text && <Block label="Feedback" value={f.feedback_text} />}
-              {f.real_life_impact && <Block label="Real-life impact" value={f.real_life_impact} />}
-              {f.objections && <Block label="Objections" value={f.objections} />}
-              {f.promote_next_month && <Block label="Promote next month" value={f.promote_next_month} />}
+              {f.real_life_impact && <Block label="Impact real" value={f.real_life_impact} />}
+              {f.objections && <Block label="Obiecții" value={f.objections} />}
+              {f.promote_next_month && <Block label="De promovat luna viitoare" value={f.promote_next_month} />}
             </li>
           ))}
         </ul>
@@ -500,32 +501,32 @@ function SettingsTab({ client, reload }: any) {
     } as any).eq("id", client.id);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved"); reload();
+    toast.success("Salvat"); reload();
   };
   return (
     <Card><CardContent className="pt-6"><form onSubmit={save} className="space-y-4 max-w-2xl">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Name *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+        <Field label="Nume *"><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
         <Field label="Status">
           <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>)}</SelectContent>
           </Select>
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Niche">
+        <Field label="Nișă">
           <Select value={form.niche} onValueChange={(v) => setForm({ ...form, niche: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>{NICHES.map((n) => <SelectItem key={n.value} value={n.value}>{n.label}</SelectItem>)}</SelectContent>
           </Select>
         </Field>
-        <Field label="City"><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></Field>
+        <Field label="Oraș"><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></Field>
       </div>
       <Field label="Website"><Input type="url" placeholder="https://" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Contact name"><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} /></Field>
-        <Field label="Contact email"><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></Field>
+        <Field label="Persoană de contact"><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} /></Field>
+        <Field label="Email de contact"><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></Field>
       </div>
       <Button type="submit" disabled={saving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Salvează</>}
@@ -554,9 +555,9 @@ function PerformanceTab({ client }: any) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Video performance</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Performanță video</h3>
         <Button size="sm" onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-          <Plus className="h-4 w-4 mr-1.5" /> Add video
+          <Plus className="h-4 w-4 mr-1.5" /> Adaugă video
         </Button>
       </div>
       {loading ? (
@@ -569,7 +570,7 @@ function PerformanceTab({ client }: any) {
       )}
 
       <div className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">{nicheLabel(client.niche)} KPIs</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">KPI {nicheLabel(client.niche)}</h3>
         <NichePanel niche={client.niche} agencyId={client.agency_id} clientId={client.id} />
       </div>
 
@@ -613,10 +614,10 @@ function ClientTasksTab({ client }: any) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> New task</Button>
+        <Button size="sm" onClick={() => { setEditId(null); setEditorOpen(true); }} className="bg-accent hover:bg-accent/90 text-accent-foreground"><Plus className="h-4 w-4 mr-1.5" /> Sarcină nouă</Button>
       </div>
       {tasks.length === 0 ? (
-        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No tasks yet.</CardContent></Card>
+        <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nicio sarcină încă.</CardContent></Card>
       ) : (
         <ul className="space-y-2">
           {tasks.map((t) => {
@@ -628,7 +629,7 @@ function ClientTasksTab({ client }: any) {
                   <CardContent className="p-3 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-medium text-sm truncate">{t.title}</div>
-                      <div className="text-[11px] text-muted-foreground">{t.deadline ? new Date(t.deadline).toLocaleDateString() : "No deadline"}</div>
+                      <div className="text-[11px] text-muted-foreground">{t.deadline ? new Date(t.deadline).toLocaleDateString("ro-RO") : "Fără termen"}</div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${p.color}`}>{p.label}</span>
@@ -665,7 +666,7 @@ function ClientCampaignsTab({ client }: any) {
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
   if (items.length === 0) return (
     <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
-      Nu există campanii încă. <Link to="/agency/campaigns" className="text-accent underline">Create one</Link>
+      Nu există campanii încă. <Link to="/agency/campaigns" className="text-accent underline">Creează una</Link>
     </CardContent></Card>
   );
   return (
@@ -680,7 +681,7 @@ function ClientCampaignsTab({ client }: any) {
                   <div className="font-semibold">{c.name}</div>
                   {c.objective && <div className="text-xs text-muted-foreground">{c.objective}</div>}
                   <div className="text-[11px] text-muted-foreground mt-1">
-                    {c.start_date ? new Date(c.start_date).toLocaleDateString() : "—"} → {c.end_date ? new Date(c.end_date).toLocaleDateString() : "—"}
+                    {c.start_date ? new Date(c.start_date).toLocaleDateString("ro-RO") : "—"} → {c.end_date ? new Date(c.end_date).toLocaleDateString("ro-RO") : "—"}
                     {c.budget != null ? ` · €${Number(c.budget).toLocaleString()}` : ""}
                   </div>
                 </div>
@@ -706,32 +707,32 @@ function BriefViewTab({ clientId }: { clientId: string }) {
     getClientBrief(clientId).then((b) => setBrief(b)).finally(() => setLoading(false));
   }, [clientId]);
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (!brief) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Client hasn't filled out the brief yet. They'll see it on first login.</CardContent></Card>;
+  if (!brief) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Clientul nu a completat încă brief-ul. Îl va vedea la prima autentificare.</CardContent></Card>;
   const tone = BRAND_TONES.find((t) => t.value === brief.brand_tone)?.label || brief.brand_tone || "—";
   return (
     <div className="space-y-3">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Client brief</CardTitle>
-            <Badge variant={brief.completed ? "default" : "secondary"} className="text-[10px] uppercase">{brief.completed ? "Submitted" : "Draft"}</Badge>
+            <CardTitle className="text-base">Brief-ul clientului</CardTitle>
+            <Badge variant={brief.completed ? "default" : "secondary"} className="text-[10px] uppercase">{brief.completed ? "Trimis" : "Ciornă"}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
-          <BriefRow label="Business" value={brief.business_description} />
-          <BriefRow label="Main 3-month objective" value={brief.main_objective} />
-          <BriefRow label="Ideal customer" value={brief.target_audience} />
-          <BriefRow label="Why them (USP)" value={brief.unique_selling_points} />
-          <BriefRow label="Competitors" value={brief.main_competitors} />
-          <BriefRow label="Brand tone" value={tone} />
-          <BriefRow label="Content do's" value={brief.content_dos} />
-          <BriefRow label="Content don'ts" value={brief.content_donts} />
-          <BriefRow label="Preferred platforms" value={(brief.preferred_platforms || []).join(", ") || "—"} />
+          <BriefRow label="Afacerea" value={brief.business_description} />
+          <BriefRow label="Obiectivul principal pe 3 luni" value={brief.main_objective} />
+          <BriefRow label="Clientul ideal" value={brief.target_audience} />
+          <BriefRow label="De ce ei (USP)" value={brief.unique_selling_points} />
+          <BriefRow label="Concurenți" value={brief.main_competitors} />
+          <BriefRow label="Tonul brandului" value={tone} />
+          <BriefRow label="Ce DA în conținut" value={brief.content_dos} />
+          <BriefRow label="Ce NU în conținut" value={brief.content_donts} />
+          <BriefRow label="Platforme preferate" value={(brief.preferred_platforms || []).join(", ") || "—"} />
           <div className="grid grid-cols-2 gap-3">
-            <BriefRow label="Posting frequency" value={brief.posting_frequency} />
+            <BriefRow label="Frecvența postărilor" value={brief.posting_frequency} />
             <BriefRow label="Budget" value={brief.budget_range} />
           </div>
-          <BriefRow label="Extra notes" value={brief.extra_notes} />
+          <BriefRow label="Note suplimentare" value={brief.extra_notes} />
         </CardContent>
       </Card>
     </div>
@@ -786,8 +787,8 @@ function ClientLogo({ logoPath, name }: { logoPath: string | null; name: string 
 
 function ClientCalendarLink({ client }: any) {
   return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground space-y-3">
-    <div>The full calendar lives in the global content calendar, filtered to this client.</div>
-    <Link to={`/agency/calendar?client=${client.id}`}><Button variant="outline">Open calendar</Button></Link>
+    <div>Calendarul complet e în calendarul global de conținut, filtrat pe acest client.</div>
+    <Link to={`/agency/calendar?client=${client.id}`}><Button variant="outline">Deschide calendarul</Button></Link>
   </CardContent></Card>;
 }
 
@@ -802,14 +803,14 @@ function ClientApprovalsList({ clientId }: { clientId: string }) {
     })();
   }, [clientId]);
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-  if (items.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No approval requests yet.</CardContent></Card>;
+  if (items.length === 0) return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">Nicio cerere de aprobare încă.</CardContent></Card>;
   return <Card><CardContent className="pt-4"><ul className="divide-y divide-border">{items.map((a: any) => (
     <li key={a.id} className="py-3">
       <div className="flex items-center justify-between gap-2">
         <div className="font-medium text-sm">{a.content_posts?.title || "—"}</div>
-        <Badge variant="outline" className="text-[10px] uppercase">{(a.decision || a.status || "pending").replace("_", " ")}</Badge>
+        <Badge variant="outline" className="text-[10px] uppercase">{({ pending: "În așteptare", pending_approval: "În așteptare", approved: "Aprobat", changes_requested: "Modificări cerute", rejected: "Respins", expired: "Expirată" } as Record<string, string>)[a.decision || a.status || "pending"] || (a.decision || a.status || "").replace(/_/g, " ")}</Badge>
       </div>
-      <div className="text-[11px] text-muted-foreground mt-0.5">{new Date(a.created_at).toLocaleString()}</div>
+      <div className="text-[11px] text-muted-foreground mt-0.5">{new Date(a.created_at).toLocaleString("ro-RO")}</div>
       {a.comment && <div className="text-sm mt-1 italic">"{a.comment}"</div>}
     </li>))}</ul></CardContent></Card>;
 }

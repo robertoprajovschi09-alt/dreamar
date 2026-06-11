@@ -34,7 +34,7 @@ export function PriorityKpiCard({ kpi }: { kpi: PriorityKpi }) {
           <div className="text-[11px] text-muted-foreground mt-1">Target: {format(kpi.target, kpi.type)}</div>
         )}
         {missing && (
-          <Badge variant="outline" className="mt-2 text-[10px] font-normal">Missing data</Badge>
+          <Badge variant="outline" className="mt-2 text-[10px] font-normal">Date lipsă</Badge>
         )}
       </CardContent>
     </Card>

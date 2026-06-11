@@ -35,7 +35,7 @@ export function AnalyticsInsightsPanel({ clientId, year, month }: { clientId: st
               <Stat label="Best platform" value={data.best_platform || "—"} />
               <Stat label="Worst platform" value={data.worst_platform || "—"} />
             </div>
-            <Section title="What worked" items={data.what_worked} />
+            <Section title="Ce a funcționat" items={data.what_worked} />
             <Section title="What dropped" items={data.what_dropped} />
             <Section title="Top content" items={data.top_content} />
             <Section title="Bottom content" items={data.bottom_content} />
@@ -43,7 +43,7 @@ export function AnalyticsInsightsPanel({ clientId, year, month }: { clientId: st
             <Section title="Next month focus" items={data.next_month_focus} />
             {data.missing_data?.length > 0 && (
               <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 mb-1">Missing data</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300 mb-1">Date lipsă</div>
                 <ul className="list-disc pl-5 text-sm">{data.missing_data.map((m, i) => <li key={i}>{m}</li>)}</ul>
               </div>
             )}

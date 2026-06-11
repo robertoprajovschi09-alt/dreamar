@@ -54,7 +54,7 @@ export function RiskAlertCard({
             Last report: {lastReportAt ? new Date(lastReportAt).toLocaleDateString() : "—"}
           </div>
           <div className="flex gap-2 pt-1">
-            <Button size="sm" variant="outline" className="flex-1" onClick={() => setOpen(true)}>View Risk Analysis</Button>
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => setOpen(true)}>Vezi analiza de risc</Button>
             <Button size="sm" className="flex-1" onClick={onCreatePlan} disabled={busy}>
               <ListPlus className="h-3 w-3 mr-1" /> Create Recovery Plan
             </Button>

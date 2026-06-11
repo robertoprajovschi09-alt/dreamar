@@ -110,9 +110,9 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
             {post?.script && <Field label="Script" value={post.script} />}
 
             <div>
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Latest feedback</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Ultimul feedback</div>
               <div className="text-sm p-3 rounded bg-muted whitespace-pre-wrap">
-                {row.feedback || row.comment || <em className="text-muted-foreground">No feedback yet.</em>}
+                {row.feedback || row.comment || <em className="text-muted-foreground">Niciun feedback încă.</em>}
               </div>
             </div>
 
@@ -129,7 +129,7 @@ export function ApprovalDetailDialog({ open, onOpenChange, approvalId, onChanged
                   {questions.map((q, i) => (
                     <li key={i} className="flex items-start justify-between gap-2 text-sm">
                       <span>• {q}</span>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(q); toast.success("Copied"); }}>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(q); toast.success("Copiat"); }}>
                         <Copy className="h-3 w-3" />
                       </Button>
                     </li>

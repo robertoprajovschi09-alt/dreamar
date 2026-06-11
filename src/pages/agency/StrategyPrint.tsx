@@ -27,20 +27,20 @@ export default function StrategyPrint() {
   return (
     <div className="max-w-3xl mx-auto p-8 print:p-0 text-foreground bg-background">
       <header className="mb-6 border-b pb-4">
-        <div className="text-xs uppercase tracking-widest text-accent">Monthly strategy</div>
+        <div className="text-xs uppercase tracking-widest text-accent">Strategie lunară</div>
         <h1 className="text-3xl font-bold">{s.strategy_title}</h1>
         <div className="text-sm text-muted-foreground">{client?.name || ""} · {monthLabel(s.month, s.year)}</div>
       </header>
       <Block title="Executive summary"><p className="whitespace-pre-line">{s.executive_summary}</p></Block>
       <Lst title="Business focus" items={s.business_focus} />
       <Lst title="Key insights" items={s.key_insights} />
-      <Lst title="What worked" items={s.what_worked} />
-      <Lst title="What didn't work" items={s.what_did_not_work} />
+      <Lst title="Ce a funcționat" items={s.what_worked} />
+      <Lst title="Ce nu a funcționat" items={s.what_did_not_work} />
       <Lst title="Content to repeat" items={s.content_to_repeat} />
       <Lst title="Content to stop" items={s.content_to_stop} />
       <Lst title="New tests" items={s.new_tests} />
       <Lst title="Recommended hooks" items={s.recommended_hooks} />
-      <Lst title="Content formats" items={s.recommended_content_formats} />
+      <Lst title="Formate de conținut" items={s.recommended_content_formats} />
       <Block title="Recommended campaigns">
         {(s.recommended_campaigns || []).map((c, i) => (
           <div key={i} className="mb-3"><div className="font-semibold">{c.name}</div><div className="text-sm text-muted-foreground">{c.goal}</div><div className="text-sm">{c.description}</div></div>

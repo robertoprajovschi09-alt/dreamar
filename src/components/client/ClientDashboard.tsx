@@ -12,7 +12,7 @@ import { getNicheDashboardCopy } from "@/lib/nicheDashboard";
 import { PENDING_POST_STATUSES } from "@/lib/approvals";
 import {
   fmtMonthYearRO, healthStatusLabel, goalStatusLabel,
-  metricLabel, NICHE_RO,
+  metricLabel, NICHE_RO, fieldLabel,
 } from "@/lib/i18nLabels";
 
 type InsightCard = {
@@ -395,7 +395,7 @@ export function ClientDashboard({
                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">Date lipsă</div>
                 <div className="flex flex-wrap gap-1">
                   {missingData.slice(0, 6).map((m, i) => (
-                    <Badge key={i} variant="outline" className="text-[10px]">{m}</Badge>
+                    <Badge key={i} variant="outline" className="text-[10px]">{fieldLabel(m)}</Badge>
                   ))}
                 </div>
               </div>

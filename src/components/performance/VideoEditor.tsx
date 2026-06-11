@@ -111,7 +111,7 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
       : await supabase.from("videos").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success("Salvat");
     onSaved?.();
     onOpenChange(false);
   };
@@ -120,7 +120,7 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
     if (!videoId || !confirm("Delete this video?")) return;
     const { error } = await supabase.from("videos").delete().eq("id", videoId);
     if (error) return toast.error(error.message);
-    toast.success("Deleted");
+    toast.success("Șters");
     onSaved?.();
     onOpenChange(false);
   };
@@ -151,7 +151,7 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
                 <SelectContent>{VIDEO_FORMATS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
-            <Field label="Objective">
+            <Field label="Obiectiv">
               <Select value={form.objective} onValueChange={(v) => setForm({ ...form, objective: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{VIDEO_OBJECTIVES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
@@ -169,7 +169,7 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
             <Field label="CTA"><Input value={form.cta} onChange={(e) => setForm({ ...form, cta: e.target.value })} /></Field>
           </div>
 
-          <div className="text-xs uppercase tracking-wide text-muted-foreground pt-2 border-t border-border">Reach metrics</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground pt-2 border-t border-border">Metrici de acoperire</div>
           <div className="grid grid-cols-4 gap-3">
             <Field label="Views"><Input type="number" value={form.views} onChange={(e) => setForm({ ...form, views: e.target.value })} /></Field>
             <Field label="Reach"><Input type="number" value={form.reach} onChange={(e) => setForm({ ...form, reach: e.target.value })} /></Field>
@@ -187,7 +187,7 @@ export function VideoEditor({ open, onOpenChange, agencyId, clientId, videoId, c
             <Field label="Retention 50% %"><Input type="number" step="0.1" value={form.retention_50pct} onChange={(e) => setForm({ ...form, retention_50pct: e.target.value })} /></Field>
           </div>
 
-          <div className="text-xs uppercase tracking-wide text-muted-foreground pt-2 border-t border-border">Business impact</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground pt-2 border-t border-border">Impact business</div>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Calls"><Input type="number" value={form.calls} onChange={(e) => setForm({ ...form, calls: e.target.value })} /></Field>
             <Field label="DMs"><Input type="number" value={form.dms} onChange={(e) => setForm({ ...form, dms: e.target.value })} /></Field>

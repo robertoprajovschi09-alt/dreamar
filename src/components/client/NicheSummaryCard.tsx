@@ -88,7 +88,7 @@ export function NicheSummaryCard({ clientId, niche }: { clientId: string; niche:
       <CardHeader><CardTitle className="text-base">{cfg.title}</CardTitle></CardHeader>
       <CardContent>
         {rows.length === 0 ? (
-          <div className="text-sm text-muted-foreground">Your agency hasn't logged any data yet.</div>
+          <div className="text-sm text-muted-foreground">Agenția ta nu a înregistrat încă date.</div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {stats.map((s) => (

@@ -120,13 +120,13 @@ export function SwipeDetailDialog({ open, onOpenChange, swipe, onUseInCalendar, 
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-accent" /> AI tools</div>
               <div className="flex gap-2 flex-wrap">
-                <Button size="sm" variant="outline" onClick={() => onUseInCalendar?.(swipe)}>Use in calendar</Button>
+                <Button size="sm" variant="outline" onClick={() => onUseInCalendar?.(swipe)}>Folosește în calendar</Button>
               </div>
             </div>
 
             <Card className="p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-xs font-medium uppercase text-muted-foreground">Why this worked</div>
+                <div className="text-xs font-medium uppercase text-muted-foreground">De ce a funcționat</div>
                 <Button size="sm" variant="ghost" onClick={runAnalyze} disabled={whyLoading}>
                   {whyLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                 </Button>
@@ -141,7 +141,7 @@ export function SwipeDetailDialog({ open, onOpenChange, swipe, onUseInCalendar, 
                   {varLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Wand2 className="h-3.5 w-3.5 mr-1" />} Generate
                 </Button>
               </div>
-              {variations && variations.length === 0 && <p className="text-sm text-muted-foreground">No variations returned.</p>}
+              {variations && variations.length === 0 && <p className="text-sm text-muted-foreground">Nicio variație returnată.</p>}
               {variations && variations.length > 0 && (
                 <ul className="space-y-1.5">
                   {variations.map((v, i) => (
@@ -159,7 +159,7 @@ export function SwipeDetailDialog({ open, onOpenChange, swipe, onUseInCalendar, 
 
             <Card className="p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-xs font-medium uppercase text-muted-foreground">Adapt to another niche</div>
+                <div className="text-xs font-medium uppercase text-muted-foreground">Adaptează la altă nișă</div>
               </div>
               <div className="flex gap-2">
                 <Input placeholder="e.g. restaurant, beauty, e-commerce" value={targetNiche} onChange={(e) => setTargetNiche(e.target.value)} className="h-8" />
@@ -179,12 +179,12 @@ export function SwipeDetailDialog({ open, onOpenChange, swipe, onUseInCalendar, 
 
             <Card className="p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-xs font-medium uppercase text-muted-foreground">Suggested reuse</div>
+                <div className="text-xs font-medium uppercase text-muted-foreground">Reutilizare sugerată</div>
                 <Button size="sm" variant="outline" onClick={runReuse} disabled={reuseLoading}>
                   {reuseLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Compass className="h-3.5 w-3.5 mr-1" />} Suggest
                 </Button>
               </div>
-              {reuse && reuse.length === 0 && <p className="text-sm text-muted-foreground">No matches.</p>}
+              {reuse && reuse.length === 0 && <p className="text-sm text-muted-foreground">Nicio potrivire.</p>}
               {reuse && reuse.length > 0 && (
                 <ul className="space-y-1 text-sm">
                   {reuse.map((s, i) => (

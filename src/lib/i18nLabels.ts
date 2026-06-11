@@ -149,3 +149,54 @@ export function nicheLabelRO(niche?: string | null): string {
   if (!niche) return "";
   return NICHE_RO[niche] || niche;
 }
+
+// --- Etichete RO pentru câmpurile de "date lipsă" / chei tehnice din AI ---
+export const FIELD_RO: Record<string, string> = {
+  reservations: "Rezervări",
+  covers: "Clienți serviți",
+  avg_ticket: "Bon mediu",
+  average_ticket: "Bon mediu",
+  aov: "Bon mediu",
+  calls: "Apeluri",
+  messages: "Mesaje",
+  dms: "Mesaje",
+  revenue_estimate: "Venit estimat",
+  revenue: "Venit",
+  bookings: "Rezervări online",
+  orders: "Comenzi",
+  leads: "Lead-uri",
+  sales: "Vânzări",
+  roas: "ROAS",
+  ai_priorities: "Priorități AI",
+  client_friendly_insights: "Insight-uri pentru client",
+  agency_internal_notes: "Note interne",
+  analytics: "Date de analiză",
+  reports: "Rapoarte",
+  business_impact: "Impact business",
+  goals: "Obiective",
+  current_checkin: "Check-in curent",
+};
+
+export function fieldLabel(key?: string | null): string {
+  if (!key) return "—";
+  const k = key.toString().toLowerCase().trim();
+  if (FIELD_RO[k]) return FIELD_RO[k];
+  if (METRIC_RO[k]) return METRIC_RO[k];
+  const cleaned = key.toString().replace(/_/g, " ").trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+// --- Etichete RO pentru statusul invitațiilor de client ---
+export const INVITE_STATUS_RO: Record<string, string> = {
+  pending: "În așteptare",
+  sent: "Trimisă",
+  opened: "Deschisă",
+  accepted: "Acceptată",
+  expired: "Expirată",
+  revoked: "Revocată",
+};
+
+export function inviteStatusLabel(status?: string | null): string {
+  if (!status) return "—";
+  return INVITE_STATUS_RO[status.toLowerCase()] || status;
+}

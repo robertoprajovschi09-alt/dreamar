@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, RefreshCw, AlertCircle, Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fieldLabel } from "@/lib/i18nLabels";
 import { toast } from "sonner";
 
 type Props = { agencyId: string; clientId: string };
@@ -39,7 +40,7 @@ export function DashboardContextCard({ clientId }: Props) {
       if ((data as any)?.context) setCtx((data as any).context);
       toast.success("Contextul dashboardului a fost regenerat");
     } catch (e: any) {
-      toast.error(e.message || "Failed to regenerate");
+      toast.error(e.message || "Regenerarea a eșuat");
     } finally {
       setBusy(false);
     }
@@ -54,7 +55,7 @@ export function DashboardContextCard({ clientId }: Props) {
       <Card>
         <CardContent className="p-5 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <div className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> Context AI dashboard</div>
+            <div className="text-sm font-semibold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> Context AI</div>
             <div className="text-xs text-muted-foreground mt-0.5">Niciun context AI încă pentru acest client.</div>
           </div>
           <Button size="sm" onClick={regenerate} disabled={busy} className="bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -71,7 +72,7 @@ export function DashboardContextCard({ clientId }: Props) {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> Context AI dashboard</CardTitle>
+          <CardTitle className="text-base flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-accent" /> Context AI</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px] capitalize">{period}</Badge>
             {ctx.confidence_score != null && (
@@ -93,7 +94,7 @@ export function DashboardContextCard({ clientId }: Props) {
                 <li key={i} className="text-sm">
                   <div className="font-medium flex items-center gap-2">
                     <span>{p.title}</span>
-                    {p.owner && <Badge variant="outline" className="text-[9px] uppercase">{p.owner}</Badge>}
+                    {p.owner && <Badge variant="outline" className="text-[9px] uppercase">{p.owner === "agency" ? "Agenție" : p.owner === "client" ? "Client" : p.owner}</Badge>}
                   </div>
                   {p.why && <div className="text-xs text-muted-foreground">{p.why}</div>}
                 </li>
@@ -107,7 +108,7 @@ export function DashboardContextCard({ clientId }: Props) {
             <div className="flex flex-wrap gap-1.5">
               {ctx.missing_data.map((m: any, i: number) => (
                 <Badge key={i} variant="outline" className="text-[10px] gap-1">
-                  <AlertCircle className="h-3 w-3 text-amber-500" /> {m.field}
+                  <AlertCircle className="h-3 w-3 text-amber-500" /> {fieldLabel(m.field)}
                 </Badge>
               ))}
             </div>
