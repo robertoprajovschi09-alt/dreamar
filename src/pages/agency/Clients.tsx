@@ -161,6 +161,15 @@ export default function Clients() {
             </form>
           </DialogContent>
         </Dialog>
+        {deleting && (
+          <DeleteClientDialog
+            open={!!deleting}
+            onOpenChange={(v) => { if (!v) setDeleting(null); }}
+            clientId={deleting.id}
+            clientName={deleting.name}
+            onDeleted={load}
+          />
+        )}
       </div>
 
       <Card>
